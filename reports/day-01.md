@@ -27,6 +27,9 @@ _Date: 2026-05-15_
 - Production URL returns HTTP 200 with correct `<title>`, meta, CSS and JS bundles
 - Identical build verified rendering in a full browser locally — hero text,
   rotating globe, dark Leaflet map, and 3 gold markers, with no console errors
+- The Vercel ↔ GitHub git integration is **connected**: the first `vercel --prod`
+  CLI deploy auto-linked the GitHub repo to the project, so every push to `main`
+  now triggers an automatic production deploy.
 
 ## Deviations from the briefing
 
@@ -41,7 +44,7 @@ _Date: 2026-05-15_
   them yet; minimal route stubs were created for `/companies/[slug]` and
   `/performances/[id]` instead.
 - **Tooling:** `gh` and `vercel` CLIs were not pre-installed. `gh` was installed
-  locally (no Homebrew); deployment used the Vercel CLI after sign-in.
+  locally (no Homebrew); the first deploy used the Vercel CLI after sign-in.
 - Vercel project name derived from the folder: `world_ballet_opera_calender`
   (production alias `worldballetoperacalender.vercel.app`).
 
@@ -51,7 +54,7 @@ _Date: 2026-05-15_
 - [ ] Enter ballet company data (top ~20 companies)
 - [ ] Implement the company detail page (`CompanyCard`, `/companies/[slug]`)
 - [ ] Implement the performance detail page (`PerformanceCard`, `/performances/[id]`)
-- [ ] Connect the Vercel ↔ GitHub integration so pushes auto-deploy
+- [ ] Add real Supabase keys as Vercel environment variables
 
 ## Notes
 
