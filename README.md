@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# World Ballet & Opera Calendar
 
-## Getting Started
+| English | 日本語 |
+|--------|--------|
+| **Purpose** — One place to discover ballet and opera performances worldwide on an interactive map and a cinematic globe-first experience. | **目的** — バレエ・オペラの公演を、インタラクティブな地図と地球儀ビジュアルから、世界規模で探せるようにする。 |
+| **Audience** — Cultural travelers planning trips; fans following companies and tours; researchers comparing companies and seasons. | **想定ユーザー** — 旅行に鑑賞を組み込みたい層、カンパニーのツアーを追うファン、比較・調査をする研究者・愛好家。 |
+| **Product direction** — Luxury dark UI (black, gold, white), fast Next.js app, data backed by Supabase. Future: richer listings, affiliates, and data pipelines. | **方向性** — 黒・金・白を基調にしたラグジュアリーなUI。Next.js と Supabase でデータ連携。将来はリスト強化・アフィリエイト・データ取得パイプライン等。 |
 
-First, run the development server:
+## Tech stack
+
+Next.js 14 (App Router), TypeScript, Tailwind CSS, Leaflet, Three.js (`@react-three/fiber`), GSAP / Framer Motion, Supabase (PostgreSQL).
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local`:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Database (Supabase)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. In the Supabase dashboard, open **SQL Editor**.
+2. Paste and run `supabase/schema.sql` (tables, RLS for public read, sample seed rows).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+| Command | Description |
+|--------|-------------|
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Run production server |
+| `npm run lint` | ESLint |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[Vercel](https://vercel.com) is a typical host for this stack; set the same `NEXT_PUBLIC_*` variables in the project settings.
+
+---
+
+More operational notes: [`docs/PROJECT_BRIEFING_AUTO.md`](docs/PROJECT_BRIEFING_AUTO.md).

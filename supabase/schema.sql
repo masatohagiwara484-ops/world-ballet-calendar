@@ -1,0 +1,148 @@
+-- ============================================================================
+-- World Ballet & Opera Calendar — Supabase initial schema
+-- Paste this file into: Supabase Dashboard → SQL Editor → New query → Run
+-- Safe to re-run on empty project only. For existing data, use ALTER / migrations.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- Helpers
+-- ---------------------------------------------------------------------------
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Companies (ballet/opera companies & venues on the map)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.companies (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  name text not null,
+  city text,
+  country text,
+  latitude double precision not null,
+  longitude double precision not null,
+  website_url text,
+  description text,
+  logo_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists companies_slug_idx on public.companies (slug);
+
+drop trigger if exists companies_set_updated_at on public.companies;
+create trigger companies_set_updated_at
+  before update on public.companies
+  for each row
+  execute function public.set_updated_at();
+
+comment on table public.companies is 'Ballet/opera companies and home venues shown on the world map.';
+
+-- ---------------------------------------------------------------------------
+-- Performances (shows linked to a company)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.performances (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references public.companies (id) on delete cascade,
+  title text not null,
+  venue_name text,
+  venue_address text,
+  latitude double precision,
+  longitude double precision,
+  starts_at timestamptz,
+  ends_at timestamptz,
+  genre text not null default 'ballet'
+    check (genre in ('ballet', 'opera', 'mixed')),
+  synopsis text,
+  external_ticket_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists performances_company_id_idx on public.performances (company_id);
+create index if not exists performances_starts_at_idx on public.performances (starts_at);
+
+drop trigger if exists performances_set_updated_at on public.performances;
+create trigger performances_set_updated_at
+  before update on public.performances
+  for each row
+  execute function public.set_updated_at();
+
+comment on table public.performances is 'Scheduled performances; app route uses id (UUID).';
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security (public read for anon — adjust for write/admin later)
+-- ---------------------------------------------------------------------------
+
+alter table public.companies enable row level security;
+alter table public.performances enable row level security;
+
+drop policy if exists "Public read companies" on public.companies;
+create policy "Public read companies"
+  on public.companies for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "Public read performances" on public.performances;
+create policy "Public read performances"
+  on public.performances for select
+  to anon, authenticated
+  using (true);
+
+-- Explicit grants (Supabase often requires these for anon / authenticated reads)
+grant usage on schema public to anon, authenticated;
+grant select on public.companies to anon, authenticated;
+grant select on public.performances to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Seed data (sample rows — remove or edit as needed)
+-- ---------------------------------------------------------------------------
+
+insert into public.companies (slug, name, city, country, latitude, longitude, description)
+values
+  (
+    'royal-ballet',
+    'The Royal Ballet',
+    'London',
+    'United Kingdom',
+    51.5127,
+    -0.1269,
+    'Royal Opera House, Covent Garden.'
+  ),
+  (
+    'paris-opera-ballet',
+    'Paris Opéra Ballet',
+    'Paris',
+    'France',
+    48.8719,
+    2.3316,
+    'Palais Garnier / Opéra Bastille.'
+  ),
+  (
+    'bolshoi-ballet',
+    'Bolshoi Ballet',
+    'Moscow',
+    'Russia',
+    55.7601,
+    37.6186,
+    'Historic Bolshoi Theatre.'
+  )
+on conflict (slug) do nothing;
+
+insert into public.performances (company_id, title, venue_name, genre, starts_at)
+select c.id, 'Sample performance — replace with real data', c.city, 'ballet', now() + interval '30 days'
+from public.companies c
+where c.slug = 'royal-ballet'
+  and not exists (
+    select 1 from public.performances p where p.company_id = c.id limit 1
+  );
