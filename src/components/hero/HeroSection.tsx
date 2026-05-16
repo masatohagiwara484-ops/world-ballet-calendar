@@ -44,14 +44,14 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden bg-[#0A0A0A]">
+    <section className="relative h-screen flex items-center justify-center overflow-hidden bg-[#2a2a3e]">
       {/* Globe Background */}
       <div className="absolute inset-0 opacity-70">
         <GlobeView />
       </div>
 
       {/* Gradient Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0A0A0A] to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#2a2a3e] to-transparent z-10" />
 
       {/* Content */}
       <div className="relative z-20 text-center px-8 max-w-5xl mx-auto">
@@ -84,13 +84,13 @@ export default function HeroSection() {
         <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 justify-center opacity-0">
           <a
             href="#map"
-            className="px-10 py-4 bg-[#C9A961] text-[#0A0A0A] text-xs tracking-[0.2em] uppercase font-medium hover:bg-[#D4B870] transition-colors duration-300"
+            className="px-10 py-4 bg-[#D4AF37] text-[#2a2a3e] text-xs tracking-[0.2em] uppercase font-medium hover:bg-[#E8D5B7] transition-colors duration-300"
           >
             Explore the Map
           </a>
           <a
             href="#companies"
-            className="px-10 py-4 border border-white/20 text-white/60 text-xs tracking-[0.2em] uppercase hover:border-white/40 hover:text-white/80 transition-all duration-300"
+            className="px-10 py-4 border border-[#E8D5B7]/40 text-[#E8D5B7]/60 text-xs tracking-[0.2em] uppercase hover:border-[#E8D5B7] hover:text-[#E8D5B7] transition-all duration-300"
           >
             Browse Companies
           </a>

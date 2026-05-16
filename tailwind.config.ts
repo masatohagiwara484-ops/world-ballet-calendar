@@ -13,8 +13,20 @@ const config: Config = {
         serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
       },
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        // Art Deco Palette (Day 5)
+        background: "#2a2a3e",
+        "surface-elevated": "#3a3a4e",
+        gold: "#D4AF37",
+        "gold-muted": "#C9A961",
+        cream: "#E8D5B7",
+        text: {
+          primary: "#FAFAF8",
+          secondary: "rgba(255,255,255,0.70)",
+          tertiary: "rgba(232,213,183,0.60)",
+        },
+      },
+      boxShadow: {
+        "gold-glow": "0 0 20px rgba(212, 175, 55, 0.5)",
       },
     },
   },

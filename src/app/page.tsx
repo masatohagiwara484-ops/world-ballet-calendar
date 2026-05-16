@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import HeroSection from '@/components/hero/HeroSection'
+import CalendarSidebar from '@/components/calendar/CalendarSidebar'
 import { useStaggerReveal } from '@/hooks/useScrollReveal'
 import type { Company } from '@/lib/supabase'
 
@@ -39,12 +40,15 @@ export default function HomePage() {
   if (!mounted) return <div className="h-screen bg-black" />
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#2a2a3e]">
+      {/* Calendar Sidebar */}
+      <CalendarSidebar />
+
       {/* Hero Section */}
       <HeroSection />
 
       {/* Interactive Map Section */}
-      <section id="map" className="py-20 px-4 bg-gradient-to-b from-black to-gray-950">
+      <section id="map" className="py-20 px-4 bg-gradient-to-b from-[#2a2a3e] to-[#3a3a4e]">
         <div className="max-w-7xl mx-auto">
           <h3 className="font-serif text-4xl mb-4 text-center">Find by location</h3>
 
@@ -56,8 +60,8 @@ export default function HomePage() {
                 onClick={() => setMapFilter(value)}
                 className={`px-6 py-2 text-sm tracking-widest uppercase border transition-all duration-300 ${
                   mapFilter === value
-                    ? 'border-[#C9A961] text-[#C9A961] bg-[#C9A961]/10'
-                    : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300'
+                    ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10'
+                    : 'border-[#E8D5B7]/30 text-[#E8D5B7]/50 hover:border-[#E8D5B7]/60 hover:text-[#E8D5B7]'
                 }`}
               >
                 {label}
@@ -73,35 +77,35 @@ export default function HomePage() {
 
       {/* Companies Grid Section */}
       {companies.length > 0 && (
-        <section id="companies" className="py-20 px-8 bg-[#0A0A0A]">
+        <section id="companies" className="py-20 px-8 bg-[#2a2a3e]">
           <div className="max-w-7xl mx-auto">
             <h3 className="font-serif text-4xl font-light mb-3 text-center">Companies</h3>
             <p className="text-white/40 text-sm mb-12 text-center tracking-wide">
               Select a company to explore their season
             </p>
 
-            <div ref={companiesRef} className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5">
+            <div ref={companiesRef} className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#E8D5B7]/10">
               {companies.map((company) => (
                 <Link
                   key={company.id}
                   href={`/companies/${company.slug}`}
                   data-company-card
-                  className="group bg-[#0A0A0A] p-10 hover:bg-white/[0.02] transition-all duration-500 block"
+                  className="group bg-[#2a2a3e] p-10 hover:bg-[#3a3a4e] transition-all duration-500 block hover:shadow-lg"
                 >
-                  <p className="text-[#C9A961] text-[10px] tracking-[0.3em] uppercase mb-4">
+                  <p className="text-[#D4AF37] text-[10px] tracking-[0.3em] uppercase mb-4">
                     {company.type} · {company.country}
                   </p>
-                  <h4 className="font-serif text-2xl font-light mb-3 group-hover:text-[#C9A961] transition-colors duration-300">
+                  <h4 className="font-serif text-2xl font-light mb-3 group-hover:text-[#D4AF37] transition-colors duration-300">
                     {company.name}
                   </h4>
-                  <p className="text-white/30 text-sm leading-relaxed line-clamp-2">
+                  <p className="text-[#E8D5B7]/60 text-sm leading-relaxed line-clamp-2">
                     {company.description_short}
                   </p>
                   <div className="mt-6 flex items-center gap-2">
-                    <span className="text-white/20 text-xs tracking-widest uppercase">
+                    <span className="text-[#E8D5B7]/40 text-xs tracking-widest uppercase">
                       Est. {company.founded_year}
                     </span>
-                    <span className="ml-auto text-[#C9A961] text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="ml-auto text-[#D4AF37] text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       Explore →
                     </span>
                   </div>
@@ -113,7 +117,7 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="bg-[#0A0A0A] border-t border-white/5 py-8 px-8">
+      <footer className="bg-[#2a2a3e] border-t border-[#E8D5B7]/15 py-8 px-8">
         <div className="max-w-7xl mx-auto text-center text-white/30 text-sm">
           <p>World Ballet &amp; Opera Calendar &copy; 2026</p>
         </div>

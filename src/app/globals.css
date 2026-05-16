@@ -5,6 +5,11 @@
 :root {
   --font-sans: var(--font-sans, 'Inter', sans-serif);
   --font-serif: var(--font-serif, 'Playfair Display', serif);
+  --color-bg: #2a2a3e;
+  --color-surface: #3a3a4e;
+  --color-gold: #D4AF37;
+  --color-gold-muted: #C9A961;
+  --color-cream: #E8D5B7;
 }
 
 html {
@@ -13,18 +18,18 @@ html {
 }
 
 body {
-  background-color: #0a0a0a;
+  background-color: #2a2a3e;
   color: #fafaf8;
   font-family: var(--font-sans);
 }
 
 ::selection {
-  background-color: #c9a961;
-  color: #0a0a0a;
+  background-color: #D4AF37;
+  color: #2a2a3e;
 }
 
 *:focus-visible {
-  outline: 1px solid #c9a961;
+  outline: 1px solid #D4AF37;
   outline-offset: 2px;
 }
 
@@ -33,11 +38,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #2a2a3e;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c9a961;
+  background: #D4AF37;
   border-radius: 0;
 }
 
@@ -65,14 +70,14 @@ body {
 
 /* Leaflet adjustments */
 .leaflet-container {
-  background-color: #0f0f0f !important;
+  background-color: #2a2a3e !important;
   font-family: var(--font-sans);
 }
 
 .leaflet-popup-content-wrapper {
-  background: #0A0A0A !important;
+  background: #2a2a3e !important;
   color: #FAFAF8 !important;
-  border: 1px solid rgba(201, 169, 97, 0.2) !important;
+  border: 1px solid rgba(232, 213, 183, 0.15) !important;
   border-radius: 0 !important;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8) !important;
   padding: 0 !important;
@@ -87,7 +92,7 @@ body {
 }
 
 .leaflet-popup-close-button {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(232, 213, 183, 0.6) !important;
   font-size: 18px !important;
   top: 8px !important;
   right: 8px !important;
@@ -98,6 +103,6 @@ body {
 }
 
 .leaflet-popup-close-button:hover {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(232, 213, 183, 1) !important;
   background: transparent !important;
 }
