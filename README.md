@@ -1,51 +1,88 @@
 # World Ballet & Opera Calendar
 
-| English | 日本語 |
-|--------|--------|
-| **Purpose** — One place to discover ballet and opera performances worldwide on an interactive map and a cinematic globe-first experience. | **目的** — バレエ・オペラの公演を、インタラクティブな地図と地球儀ビジュアルから、世界規模で探せるようにする。 |
-| **Audience** — Cultural travelers planning trips; fans following companies and tours; researchers comparing companies and seasons. | **想定ユーザー** — 旅行に鑑賞を組み込みたい層、カンパニーのツアーを追うファン、比較・調査をする研究者・愛好家。 |
-| **Product direction** — Luxury dark UI (black, gold, white), fast Next.js app, data backed by Supabase. Future: richer listings, affiliates, and data pipelines. | **方向性** — 黒・金・白を基調にしたラグジュアリーなUI。Next.js と Supabase でデータ連携。将来はリスト強化・アフィリエイト・データ取得パイプライン等。 |
+**Discover ballet and opera performances worldwide — on one beautiful map.**
 
-## Tech stack
+🌐 Live: [worldballetoperacalender.vercel.app](https://worldballetoperacalender.vercel.app)
 
-Next.js 14 (App Router), TypeScript, Tailwind CSS, Leaflet, Three.js (`@react-three/fiber`), GSAP / Framer Motion, Supabase (PostgreSQL).
+---
 
-## Getting started
+## What It Is
+
+World Ballet & Opera Calendar is an interactive web platform that maps ballet and opera performances across the globe. Browse shows by location using a live interactive map and a cinematic rotating globe, explore company profiles, and plan your next cultural experience.
+
+The interface is designed to the standard of the art forms it presents — refined, precise, and effortlessly elegant (black, gold, and white luxury aesthetic).
+
+## Who It's For
+
+| Audience | Use case |
+|---|---|
+| **Cultural Travelers** | Find world-class performances in cities you're visiting |
+| **Ballet & Opera Fans** | Follow your favourite company's global tour season |
+| **Dance Researchers** | Compare repertoire and schedules across companies |
+
+## Tech Stack
+
+Next.js 14 · TypeScript · Tailwind CSS · Leaflet.js · Three.js · Supabase (PostgreSQL) · Vercel
+
+## Getting Started
 
 ```bash
 npm install
 npm run dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+### Environment variables
 
-## Environment variables
-
-Create `.env.local`:
+Create `.env.local` in the project root:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 ```
 
-## Database (Supabase)
+---
+---
 
-1. In the Supabase dashboard, open **SQL Editor**.
-2. Paste and run `supabase/schema.sql` (tables, RLS for public read, sample seed rows).
+# World Ballet & Opera Calendar（日本語）
 
-## Scripts
+**世界中のバレエ・オペラ公演を、1つの美しい地図から探せるプラットフォーム。**
 
-| Command | Description |
-|--------|-------------|
-| `npm run dev` | Development server |
-| `npm run build` | Production build |
-| `npm run start` | Run production server |
-| `npm run lint` | ESLint |
-
-## Deploy
-
-[Vercel](https://vercel.com) is a typical host for this stack; set the same `NEXT_PUBLIC_*` variables in the project settings.
+🌐 ライブサイト: [worldballetoperacalender.vercel.app](https://worldballetoperacalender.vercel.app)
 
 ---
 
-More operational notes: [`docs/PROJECT_BRIEFING_AUTO.md`](docs/PROJECT_BRIEFING_AUTO.md).
+## プロジェクト概要
+
+World Ballet & Opera Calendar は、世界中のバレエ・オペラ公演をインタラクティブな地図で探せる Web プラットフォームです。回転する地球儀ビューとライブ地図を使って公演を都市ごとに検索し、カンパニー情報を閲覧し、次の文化体験を計画することができます。
+
+インターフェースは、掲載する芸術と同じ基準で設計されています——洗練されており、正確で、黒・金・白を基調にしたラグジュアリーなデザインです。
+
+## 対象ユーザー
+
+| ユーザー層 | 活用シーン |
+|---|---|
+| **カルチャートラベラー** | 旅行先の都市でワールドクラスの公演を見つける |
+| **バレエ・オペラファン** | 推しカンパニーの世界ツアースケジュールを追う |
+| **ダンス研究者・愛好家** | カンパニーのレパートリーやスケジュールを比較・調査する |
+
+## 技術スタック
+
+Next.js 14 · TypeScript · Tailwind CSS · Leaflet.js · Three.js · Supabase（PostgreSQL）· Vercel
+
+## ローカル開発
+
+```bash
+npm install
+npm run dev
+# http://localhost:3000 を開く
+```
+
+### 環境変数
+
+プロジェクトルートに `.env.local` を作成してください：
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+```
