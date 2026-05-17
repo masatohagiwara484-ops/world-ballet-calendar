@@ -6,6 +6,7 @@ import type { Performance, Company } from '@/lib/supabase'
 interface CalendarSidebarProps {
   onFilterChange?: (filters: FilterState) => void
   onDateSelected?: (dateStr: string) => void
+  onCountryChange?: (country: string | null) => void
 }
 
 interface FilterState {
@@ -14,7 +15,7 @@ interface FilterState {
   selectedDate: string | null
 }
 
-export default function CalendarSidebar({ onFilterChange, onDateSelected }: CalendarSidebarProps) {
+export default function CalendarSidebar({ onFilterChange, onDateSelected, onCountryChange }: CalendarSidebarProps) {
   const [filters, setFilters] = useState<FilterState>({
     country: null,
     type: 'all',
@@ -118,7 +119,11 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected }: Cale
           </label>
           <select
             value={filters.country || ''}
-            onChange={(e) => handleFilterChange({ country: e.target.value || null })}
+            onChange={(e) => {
+              const country = e.target.value || null
+              handleFilterChange({ country })
+              onCountryChange?.(country)
+            }}
             className="w-full bg-[#FAF8F5] border border-[#1A1A1A]/[0.08] text-[#1A1A1A] px-3 py-2 text-sm rounded focus:outline-none focus:border-[#D4AF37] transition-colors"
           >
             <option value="">All Countries</option>

@@ -9,7 +9,12 @@ const GlobeView = dynamic(() => import('@/components/map/GlobeView'), {
   loading: () => <div className="h-full bg-[#F5F0EA]" />,
 })
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  focusCountry?: string | null
+  highlightedCompanyIds?: string[]
+}
+
+export default function HeroSection({ focusCountry, highlightedCompanyIds }: HeroSectionProps) {
   const titleRef = useRef<HTMLHeadingElement>(null)
   const subtitleRef = useRef<HTMLHeadingElement>(null)
   const descRef = useRef<HTMLParagraphElement>(null)
@@ -62,7 +67,7 @@ export default function HeroSection() {
     >
       {/* Globe Background */}
       <div className="absolute inset-0 opacity-40">
-        <GlobeView />
+        <GlobeView focusCountry={focusCountry} highlightedCompanyIds={highlightedCompanyIds} />
       </div>
 
       {/* Bottom gradient fade */}

@@ -29,6 +29,9 @@ export default function Navbar() {
           <Link href="/#companies" className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase hover:text-[#1A1A1A] transition-colors duration-300">
             Companies
           </Link>
+          <Link href="/partners" className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase hover:text-[#1A1A1A] transition-colors duration-300">
+            Partners
+          </Link>
           <a
             href="#premium"
             className="px-5 py-2 border border-[#D4AF37]/50 text-[#D4AF37] text-xs tracking-widest uppercase hover:bg-[#D4AF37]/10 transition-all duration-300"

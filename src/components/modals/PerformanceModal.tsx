@@ -88,6 +88,7 @@ export default function PerformanceModal({
   }
 
   const companyCountry = performance.company?.country || null
+  const bookingUrl = performance.affiliate_url ?? performance.ticket_url ?? null
 
   return (
     <div
@@ -202,20 +203,25 @@ export default function PerformanceModal({
           )}
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {performance.ticket_url && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {bookingUrl && (
               <a
-                href={performance.ticket_url}
+                href={bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-3 bg-[#D4AF37] text-white text-sm tracking-widest uppercase font-medium rounded hover:bg-[#C9A961] transition-colors"
+                className="w-full sm:w-auto text-center px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium rounded shadow-md hover:bg-[#C9A961] hover:scale-[1.03] hover:shadow-lg transition-all duration-300"
               >
                 Book Tickets
               </a>
             )}
+            {performance.price_range && (
+              <span className="text-[#1A1A1A]/50 text-xs">
+                {performance.price_range}
+              </span>
+            )}
             <button
               onClick={handleClose}
-              className="px-8 py-3 border border-[#1A1A1A]/15 text-[#1A1A1A]/60 text-sm tracking-widest uppercase rounded hover:border-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-all"
+              className="w-full sm:w-auto px-8 py-3 border border-[#1A1A1A]/15 text-[#1A1A1A]/60 text-sm tracking-widest uppercase rounded hover:border-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-all sm:ml-auto"
             >
               Close
             </button>

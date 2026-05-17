@@ -33,6 +33,8 @@ export default function HomePage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedPerformance, setSelectedPerformance] = useState<(Performance & { company?: Company }) | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+  const [highlightedCompanyIds, setHighlightedCompanyIds] = useState<string[]>([])
   const companiesRef = useStaggerReveal<HTMLDivElement>('[data-company-card]')
   const mapSectionRef = useRef<HTMLElement>(null)
   const companiesSectionRef = useRef<HTMLElement>(null)
@@ -56,11 +58,18 @@ export default function HomePage() {
       const data = await res.json()
 
       if (data.performances && data.performances.length > 0) {
-        const performance = data.performances[0]
+        const performances = data.performances as Performance[]
+        const performance = performances[0]
         // Find company info for this performance
         const company = companies.find(c => c.id === performance.company_id)
         setSelectedPerformance({ ...performance, company })
         setIsModalOpen(true)
+
+        // Highlight every company performing on this date
+        const ids = Array.from(new Set(performances.map(p => p.company_id)))
+        setHighlightedCompanyIds(ids)
+      } else {
+        setHighlightedCompanyIds([])
       }
     } catch (error) {
       console.error('Failed to fetch performance:', error)
@@ -89,7 +98,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)', backgroundAttachment: 'fixed' }}>
       {/* Calendar Sidebar */}
-      <CalendarSidebar onDateSelected={handleDateSelected} />
+      <CalendarSidebar onDateSelected={handleDateSelected} onCountryChange={setSelectedCountry} />
 
       {/* Performance Modal */}
       <PerformanceModal
@@ -103,7 +112,7 @@ export default function HomePage() {
       />
 
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection focusCountry={selectedCountry} highlightedCompanyIds={highlightedCompanyIds} />
 
       {/* Interactive Map Section */}
       <section
