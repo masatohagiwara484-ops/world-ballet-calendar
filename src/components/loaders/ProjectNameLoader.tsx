@@ -38,11 +38,15 @@ export default function ProjectNameLoader() {
   return (
     <div
       ref={loaderRef}
-      className="fixed inset-0 bg-[#2a2a3e] flex items-center justify-center z-[9999] opacity-0"
+      className="fixed inset-0 flex flex-col items-center justify-center z-[9999] opacity-0"
+      style={{ background: 'rgba(255,255,255,0.98)' }}
     >
-      <h1 className="font-serif text-6xl md:text-7xl lg:text-8xl font-light text-[#E8D5B7] text-center px-8">
+      <h1 className="font-serif text-6xl md:text-7xl lg:text-8xl font-light text-[#1A1A1A] text-center px-8 leading-tight">
         World Ballet &amp; Opera Calendar
       </h1>
+      <p className="mt-6 text-[#D4AF37] text-[11px] tracking-[0.5em] uppercase">
+        The World Calendar
+      </p>
     </div>
   )
 }

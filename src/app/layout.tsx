@@ -45,7 +45,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="bg-[#2a2a3e] text-white font-sans">
+      <body className="bg-[#FAFAF8] text-[#1A1A1A] font-sans">
         <ProjectNameLoader />
         <Navbar />
         {children}
