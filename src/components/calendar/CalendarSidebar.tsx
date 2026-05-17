@@ -5,6 +5,7 @@ import type { Performance, Company } from '@/lib/supabase'
 
 interface CalendarSidebarProps {
   onFilterChange?: (filters: FilterState) => void
+  onDateSelected?: (dateStr: string) => void
 }
 
 interface FilterState {
@@ -13,7 +14,7 @@ interface FilterState {
   selectedDate: string | null
 }
 
-export default function CalendarSidebar({ onFilterChange }: CalendarSidebarProps) {
+export default function CalendarSidebar({ onFilterChange, onDateSelected }: CalendarSidebarProps) {
   const [filters, setFilters] = useState<FilterState>({
     country: null,
     type: 'all',
@@ -23,6 +24,7 @@ export default function CalendarSidebar({ onFilterChange }: CalendarSidebarProps
   const [countries, setCountries] = useState<string[]>([])
   const [performanceDates, setPerformanceDates] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [expandedMonth, setExpandedMonth] = useState<number | null>(4) // May 2026 is month 4
 
   // Fetch countries from companies
   useEffect(() => {
@@ -82,6 +84,16 @@ export default function CalendarSidebar({ onFilterChange }: CalendarSidebarProps
     const cleared = { country: null, type: 'all' as const, selectedDate: null }
     setFilters(cleared)
     onFilterChange?.(cleared)
+  }
+
+  const handleDateClick = (dateStr: string) => {
+    setFilters(prev => ({ ...prev, selectedDate: dateStr }))
+    onFilterChange?.(filters)
+    onDateSelected?.(dateStr)
+  }
+
+  const toggleMonth = (month: number) => {
+    setExpandedMonth(expandedMonth === month ? null : month)
   }
 
   // Generate calendar days for 2026
@@ -152,44 +164,58 @@ export default function CalendarSidebar({ onFilterChange }: CalendarSidebarProps
       </div>
 
       {/* Calendar Grid */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {months.map(({ month, name }) => (
-          <div key={month}>
-            <h3 className="font-serif text-sm font-light text-[#1A1A1A] mb-3">{name}</h3>
-            <div className="grid grid-cols-7 gap-1">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-center text-[#1A1A1A]/30 text-[10px] font-light h-6 flex items-center justify-center">
-                  {day.substring(0, 1)}
-                </div>
-              ))}
+          <div key={month} className="border-b border-[#1A1A1A]/[0.06] last:border-0 pb-4 last:pb-0">
+            {/* Month Header - Clickable */}
+            <button
+              onClick={() => toggleMonth(month)}
+              className={`w-full text-left font-serif text-sm font-light mb-3 transition-colors ${
+                expandedMonth === month
+                  ? 'text-[#1A1A1A] border-b-2 border-[#D4AF37] pb-2'
+                  : 'text-[#1A1A1A] hover:text-[#D4AF37]'
+              }`}
+            >
+              {name}
+            </button>
 
-              {Array.from({ length: new Date(2026, month, 1).getDay() }).map((_, i) => (
-                <div key={`empty-${i}`} />
-              ))}
+            {/* Calendar Grid - Conditional Render */}
+            {expandedMonth === month && (
+              <div className="grid grid-cols-7 gap-1 max-h-96 overflow-hidden transition-all duration-300">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="text-center text-[#1A1A1A]/30 text-[10px] font-light h-6 flex items-center justify-center">
+                    {day.substring(0, 1)}
+                  </div>
+                ))}
 
-              {Array.from({ length: daysInMonth(2026, month) }).map((_, i) => {
-                const day = i + 1
-                const dateStr = `2026-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                const hasPerformance = performanceDates.has(dateStr)
+                {Array.from({ length: new Date(2026, month, 1).getDay() }).map((_, i) => (
+                  <div key={`empty-${i}`} />
+                ))}
 
-                return (
-                  <button
-                    key={dateStr}
-                    onClick={() => handleFilterChange({ selectedDate: dateStr })}
-                    className={`h-8 flex items-center justify-center text-xs rounded transition-all ${
-                      filters.selectedDate === dateStr
-                        ? 'bg-[#D4AF37] text-white font-medium shadow-gold-glow'
-                        : hasPerformance
-                          ? 'bg-[#FAF8F5] text-[#D4AF37] border border-[#D4AF37]/50 cursor-pointer hover:shadow-gold-glow'
-                          : 'text-[#1A1A1A]/30 hover:text-[#1A1A1A]/50'
-                    }`}
-                    disabled={!hasPerformance && filters.selectedDate !== dateStr}
-                  >
-                    {day}
-                  </button>
-                )
-              })}
-            </div>
+                {Array.from({ length: daysInMonth(2026, month) }).map((_, i) => {
+                  const day = i + 1
+                  const dateStr = `2026-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                  const hasPerformance = performanceDates.has(dateStr)
+
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => handleDateClick(dateStr)}
+                      className={`h-8 flex items-center justify-center text-xs rounded transition-all ${
+                        filters.selectedDate === dateStr
+                          ? 'bg-[#D4AF37] text-white font-medium shadow-gold-glow'
+                          : hasPerformance
+                            ? 'bg-[#FAF8F5] text-[#D4AF37] border border-[#D4AF37]/50 cursor-pointer hover:shadow-gold-glow'
+                            : 'text-[#1A1A1A]/30 hover:text-[#1A1A1A]/50'
+                      }`}
+                      disabled={!hasPerformance && filters.selectedDate !== dateStr}
+                    >
+                      {day}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>

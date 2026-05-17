@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import HeroSection from '@/components/hero/HeroSection'
 import CalendarSidebar from '@/components/calendar/CalendarSidebar'
+import PerformanceModal from '@/components/modals/PerformanceModal'
 import { useStaggerReveal } from '@/hooks/useScrollReveal'
-import type { Company } from '@/lib/supabase'
+import type { Company, Performance } from '@/lib/supabase'
 
 const WorldMap = dynamic(() => import('@/components/map/WorldMap'), {
   ssr: false,
@@ -30,6 +31,8 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false)
   const [mapFilter, setMapFilter] = useState<MapFilter>('all')
   const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedPerformance, setSelectedPerformance] = useState<(Performance & { company?: Company }) | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const companiesRef = useStaggerReveal<HTMLDivElement>('[data-company-card]')
   const mapSectionRef = useRef<HTMLElement>(null)
   const companiesSectionRef = useRef<HTMLElement>(null)
@@ -41,6 +44,28 @@ export default function HomePage() {
       .then(d => setCompanies(d.companies ?? []))
       .catch(() => {})
   }, [])
+
+  // Handle calendar date selection
+  const handleDateSelected = async (dateStr: string) => {
+    try {
+      const params = new URLSearchParams()
+      params.append('start_date', dateStr)
+      params.append('end_date', dateStr)
+
+      const res = await fetch(`/api/performances?${params.toString()}`)
+      const data = await res.json()
+
+      if (data.performances && data.performances.length > 0) {
+        const performance = data.performances[0]
+        // Find company info for this performance
+        const company = companies.find(c => c.id === performance.company_id)
+        setSelectedPerformance({ ...performance, company })
+        setIsModalOpen(true)
+      }
+    } catch (error) {
+      console.error('Failed to fetch performance:', error)
+    }
+  }
 
   // IntersectionObserver for reveal animations
   useEffect(() => {
@@ -64,7 +89,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)', backgroundAttachment: 'fixed' }}>
       {/* Calendar Sidebar */}
-      <CalendarSidebar />
+      <CalendarSidebar onDateSelected={handleDateSelected} />
+
+      {/* Performance Modal */}
+      <PerformanceModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedPerformance(null)
+        }}
+        performance={selectedPerformance}
+        accentColor="gold"
+      />
 
       {/* Hero Section */}
       <HeroSection />
