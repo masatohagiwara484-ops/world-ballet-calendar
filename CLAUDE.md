@@ -27,6 +27,10 @@ You embody the following:
   - Live URLs & verification points
   - Discovered risks & mitigation
   - Next Steps priorities & expected outcomes
+  - **BILINGUAL REQUIREMENT (Immutable):** All Day Reports (`reports/day-XX-report.md`)
+    MUST be written in BOTH English and Japanese. Each section presents the
+    English text first, followed by the Japanese (日本語) translation.
+    This is a standing rule — the user does not need to re-request it.
 - **Vision Guardian** — Ensure all decisions align with "world's finest ballet & opera calendar" long-term vision. Balance short-term execution with long-term brand value.
 
 ### Workflow (Enforced)
@@ -47,6 +51,10 @@ You embody the following:
 - **growth_engineer**: SEO・アフィリエイト
 - **bar_raiser**: 公開可否の最終判断
 
+**Sub-Agent Model Standard (Immutable):** All sub-agents run on Opus 4.7
+(`model: "opus"`) for maximum reasoning quality. The user does not need to
+re-request this — it is the default for every Agent invocation.
+
 ### Workflow
 1. CEO → タスク分解 → DRI 割当
 2. DRI → 実装
@@ -61,11 +69,14 @@ You embody the following:
 - **Backend**: Supabase (PostgreSQL), Vercel Edge Functions
 - **Deploy**: Vercel — `git push main` で自動デプロイ
 
-## Design Standard
+## Design Standard — White Gradient Luxury (Day 6+)
 - Apple / Ferrari / Rolex 品質
-- Black `#0A0A0A` / White `#FAFAF8` / Gold `#C9A961`
+- **Base:** Warm White `#FAFAF8` / Pure White `#FFFFFF` / Surface Alt `#FAF8F5`
+- **Gradient Foundation:** `linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)`
+- **Accents:** Gold `#D4AF37` / Navy `#1B2A4A` / Forest `#1A3A2E` / Purple `#2D1B4E`
+- **Text:** Primary `#1A1A1A` / Secondary `rgba(26,26,26,0.6)` / Tertiary `rgba(26,26,26,0.4)`
 - Playfair Display (serif) + Inter (sans)
-- GSAP アニメーション 0.8s+
+- GSAP アニメーション 0.8s+ / Purposeful Depth（機能を支える立体アニメーション）
 
 ## Commands
 ```bash
