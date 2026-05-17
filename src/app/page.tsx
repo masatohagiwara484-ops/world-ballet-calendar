@@ -111,6 +111,7 @@ export default function HomePage() {
         accentColor="gold"
       />
 
+      <main>
       {/* Hero Section */}
       <HeroSection focusCountry={selectedCountry} highlightedCompanyIds={highlightedCompanyIds} />
 
@@ -118,6 +119,7 @@ export default function HomePage() {
       <section
         ref={mapSectionRef}
         id="map"
+        aria-label="Find performances by location"
         className="py-24 px-4"
         style={{ background: 'linear-gradient(180deg, #FAF8F5 0%, #FFFFFF 100%)' }}
       >
@@ -128,11 +130,12 @@ export default function HomePage() {
           </div>
 
           {/* Filter buttons */}
-          <div className="reveal flex justify-center gap-3 mt-6 mb-10" style={{ transitionDelay: '0.1s' }}>
+          <div className="reveal flex flex-wrap justify-center gap-3 mt-6 mb-10" style={{ transitionDelay: '0.1s' }} role="group" aria-label="Filter map by performance type">
             {FILTERS.map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => setMapFilter(value)}
+                aria-pressed={mapFilter === value}
                 className={`px-6 py-2 text-sm tracking-widest uppercase border transition-all duration-300 ${
                   mapFilter === value
                     ? 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/[0.08]'
@@ -155,6 +158,7 @@ export default function HomePage() {
         <section
           ref={companiesSectionRef}
           id="companies"
+          aria-label="Ballet and opera companies directory"
           className="py-24 px-8"
           style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF8F5 100%)' }}
         >
@@ -206,6 +210,7 @@ export default function HomePage() {
           </div>
         </section>
       )}
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-[#1A1A1A]/[0.08] py-10 px-8" style={{ background: '#FAF8F5' }}>

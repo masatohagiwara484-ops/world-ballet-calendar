@@ -84,14 +84,14 @@ export default function HeroSection({ focusCountry, highlightedCompanyIds }: Her
 
         <h1
           ref={titleRef}
-          className="font-serif text-6xl md:text-8xl lg:text-9xl font-light leading-none mb-4 text-[#1A1A1A] opacity-0"
+          className="font-serif text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-light leading-none mb-4 text-[#1A1A1A] opacity-0"
         >
           Every stage.
         </h1>
 
         <h2
           ref={subtitleRef}
-          className="font-serif text-6xl md:text-8xl lg:text-9xl font-light leading-none mb-12 text-[#1A1A1A]/25 opacity-0"
+          className="font-serif text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-light leading-none mb-12 text-[#1A1A1A]/25 opacity-0"
         >
           Every season.
         </h2>

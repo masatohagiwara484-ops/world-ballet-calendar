@@ -173,7 +173,7 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
   }, [])
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" aria-hidden="true">
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
         gl={{ antialias: true, alpha: true }}

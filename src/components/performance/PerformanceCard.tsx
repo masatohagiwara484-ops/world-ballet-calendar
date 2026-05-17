@@ -73,7 +73,7 @@ export default function PerformanceCard({ performance, companyCity }: Props) {
                 href={ticketUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 bg-[#D4AF37] text-white text-xs tracking-widest uppercase hover:bg-[#C9A961] transition-all duration-300 text-center font-medium rounded"
+                className="px-5 py-3 min-h-[44px] flex items-center justify-center bg-[#D4AF37] text-white text-xs tracking-widest uppercase hover:bg-[#C9A961] transition-all duration-300 text-center font-medium rounded"
               >
                 Book Tickets
               </a>
@@ -82,7 +82,7 @@ export default function PerformanceCard({ performance, companyCity }: Props) {
               href={hotelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-2.5 border border-[#1A1A1A]/15 text-[#1A1A1A]/50 text-xs tracking-widest uppercase hover:border-[#1A1A1A]/30 hover:text-[#1A1A1A]/70 transition-all duration-300 text-center rounded"
+              className="px-5 py-3 min-h-[44px] flex items-center justify-center border border-[#1A1A1A]/15 text-[#1A1A1A]/50 text-xs tracking-widest uppercase hover:border-[#1A1A1A]/30 hover:text-[#1A1A1A]/70 transition-all duration-300 text-center rounded"
             >
               Hotels in {companyCity}
             </a>

@@ -19,6 +19,7 @@ export default function PerformanceModal({
 }: PerformanceModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!isOpen || !backdropRef.current || !modalRef.current) return
@@ -35,6 +36,9 @@ export default function PerformanceModal({
       { opacity: 1, scale: 1.0, duration: 0.3, ease: 'back.out(1.5)' },
       0
     )
+
+    // Move focus into the modal so keyboard/screen-reader users land inside it.
+    closeButtonRef.current?.focus()
   }, [isOpen])
 
   const handleClose = async () => {
@@ -103,6 +107,9 @@ export default function PerformanceModal({
     >
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="performance-modal-title"
         className="relative w-full max-w-2xl bg-gradient-to-br from-white to-[#FAF8F5] rounded-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -114,10 +121,12 @@ export default function PerformanceModal({
 
         {/* Close button */}
         <button
+          ref={closeButtonRef}
           onClick={handleClose}
+          aria-label="Close performance details"
           className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center text-[#1A1A1A]/40 hover:text-[#1A1A1A]/80 transition-colors z-10"
         >
-          <span className="text-xl">×</span>
+          <span className="text-xl" aria-hidden="true">×</span>
         </button>
 
         {/* Content */}
@@ -128,7 +137,10 @@ export default function PerformanceModal({
           </p>
 
           {/* Title */}
-          <h2 className="font-serif text-4xl md:text-5xl font-light text-[#1A1A1A] mb-4">
+          <h2
+            id="performance-modal-title"
+            className="font-serif text-4xl md:text-5xl font-light text-[#1A1A1A] mb-4"
+          >
             {performance.title}
           </h2>
 

@@ -106,8 +106,15 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
     name: new Date(2026, i).toLocaleString('en-US', { month: 'short' }),
   }))
 
+  const describeDate = (year: number, month: number, day: number) =>
+    new Date(year, month, day).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+
   return (
-    <aside className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-[#1A1A1A]/[0.08] overflow-y-auto pt-24 px-6 py-8 z-40 max-xl:hidden">
+    <aside aria-label="2026 performance calendar" className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-[#1A1A1A]/[0.08] overflow-y-auto pt-24 px-6 py-8 z-40 max-xl:hidden">
       <h2 className="font-serif text-xl font-light mb-6 text-[#1A1A1A]">2026 Calendar</h2>
 
       {/* Filters */}
@@ -140,11 +147,12 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
           <label className="text-[#1A1A1A]/50 text-xs tracking-widest uppercase block mb-2">
             Type
           </label>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="group" aria-label="Filter by performance type">
             {(['all', 'ballet', 'opera'] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => handleFilterChange({ type })}
+                aria-pressed={filters.type === type}
                 className={`flex-1 px-3 py-2 text-xs tracking-widest uppercase rounded transition-all ${
                   filters.type === type
                     ? 'bg-[#D4AF37] text-white font-medium'
@@ -175,6 +183,8 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
             {/* Month Header - Clickable */}
             <button
               onClick={() => toggleMonth(month)}
+              aria-expanded={expandedMonth === month}
+              aria-label={`${expandedMonth === month ? 'Collapse' : 'Expand'} ${new Date(2026, month).toLocaleString('en-US', { month: 'long' })} 2026`}
               className={`w-full text-left font-serif text-sm font-light mb-3 transition-colors ${
                 expandedMonth === month
                   ? 'text-[#1A1A1A] border-b-2 border-[#D4AF37] pb-2'
@@ -202,10 +212,17 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
                   const dateStr = `2026-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                   const hasPerformance = performanceDates.has(dateStr)
 
+                  const dateLabel = describeDate(2026, month, day)
                   return (
                     <button
                       key={dateStr}
                       onClick={() => handleDateClick(dateStr)}
+                      aria-label={
+                        hasPerformance
+                          ? `${dateLabel} — performances available`
+                          : dateLabel
+                      }
+                      aria-pressed={filters.selectedDate === dateStr}
                       className={`h-8 flex items-center justify-center text-xs rounded transition-all ${
                         filters.selectedDate === dateStr
                           ? 'bg-[#D4AF37] text-white font-medium shadow-gold-glow'

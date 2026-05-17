@@ -38,6 +38,25 @@ export const metadata: Metadata = {
   },
 }
 
+const SITE_URL = 'https://worldballetoperacalender.vercel.app'
+const SITE_NAME = 'World Ballet & Opera Calendar'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+  ],
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -46,6 +65,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className="bg-[#FAFAF8] text-[#1A1A1A] font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ProjectNameLoader />
         <Navbar />
         {children}
