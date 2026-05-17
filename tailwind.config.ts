@@ -17,7 +17,7 @@ const config: Config = {
         surface: "#FFFFFF",
         "surface-alt": "#FAF8F5",
         gold: "#D4AF37",
-        "gold-muted": "#C9A961",
+        "gold-muted": "#B8941F",
         navy: "#1B2A4A",
         forest: "#1A3A2E",
         purple: "#2D1B4E",

@@ -21,6 +21,10 @@ export default function PerformanceModal({
   const modalRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
 
+  // Shallow resting shadow and deep cinematic shadow for the modal card.
+  const SHADOW_SHALLOW = '0 10px 30px rgba(26,26,26,0.1)'
+  const SHADOW_DEEP = '0 40px 80px -20px rgba(26,26,26,0.35)'
+
   useEffect(() => {
     if (!isOpen || !backdropRef.current || !modalRef.current) return
 
@@ -32,8 +36,24 @@ export default function PerformanceModal({
       { opacity: 1, duration: 0.3, ease: 'power2.out' }
     ).fromTo(
       modalRef.current,
-      { opacity: 0, scale: 0.92 },
-      { opacity: 1, scale: 1.0, duration: 0.3, ease: 'back.out(1.5)' },
+      {
+        opacity: 0,
+        scale: 0.92,
+        y: 40,
+        rotationX: -14,
+        transformPerspective: 800,
+        transformOrigin: 'center center',
+        boxShadow: SHADOW_SHALLOW,
+      },
+      {
+        opacity: 1,
+        scale: 1.0,
+        y: 0,
+        rotationX: 0,
+        boxShadow: SHADOW_DEEP,
+        duration: 0.55,
+        ease: 'power3.out',
+      },
       0
     )
 
@@ -46,8 +66,17 @@ export default function PerformanceModal({
 
     await gsap
       .timeline()
-      .to(modalRef.current, { opacity: 0, scale: 0.92, duration: 0.2 })
-      .to(backdropRef.current, { opacity: 0, duration: 0.2 }, 0)
+      .to(modalRef.current, {
+        opacity: 0,
+        scale: 0.94,
+        y: 28,
+        rotationX: -10,
+        transformPerspective: 800,
+        boxShadow: SHADOW_SHALLOW,
+        duration: 0.28,
+        ease: 'power2.in',
+      })
+      .to(backdropRef.current, { opacity: 0, duration: 0.25 }, 0)
 
     onClose()
   }
@@ -61,8 +90,17 @@ export default function PerformanceModal({
 
         gsap
           .timeline()
-          .to(modalRef.current, { opacity: 0, scale: 0.92, duration: 0.2 })
-          .to(backdropRef.current, { opacity: 0, duration: 0.2 }, 0)
+          .to(modalRef.current, {
+            opacity: 0,
+            scale: 0.94,
+            y: 28,
+            rotationX: -10,
+            transformPerspective: 800,
+            boxShadow: SHADOW_SHALLOW,
+            duration: 0.28,
+            ease: 'power2.in',
+          })
+          .to(backdropRef.current, { opacity: 0, duration: 0.25 }, 0)
           .then(() => onClose())
       }
     }
@@ -110,12 +148,13 @@ export default function PerformanceModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="performance-modal-title"
-        className="relative w-full max-w-2xl bg-gradient-to-br from-white to-[#FAF8F5] rounded-lg shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl bg-gradient-to-br from-white to-[#FAF8F5] rounded-2xl ring-1 ring-white/60 overflow-hidden"
+        style={{ boxShadow: SHADOW_DEEP }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top accent bar */}
         <div
-          className="absolute top-0 left-0 right-0 h-1"
+          className="absolute top-0 left-0 right-0 h-1.5 z-10"
           style={{ backgroundColor: accentBgColor }}
         />
 
@@ -145,7 +184,7 @@ export default function PerformanceModal({
           </h2>
 
           {/* Meta info */}
-          <div className="flex flex-wrap gap-6 md:gap-8 mb-6 pb-6 border-b border-[#1A1A1A]/08">
+          <div className="flex flex-wrap gap-6 md:gap-8 mb-6 pb-6 border-b border-[#1A1A1A]/[0.08]">
             <div>
               <p className="text-[#1A1A1A]/40 text-xs uppercase tracking-widest mb-1">
                 Date
@@ -187,7 +226,7 @@ export default function PerformanceModal({
 
           {/* Composer & Choreographer */}
           {(performance.composer || performance.choreographer) && (
-            <div className="mb-6 pb-6 border-b border-[#1A1A1A]/08">
+            <div className="mb-6 pb-6 border-b border-[#1A1A1A]/[0.08]">
               {performance.composer && (
                 <div className="mb-3">
                   <p className="text-[#1A1A1A]/40 text-xs uppercase tracking-widest mb-1">
@@ -221,7 +260,7 @@ export default function PerformanceModal({
                 href={bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto text-center px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium rounded shadow-md hover:bg-[#C9A961] hover:scale-[1.03] hover:shadow-lg transition-all duration-300"
+                className="w-full sm:w-auto text-center px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium rounded shadow-md hover:bg-[#B8941F] hover:scale-[1.03] hover:shadow-lg transition-all duration-300"
               >
                 Book Tickets
               </a>

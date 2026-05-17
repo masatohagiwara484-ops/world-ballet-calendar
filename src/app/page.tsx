@@ -125,7 +125,7 @@ export default function HomePage() {
       >
         <div className="max-w-7xl mx-auto">
           <div className="reveal text-center mb-4">
-            <p className="text-[#C9A961] text-[10px] tracking-[0.4em] uppercase mb-3">Explore</p>
+            <p className="text-[#D4AF37] text-[10px] tracking-[0.4em] uppercase mb-3">Explore</p>
             <h3 className="font-serif text-4xl font-light text-[#1A1A1A]">Find by location</h3>
           </div>
 
@@ -164,7 +164,7 @@ export default function HomePage() {
         >
           <div className="max-w-7xl mx-auto">
             <div className="reveal text-center mb-2">
-              <p className="text-[#C9A961] text-[10px] tracking-[0.4em] uppercase mb-3">Directory</p>
+              <p className="text-[#D4AF37] text-[10px] tracking-[0.4em] uppercase mb-3">Directory</p>
               <h3 className="font-serif text-4xl font-light text-[#1A1A1A]">Companies</h3>
             </div>
             <p className="reveal text-[#1A1A1A]/40 text-sm mb-14 text-center tracking-wide" style={{ transitionDelay: '0.1s' }}>

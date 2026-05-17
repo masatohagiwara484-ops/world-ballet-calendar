@@ -1,7 +1,15 @@
+-- DEPRECATED / DO NOT APPLY. Authoritative schema: supabase/migrations/001_initial_schema.sql
 -- ============================================================================
--- World Ballet & Opera Calendar — Supabase initial schema
--- Paste this file into: Supabase Dashboard → SQL Editor → New query → Run
--- Safe to re-run on empty project only. For existing data, use ALTER / migrations.
+-- World Ballet & Opera Calendar — Supabase initial schema (LEGACY / STALE)
+--
+-- WARNING: This file is OUT OF DATE and DIVERGES from the live schema and the
+-- TypeScript types. It uses latitude/longitude (should be lat/lng), genre
+-- (should be type), starts_at/ends_at (should be start_date/end_date), and is
+-- missing columns the app relies on (hero_image, is_active, etc.). Applying it
+-- WILL BREAK the application.
+--
+-- The single source of truth is: supabase/migrations/001_initial_schema.sql
+-- This file is archived for historical reference only. Do not run it.
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------

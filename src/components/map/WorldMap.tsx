@@ -10,11 +10,11 @@ const goldIcon = L.divIcon({
   className: '',
   html: `<div style="
     width:14px;height:14px;
-    background:#C9A961;
-    border:2px solid rgba(255,255,255,0.8);
+    background:#D4AF37;
+    border:2px solid rgba(255,255,255,0.9);
     border-radius:50%;
     cursor:pointer;
-    box-shadow:0 0 8px rgba(201,169,97,0.6);
+    box-shadow:0 0 8px rgba(212,175,55,0.6);
   "></div>`,
   iconSize: [14, 14],
   iconAnchor: [7, 7],
@@ -43,18 +43,18 @@ export default function WorldMap({ filter = 'all' }: WorldMapProps) {
   return (
     <div className="relative h-full w-full">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-950 z-10">
-          <p className="text-gray-400 text-sm tracking-widest uppercase">Loading…</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-[#FAF8F5] z-10">
+          <p className="text-[#1A1A1A]/40 text-sm tracking-widest uppercase">Loading…</p>
         </div>
       )}
       <MapContainer
         center={[20, 0]}
         zoom={2}
         style={{ height: '100%', width: '100%' }}
-        className="bg-gray-950"
+        className="bg-[#FAF8F5]"
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; OpenStreetMap contributors &copy; CARTO'
         />
         {companies.map((company) => (
@@ -65,16 +65,16 @@ export default function WorldMap({ filter = 'all' }: WorldMapProps) {
           >
             <Popup>
               <div style={{
-                background: '#0A0A0A',
-                color: '#FAFAF8',
+                background: '#FFFFFF',
+                color: '#1A1A1A',
                 padding: '12px 14px',
                 minWidth: '180px',
                 fontFamily: 'Inter, sans-serif',
-                borderRadius: '2px',
+                borderRadius: '4px',
               }}>
                 <p style={{
                   fontSize: '10px',
-                  color: '#C9A961',
+                  color: '#D4AF37',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   marginBottom: '4px',
@@ -93,7 +93,7 @@ export default function WorldMap({ filter = 'all' }: WorldMapProps) {
                   href={`/companies/${company.slug}`}
                   style={{
                     fontSize: '11px',
-                    color: '#C9A961',
+                    color: '#D4AF37',
                     textDecoration: 'none',
                     letterSpacing: '0.05em',
                   }}

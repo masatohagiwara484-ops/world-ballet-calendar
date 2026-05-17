@@ -60,24 +60,35 @@ export default function HeroSection({ focusCountry, highlightedCompanyIds }: Her
 
   return (
     <section
-      className="relative h-screen flex items-center justify-center overflow-hidden"
-      style={{
-        background: 'radial-gradient(ellipse at 50% 30%, rgba(212,175,55,0.07) 0%, rgba(255,255,255,0) 65%), linear-gradient(180deg, #FFFFFF 0%, #F5F0EA 100%)',
-      }}
+      className="relative h-screen flex items-center justify-center overflow-hidden bg-[#FFFFFF]"
     >
-      {/* Globe Background */}
-      <div className="absolute inset-0 opacity-40">
+      {/* Globe — the visual hero */}
+      <div className="absolute inset-0 opacity-100">
         <GlobeView focusCountry={focusCountry} highlightedCompanyIds={highlightedCompanyIds} />
       </div>
 
+      {/* Edge vignette — keeps gradient identity without washing out the globe */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0) 38%, rgba(245,240,234,0.55) 100%), linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 22%, rgba(255,255,255,0) 78%, rgba(245,240,234,0.85) 100%)',
+        }}
+      />
+
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FAF8F5] to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FAF8F5] to-transparent z-10 pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-20 text-center px-8 max-w-5xl mx-auto">
+        {/* Soft scrim behind text only — keeps copy legible over the globe */}
+        <div
+          className="absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[150%] bg-white/40 blur-3xl rounded-full pointer-events-none"
+          aria-hidden="true"
+        />
         <p
           ref={badgeRef}
-          className="text-[#C9A961] text-[10px] tracking-[0.5em] uppercase mb-8 opacity-0"
+          className="text-[#D4AF37] text-[10px] tracking-[0.5em] uppercase mb-8 opacity-0"
         >
           The World Calendar
         </p>
@@ -107,7 +118,7 @@ export default function HeroSection({ focusCountry, highlightedCompanyIds }: Her
         <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 justify-center opacity-0">
           <a
             href="#map"
-            className="px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium hover:bg-[#C9A961] transition-colors duration-300 shadow-md hover:shadow-lg"
+            className="px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium hover:bg-[#B8941F] transition-colors duration-300 shadow-md hover:shadow-lg"
           >
             Explore the Map
           </a>

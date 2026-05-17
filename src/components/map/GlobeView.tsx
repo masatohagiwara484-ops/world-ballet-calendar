@@ -6,6 +6,7 @@ import { useRef, useState, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { gsap } from '@/lib/gsap'
 import type { Company } from '@/lib/supabase'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 
 interface GlobeViewProps {
   focusCountry?: string | null
@@ -95,7 +96,7 @@ function CompanyMarker({
     }
   })
 
-  const color = hovered || isHighlighted ? '#FFD700' : '#C9A961'
+  const color = hovered || isHighlighted ? '#FFD700' : '#D4AF37'
 
   return (
     <mesh
@@ -120,9 +121,11 @@ function CompanyMarker({
 function CameraController({
   focusCountry,
   companies,
+  controlsRef,
 }: {
   focusCountry?: string | null
   companies: Company[]
+  controlsRef: React.MutableRefObject<OrbitControlsImpl | null>
 }) {
   const { camera } = useThree()
 
@@ -143,19 +146,40 @@ function CameraController({
       target = new THREE.Vector3(0, 0, 5)
     }
 
+    const controls = controlsRef.current
+
     const tween = gsap.to(camera.position, {
       x: target.x,
       y: target.y,
       z: target.z,
       duration: 1.5,
       ease: 'power2.inOut',
+      // Disable OrbitControls for the duration of the fly-to so it does not
+      // overwrite the camera each frame and fight `lookAt`.
+      onStart: () => {
+        if (controlsRef.current) controlsRef.current.enabled = false
+      },
       onUpdate: () => camera.lookAt(0, 0, 0),
+      onComplete: () => {
+        const c = controlsRef.current
+        if (c) {
+          // Sync OrbitControls to the new camera pose, then hand control back.
+          c.target.set(0, 0, 0)
+          c.update()
+          c.enabled = true
+        }
+      },
     })
 
     return () => {
       tween.kill()
+      // If the tween is interrupted, make sure controls are usable again.
+      if (controls) {
+        controls.enabled = true
+        controls.update()
+      }
     }
-  }, [focusCountry, companies, camera])
+  }, [focusCountry, companies, camera, controlsRef])
 
   return null
 }
@@ -164,6 +188,7 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
   const [companies, setCompanies] = useState<Company[]>([])
   const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null)
   const dragging = useRef(false)
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
   useEffect(() => {
     fetch('/api/companies')
@@ -180,7 +205,7 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={0.8} color="#ffffff" />
-        <pointLight position={[-8, -8, -8]} intensity={0.3} color="#C9A961" />
+        <pointLight position={[-8, -8, -8]} intensity={0.3} color="#D4AF37" />
 
         <Globe dragging={dragging} />
 
@@ -193,9 +218,14 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
           />
         ))}
 
-        <CameraController focusCountry={focusCountry} companies={companies} />
+        <CameraController
+          focusCountry={focusCountry}
+          companies={companies}
+          controlsRef={controlsRef}
+        />
 
         <OrbitControls
+          ref={controlsRef}
           enableZoom={false}
           enablePan={false}
           enableRotate={true}

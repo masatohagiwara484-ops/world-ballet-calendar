@@ -7,7 +7,7 @@ export default function NotFound() {
       style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}
     >
       <div className="text-center">
-        <p className="text-[#C9A961] text-xs tracking-[0.3em] uppercase mb-6">404</p>
+        <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase mb-6">404</p>
         <h1 className="font-serif text-5xl md:text-6xl font-light mb-6 text-[#1A1A1A]">
           Page not found
         </h1>
