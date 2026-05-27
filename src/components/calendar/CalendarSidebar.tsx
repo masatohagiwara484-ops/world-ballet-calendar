@@ -26,6 +26,19 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
   const [performanceDates, setPerformanceDates] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [expandedMonth, setExpandedMonth] = useState<number | null>(4) // May 2026 is month 4
+  const [isOpenMobile, setIsOpenMobile] = useState(false)
+
+  // Lock body scroll on mobile when calendar sheet is open
+  useEffect(() => {
+    if (isOpenMobile) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpenMobile])
 
   // Fetch countries from companies
   useEffect(() => {
@@ -91,6 +104,7 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
     setFilters(prev => ({ ...prev, selectedDate: dateStr }))
     onFilterChange?.(filters)
     onDateSelected?.(dateStr)
+    setIsOpenMobile(false) // Close drawer on mobile selection
   }
 
   const toggleMonth = (month: number) => {
@@ -114,8 +128,41 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
     })
 
   return (
-    <aside aria-label="2026 performance calendar" className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-[#1A1A1A]/[0.08] overflow-y-auto pt-24 px-6 py-8 z-40 max-xl:hidden">
-      <h2 className="font-serif text-xl font-light mb-6 text-[#1A1A1A]">2026 Calendar</h2>
+    <>
+      {/* Floating mobile toggle button */}
+      <button
+        onClick={() => setIsOpenMobile(true)}
+        className="xl:hidden fixed bottom-6 right-6 z-40 bg-[#D4AF37] text-white py-4 px-6 rounded-full shadow-lg flex items-center justify-center gap-2 hover:bg-[#B8941F] transition-all duration-300 hover:scale-105"
+        aria-label="Open performance calendar and filters"
+      >
+        <span className="text-[10px] tracking-[0.2em] font-semibold uppercase">Calendar &amp; Filters</span>
+      </button>
+
+      {/* Backdrop overlay for mobile */}
+      {isOpenMobile && (
+        <div
+          onClick={() => setIsOpenMobile(false)}
+          className="xl:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        aria-label="2026 performance calendar"
+        className={`fixed right-0 top-0 h-screen w-80 bg-white border-l border-[#1A1A1A]/[0.08] overflow-y-auto pt-24 px-6 py-8 z-40 transition-transform duration-500 ease-in-out ${
+          isOpenMobile ? 'translate-x-0' : 'translate-x-full xl:translate-x-0'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-serif text-xl font-light text-[#1A1A1A] mb-0">2026 Calendar</h2>
+          <button
+            onClick={() => setIsOpenMobile(false)}
+            className="xl:hidden w-8 h-8 flex items-center justify-center text-[#1A1A1A]/40 hover:text-[#1A1A1A]/80 transition-colors"
+            aria-label="Close calendar"
+          >
+            <span className="text-xl" aria-hidden="true">×</span>
+          </button>
+        </div>
 
       {/* Filters */}
       <div className="mb-8 space-y-4">
@@ -244,5 +291,6 @@ export default function CalendarSidebar({ onFilterChange, onDateSelected, onCoun
 
       {loading && <div className="text-center text-[#1A1A1A]/30 text-xs mt-4">Loading...</div>}
     </aside>
+  </>
   )
 }

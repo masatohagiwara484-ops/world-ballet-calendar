@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 import gsap from 'gsap'
 import type { Performance, Company } from '@/lib/supabase'
 
@@ -260,13 +261,19 @@ export default function PerformanceModal({
                 href={bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto text-center px-10 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium rounded shadow-md hover:bg-[#B8941F] hover:scale-[1.03] hover:shadow-lg transition-all duration-300"
+                className="w-full sm:w-auto text-center px-8 py-4 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase font-medium rounded shadow-md hover:bg-[#B8941F] hover:scale-[1.03] hover:shadow-lg transition-all duration-300"
               >
                 Book Tickets
               </a>
             )}
+            <Link
+              href={`/performances/${performance.id}`}
+              className="w-full sm:w-auto text-center px-8 py-4 border border-[#D4AF37]/50 text-[#D4AF37] text-xs tracking-[0.2em] uppercase font-medium rounded hover:bg-[#D4AF37]/10 transition-all duration-300"
+            >
+              More Details
+            </Link>
             {performance.price_range && (
-              <span className="text-[#1A1A1A]/50 text-xs">
+              <span className="text-[#1A1A1A]/50 text-xs px-2">
                 {performance.price_range}
               </span>
             )}

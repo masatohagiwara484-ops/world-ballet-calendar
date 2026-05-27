@@ -113,7 +113,7 @@ values
     'ballet', 'United Kingdom', 'London',
     51.5129, -0.1243,
     'https://www.roh.org.uk', 'royalballetofficial',
-    'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=The%20Royal%20Ballet',
+    'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=1600&auto=format&fit=crop',
     'One of the world''s greatest ballet companies, based at the Royal Opera House in Covent Garden, London. Founded in 1931, the Royal Ballet is celebrated for its exceptional classical and contemporary repertoire.',
     'World-leading ballet company at the Royal Opera House, London.',
     1931
@@ -125,7 +125,7 @@ values
     'ballet', 'France', 'Paris',
     48.8719, 2.3316,
     'https://www.operadeparis.fr', 'operadeparis',
-    'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Paris%20Op%C3%A9ra%20Ballet',
+    'https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=1600&auto=format&fit=crop',
     'The world''s oldest national ballet company, founded in 1661 by King Louis XIV. Based at the Palais Garnier and Opéra Bastille, it is a cornerstone of French cultural heritage.',
     'World''s oldest ballet company, founded in 1661 by Louis XIV.',
     1661
@@ -137,7 +137,7 @@ values
     'both', 'Russia', 'Moscow',
     55.7603, 37.6189,
     'https://www.bolshoi.ru', 'bolshoi_theatre',
-    'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Bolshoi%20Ballet',
+    'https://images.unsplash.com/photo-1580809361436-42a7ec20488f?q=80&w=1600&auto=format&fit=crop',
     'One of the most prestigious and historically significant ballet companies in the world. The Bolshoi Theatre in Moscow has been home to extraordinary productions since 1776.',
     'Russia''s legendary ballet company, home of Swan Lake and The Nutcracker.',
     1776
@@ -149,7 +149,7 @@ values
     'opera', 'United States', 'New York',
     40.7730, -73.9831,
     'https://www.metopera.org', 'metropolitanopera',
-    'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Metropolitan%20Opera',
+    'https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?q=80&w=1600&auto=format&fit=crop',
     'The largest classical music organization in North America. The Met presents approximately 220 performances of some 25 operas each season at Lincoln Center.',
     'North America''s leading opera house at Lincoln Center, New York.',
     1883

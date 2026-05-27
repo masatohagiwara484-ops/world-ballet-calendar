@@ -1,6 +1,7 @@
 'use client'
 
 import type { Performance } from '@/lib/supabase'
+import Link from 'next/link'
 
 interface Props {
   performance: Performance
@@ -78,6 +79,12 @@ export default function PerformanceCard({ performance, companyCity }: Props) {
                 Book Tickets
               </a>
             )}
+            <Link
+              href={`/performances/${performance.id}`}
+              className="px-5 py-3 min-h-[44px] flex items-center justify-center border border-[#D4AF37]/50 text-[#D4AF37] text-xs tracking-widest uppercase hover:bg-[#D4AF37]/10 transition-all duration-300 text-center font-medium rounded"
+            >
+              View Details
+            </Link>
             <a
               href={hotelUrl}
               target="_blank"

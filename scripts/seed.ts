@@ -84,7 +84,7 @@ const companies: CompanySeed[] = [
     website: 'https://www.roh.org.uk',
     instagram: 'royalballetofficial',
     hero_image:
-      'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=The%20Royal%20Ballet',
+      'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=1600&auto=format&fit=crop',
     description:
       "One of the world's greatest ballet companies, based at the Royal Opera House in Covent Garden, London. Founded in 1931, the Royal Ballet is celebrated for its exceptional classical and contemporary repertoire.",
     description_short:
@@ -103,7 +103,7 @@ const companies: CompanySeed[] = [
     website: 'https://www.operadeparis.fr',
     instagram: 'operadeparis',
     hero_image:
-      'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Paris%20Op%C3%A9ra%20Ballet',
+      'https://images.unsplash.com/photo-1545128485-c400e7702796?q=80&w=1600&auto=format&fit=crop',
     description:
       "The world's oldest national ballet company, founded in 1661 by King Louis XIV. Based at the Palais Garnier and Opéra Bastille, it is a cornerstone of French cultural heritage.",
     description_short:
@@ -122,7 +122,7 @@ const companies: CompanySeed[] = [
     website: 'https://www.bolshoi.ru',
     instagram: 'bolshoi_theatre',
     hero_image:
-      'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Bolshoi%20Ballet',
+      'https://images.unsplash.com/photo-1580809361436-42a7ec20488f?q=80&w=1600&auto=format&fit=crop',
     description:
       'One of the most prestigious and historically significant ballet companies in the world. The Bolshoi Theatre in Moscow has been home to extraordinary productions since 1776.',
     description_short:
@@ -141,7 +141,7 @@ const companies: CompanySeed[] = [
     website: 'https://www.metopera.org',
     instagram: 'metropolitanopera',
     hero_image:
-      'https://placehold.co/1600x900/1B2A4A/E8D5B7?text=Metropolitan%20Opera',
+      'https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?q=80&w=1600&auto=format&fit=crop',
     description:
       'The largest classical music organization in North America. The Met presents approximately 220 performances of some 25 operas each season at Lincoln Center.',
     description_short:
