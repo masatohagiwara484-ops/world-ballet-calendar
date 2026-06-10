@@ -188,12 +188,12 @@ export async function getPerformances(
 
     // Normalize the embedded company key and shape.
     type Row = Performance & { company: Company | Company[] }
-    return (data as Row[])
-      .map((row) => {
-        const company = Array.isArray(row.company) ? row.company[0] : row.company
-        const { company: _omit, ...perf } = row
-        return { ...(perf as Performance), company } as PerformanceWithCompany
-      })
+    return (data as Row[]).map((row) => {
+      const company = Array.isArray(row.company) ? row.company[0] : row.company
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { company: _omitted, ...perf } = row
+      return { ...perf, company } as PerformanceWithCompany
+    })
       .filter((p) => p.company)
   } catch {
     markUnreachable()
