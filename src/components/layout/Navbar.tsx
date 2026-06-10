@@ -34,70 +34,81 @@ export default function Navbar() {
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
-    <nav
-      aria-label="Primary"
-      className={clsx(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
-        scrolled || open
-          ? 'bg-white/[0.92] backdrop-blur-md border-b border-[#1A1A1A]/[0.08] shadow-sm'
-          : 'bg-transparent'
-      )}
+    <div
+      className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pointer-events-none"
+      aria-label="Primary navigation region"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-10 py-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="font-serif text-lg font-light tracking-wider text-[#1A1A1A] hover:text-[#D4AF37] transition-colors"
-        >
-          Ballet &amp; Opera
-        </Link>
+      <nav
+        aria-label="Primary"
+        className={clsx(
+          'pointer-events-auto mx-auto max-w-5xl rounded-glass specular',
+          'border transition-all duration-500',
+          scrolled || open
+            ? 'bg-white/[0.07] backdrop-blur-[28px] backdrop-saturate-150 border-white/[0.14] shadow-[0_16px_48px_rgba(0,0,0,0.45)]'
+            : 'bg-white/[0.04] backdrop-blur-[20px] backdrop-saturate-150 border-white/[0.10] shadow-[0_8px_28px_rgba(0,0,0,0.35)]'
+        )}
+      >
+        <div className="px-5 sm:px-7 py-3.5 flex items-center justify-between">
+          <Link
+            href="/"
+            className="font-serif text-base sm:text-lg tracking-[0.18em] uppercase text-ivory hover:text-gold transition-colors duration-300"
+          >
+            Ballet &amp; Opera
+          </Link>
 
-        <div className="hidden md:flex items-center gap-9">
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={isActive(link.href) ? 'page' : undefined}
-              className={clsx(
-                'text-xs tracking-[0.2em] uppercase transition-colors',
-                isActive(link.href)
-                  ? 'text-[#D4AF37]'
-                  : 'text-[#1A1A1A]/45 hover:text-[#1A1A1A]'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-
-        <button
-          className="md:hidden text-[#1A1A1A] p-1"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
-      </div>
-
-      {open && (
-        <div className="md:hidden border-t border-[#1A1A1A]/[0.06] bg-white/95 backdrop-blur-md">
-          <div className="px-6 py-4 flex flex-col">
+          <div className="hidden md:flex items-center gap-9">
             {LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 aria-current={isActive(link.href) ? 'page' : undefined}
                 className={clsx(
-                  'py-3 text-sm tracking-[0.15em] uppercase border-b border-[#1A1A1A]/[0.06] last:border-0',
-                  isActive(link.href) ? 'text-[#D4AF37]' : 'text-[#1A1A1A]/70'
+                  'relative text-[11px] tracking-[0.22em] uppercase transition-colors duration-300',
+                  isActive(link.href)
+                    ? 'text-gold'
+                    : 'text-ivory/55 hover:text-ivory'
                 )}
               >
                 {link.label}
+                {isActive(link.href) && (
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-px w-5 bg-gold shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
+                )}
               </Link>
             ))}
           </div>
+
+          <button
+            className="md:hidden text-ivory p-1 hover:text-gold transition-colors duration-300"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-      )}
-    </nav>
+
+        {open && (
+          <div className="md:hidden border-t border-white/[0.10] px-5 pb-3 pt-1">
+            <div className="flex flex-col">
+              {LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive(link.href) ? 'page' : undefined}
+                  className={clsx(
+                    'py-3 text-sm tracking-[0.18em] uppercase border-b border-white/[0.07] last:border-0 transition-colors duration-300',
+                    isActive(link.href)
+                      ? 'text-gold'
+                      : 'text-ivory/70 hover:text-ivory'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </nav>
+    </div>
   )
 }

@@ -2,50 +2,216 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   Liquid Glass × Champagne Noir — base system
+   ========================================================================= */
+
 :root {
-  --font-sans: var(--font-sans, 'Inter', sans-serif);
-  --font-serif: var(--font-serif, 'Playfair Display', serif);
-  --color-bg: #FAFAF8;
-  --color-surface: #FFFFFF;
-  --color-gold: #D4AF37;
-  --color-gold-muted: #B8941F;
-  --color-navy: #1B2A4A;
-  --color-text: #1A1A1A;
+  --font-sans: var(--font-sans, 'Manrope', sans-serif);
+  --font-serif: var(--font-serif, 'Italiana', serif);
+
+  /* Stage */
+  --stage-base: #0A0908;
+  --stage-elevated: #121110;
+  --stage-raised: #1A1816;
+
+  /* Gold */
+  --gold: #D4AF37;
+  --gold-bright: #E8C96A;
+  --gold-pale: #F5E7C1;
+
+  /* Ivory text */
+  --ivory: #F5F1E8;
+  --ivory-secondary: rgba(245, 241, 232, 0.62);
+  --ivory-tertiary: rgba(245, 241, 232, 0.38);
+
+  /* Deep accent washes */
+  --wine: #4A1F2E;
+  --midnight: #1B2A4A;
+
+  /* Glass recipe */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-gold: rgba(212, 175, 55, 0.35);
 }
 
 html {
-  scroll-padding-top: 80px;
+  scroll-padding-top: 96px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%);
-  background-attachment: fixed;
-  color: #1A1A1A;
+  position: relative;
+  min-height: 100vh;
+  color: var(--ivory);
   font-family: var(--font-sans);
+  background-color: var(--stage-base);
+  /* Fixed, very subtle radial auras so glass has something to refract. */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 75% 0%, rgba(212, 175, 55, 0.10) 0%, rgba(10, 9, 8, 0) 55%),
+    radial-gradient(ellipse 70% 60% at 10% 20%, rgba(74, 31, 46, 0.16) 0%, rgba(10, 9, 8, 0) 55%),
+    radial-gradient(ellipse 90% 70% at 50% 110%, rgba(27, 42, 74, 0.18) 0%, rgba(10, 9, 8, 0) 60%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Film-grain / noise overlay for richness — apply via .noise-overlay on a
+   fixed wrapper, or it is auto-painted on body::after below. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 ::selection {
-  background-color: #D4AF37;
-  color: #FFFFFF;
+  background-color: rgba(212, 175, 55, 0.30);
+  color: var(--gold-pale);
 }
 
 *:focus-visible {
-  outline: 2px solid #D4AF37;
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF8F5;
+  background: var(--stage-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37;
-  border-radius: 2px;
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 4px;
+  border: 2px solid var(--stage-base);
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.55);
+}
+
+/* =========================================================================
+   Component utilities — Liquid Glass
+   ========================================================================= */
+
+@layer components {
+  /* Static glass surface */
+  .glass-panel {
+    position: relative;
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  /* Interactive glass card — hover lift + gold-tinted border */
+  .glass-card {
+    position: relative;
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transition:
+      background-color 400ms ease,
+      border-color 400ms ease,
+      box-shadow 400ms ease,
+      transform 400ms ease;
+  }
+
+  .glass-card:hover {
+    background-color: var(--glass-bg-hover);
+    border-color: var(--glass-border-gold);
+    transform: translateY(-2px);
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(212, 175, 55, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+
+  /* Compact glass pill (nav, chips, toggles) */
+  .glass-pill {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    border-radius: 9999px;
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.40),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  /* Specular top-edge highlight (overlay element, absolutely positioned) */
+  .specular {
+    position: relative;
+  }
+  .specular::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.04) 18%,
+      rgba(255, 255, 255, 0) 50%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Champagne gradient text for hero headlines */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #F5E7C1 0%, #E8C96A 42%, #D4AF37 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Gold emphasis glow utility */
+  .glow-gold {
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.15);
+  }
+
+  /* Standalone film-grain overlay (for sections that opt in) */
+  .noise-overlay {
+    position: relative;
+  }
+  .noise-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n2)'/%3E%3C/svg%3E");
+  }
+}
+
+/* =========================================================================
+   Utilities & animations
+   ========================================================================= */
 
 .line-clamp-2 {
   display: -webkit-box;
@@ -90,18 +256,29 @@ body {
   transform: translateY(0);
 }
 
-/* Leaflet adjustments */
+/* Keep content above the fixed body::after noise layer */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================================================================
+   Leaflet — dark glass tuning
+   ========================================================================= */
+
 .leaflet-container {
-  background-color: #F5F0EA !important;
+  background-color: #0A0908 !important;
   font-family: var(--font-sans);
 }
 
 .leaflet-popup-content-wrapper {
-  background: #FFFFFF !important;
-  color: #1A1A1A !important;
-  border: 1px solid rgba(26,26,26,0.08) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 8px 40px rgba(26,26,26,0.15) !important;
+  background: rgba(18, 17, 16, 0.85) !important;
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  color: #F5F1E8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55) !important;
   padding: 0 !important;
 }
 
@@ -114,7 +291,7 @@ body {
 }
 
 .leaflet-popup-close-button {
-  color: rgba(26,26,26,0.5) !important;
+  color: rgba(245, 241, 232, 0.5) !important;
   font-size: 18px !important;
   top: 8px !important;
   right: 8px !important;
@@ -125,21 +302,24 @@ body {
 }
 
 .leaflet-popup-close-button:hover {
-  color: #1A1A1A !important;
+  color: #F5F1E8 !important;
   background: transparent !important;
 }
 
 /* Custom Leaflet Zoom Controls */
 .leaflet-bar {
-  border: 1px solid rgba(26, 26, 26, 0.08) !important;
-  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.05) !important;
-  border-radius: 0px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
 }
 
 .leaflet-bar a {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  color: #1A1A1A !important;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.08) !important;
+  background-color: rgba(18, 17, 16, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  color: #F5F1E8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
   width: 32px !important;
   height: 32px !important;
   line-height: 32px !important;
@@ -151,30 +331,23 @@ body {
 }
 
 .leaflet-bar a:hover {
-  background-color: #FAF8F5 !important;
+  background-color: rgba(26, 24, 22, 0.92) !important;
   color: #D4AF37 !important;
 }
 
-.leaflet-bar a:first-child {
-  border-top-left-radius: 0px !important;
-  border-top-right-radius: 0px !important;
-}
-
 .leaflet-bar a:last-child {
-  border-bottom-left-radius: 0px !important;
-  border-bottom-right-radius: 0px !important;
   border-bottom: none !important;
 }
 
 /* Custom Leaflet Attribution */
 .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.8) !important;
-  color: rgba(26, 26, 26, 0.4) !important;
+  background: rgba(10, 9, 8, 0.7) !important;
+  color: rgba(245, 241, 232, 0.4) !important;
   font-size: 9px !important;
   font-family: var(--font-sans) !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
-  border: 1px solid rgba(26, 26, 26, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
   border-right: none !important;
   border-bottom: none !important;
 }

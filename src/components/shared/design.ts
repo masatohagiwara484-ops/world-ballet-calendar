@@ -1,16 +1,18 @@
 /**
- * Shared editorial-design helpers for the White Gradient Luxury system.
+ * Shared editorial-design helpers for the Liquid Glass × Champagne Noir system.
  * NO external photography anywhere — every "image" surface is a typographic
- * gradient composed here, so the site reads like a printed season brochure.
+ * gradient composed here, so the site reads like a printed season brochure
+ * lit by an opera house at night. Each gradient is a deep glass-dark wash with
+ * a warm champagne/wine/navy tint so monogram text (white/ivory) reads clearly.
  */
 import type { Company, Performance } from '@/lib/types'
 
-/** Deep luxury accent gradients, rotated deterministically per entity. */
+/** Deep glass-dark accent gradients, rotated deterministically per entity. */
 export const LUXE_GRADIENTS: string[] = [
-  'linear-gradient(135deg, #1B2A4A 0%, #0E1730 55%, #1B2A4A 100%)', // navy
-  'linear-gradient(135deg, #1A3A2E 0%, #0C201A 55%, #1A3A2E 100%)', // forest
-  'linear-gradient(135deg, #2D1B4E 0%, #170D2A 55%, #2D1B4E 100%)', // purple
-  'linear-gradient(135deg, #3A2D12 0%, #1C1607 50%, #6B5316 100%)', // gold-bronze
+  'linear-gradient(135deg, #1B2A4A 0%, #0B1426 55%, #0A0908 100%)', // midnight navy
+  'linear-gradient(135deg, #4A1F2E 0%, #2A0F18 55%, #0A0908 100%)', // wine bordeaux
+  'linear-gradient(135deg, #3A2D12 0%, #1C1607 50%, #0A0908 100%)', // bronze gold
+  'linear-gradient(135deg, #121110 0%, #1A1816 50%, #0A0908 100%)', // stage noir
 ]
 
 /** Stable hash so the same slug/id always gets the same palette. */
