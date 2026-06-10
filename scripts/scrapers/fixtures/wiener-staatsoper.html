@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Calendar — Wiener Staatsoper</title></head>
+<body>
+  <main>
+    <h1>Repertoire 2026/27</h1>
+    <table class="repertoire">
+      <thead>
+        <tr><th>Title</th><th>Composer</th><th>From</th><th>To</th><th>Venue</th><th>Prices</th><th></th></tr>
+      </thead>
+      <tbody>
+
+        <tr class="repertoire-row" data-category="opera">
+          <td class="rep-title" data-original="Der Rosenkavalier">Der Rosenkavalier</td>
+          <td class="rep-composer">Richard Strauss</td>
+          <td class="rep-start" data-iso="2026-06-12">12.06.2026</td>
+          <td class="rep-end" data-iso="2026-06-28">28.06.2026</td>
+          <td class="rep-venue">Wiener Staatsoper</td>
+          <td class="rep-price">€15 – €260</td>
+          <td><a class="rep-tickets" href="https://www.wiener-staatsoper.at/en/tickets/der-rosenkavalier">Tickets</a></td>
+        </tr>
+
+        <tr class="repertoire-row" data-category="opera">
+          <td class="rep-title">Tosca</td>
+          <td class="rep-composer">Giacomo Puccini</td>
+          <td class="rep-start" data-iso="2026-11-08">08.11.2026</td>
+          <td class="rep-end" data-iso="2026-11-29">29.11.2026</td>
+          <td class="rep-venue">Wiener Staatsoper</td>
+          <td class="rep-price">€15 – €250</td>
+          <td><a class="rep-tickets" href="https://www.wiener-staatsoper.at/en/tickets/tosca">Tickets</a></td>
+        </tr>
+
+        <!-- German-formatted dates with no data-iso; the normalizer parses dd.MM.yyyy. -->
+        <tr class="repertoire-row" data-category="opera">
+          <td class="rep-title">Die Fledermaus</td>
+          <td class="rep-composer">Johann Strauss II</td>
+          <td class="rep-start">26.12.2026</td>
+          <td class="rep-end">04.01.2027</td>
+          <td class="rep-venue">Wiener Staatsoper</td>
+          <td class="rep-price">€20 – €280</td>
+          <td><a class="rep-tickets" href="https://www.wiener-staatsoper.at/en/tickets/die-fledermaus">Tickets</a></td>
+        </tr>
+
+        <!-- A row with an unparseable date the normalizer must reject. -->
+        <tr class="repertoire-row" data-category="opera">
+          <td class="rep-title">New Production (dates to be announced)</td>
+          <td class="rep-composer">TBA</td>
+          <td class="rep-start">soon</td>
+          <td class="rep-end"></td>
+          <td class="rep-venue">Wiener Staatsoper</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

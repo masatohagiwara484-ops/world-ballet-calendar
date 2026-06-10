@@ -1,52 +1,62 @@
-import { createClient } from '@supabase/supabase-js'
+/**
+ * Supabase client — lazy & non-throwing.
+ *
+ * Importing this module must NEVER throw, even when the environment variables
+ * are missing or still contain placeholder values. The client is created on
+ * first use via getSupabaseClient(); if the configuration is unusable the
+ * helper returns null and callers fall back to the curated static dataset.
+ *
+ * The canonical domain types live in ./types. We re-export the legacy
+ * `Company` / `Performance` aliases here so older imports keep working.
+ */
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Company as CompanyType, Performance as PerformanceType } from './types'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+/** Legacy re-exports — canonical definitions live in ./types. */
+export type Company = CompanyType
+export type Performance = PerformanceType
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+const PLACEHOLDER = 'placeholder'
+
+/**
+ * Returns true when the Supabase env vars look real (present and not a
+ * placeholder). When this is false the data layer skips Supabase entirely.
+ */
+export function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return false
+  if (url.includes(PLACEHOLDER) || key.includes(PLACEHOLDER)) return false
+  // Must be a plausible https URL.
+  if (!/^https?:\/\//.test(url)) return false
+  return true
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let cachedClient: SupabaseClient | null = null
+let attemptedClientInit = false
 
-export type Company = {
-  id: string
-  slug: string
-  name: string
-  name_local?: string
-  type: 'ballet' | 'opera' | 'both'
-  country: string
-  city: string
-  lat: number
-  lng: number
-  website?: string
-  instagram?: string
-  hero_image?: string
-  description?: string
-  description_short?: string
-  founded_year?: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
+/**
+ * Lazily creates (and memoizes) the anon Supabase client. Returns null when
+ * the configuration is unusable — callers must handle the null case by
+ * falling back to the static dataset. Never throws.
+ */
+export function getSupabaseClient(): SupabaseClient | null {
+  if (attemptedClientInit) return cachedClient
+  attemptedClientInit = true
 
-export type Performance = {
-  id: string
-  company_id: string
-  title: string
-  title_original?: string
-  composer?: string
-  choreographer?: string
-  start_date: string
-  end_date?: string
-  venue?: string
-  venue_address?: string
-  ticket_url?: string
-  affiliate_url?: string
-  description?: string
-  image_url?: string
-  price_range?: string
-  is_featured: boolean
-  created_at: string
-  updated_at: string
+  if (!isSupabaseConfigured()) {
+    cachedClient = null
+    return null
+  }
+
+  try {
+    cachedClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+      { auth: { persistSession: false } }
+    )
+  } catch {
+    cachedClient = null
+  }
+  return cachedClient
 }

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>The Royal Ballet — Tickets &amp; Events</title></head>
+<body>
+  <main class="season-listing">
+    <h1>The Royal Ballet 2026/27</h1>
+
+    <article class="production" data-genre="ballet"
+             data-start-date="2026-06-05" data-end-date="2026-06-27">
+      <h2 class="production__title">Swan Lake</h2>
+      <p class="production__composer">Pyotr Ilyich Tchaikovsky</p>
+      <p class="production__choreographer">Liam Scarlett after Marius Petipa and Lev Ivanov</p>
+      <p class="production__venue">Royal Opera House</p>
+      <p class="production__price">£18 – £150</p>
+      <a class="production__cta" href="https://www.rbo.org.uk/tickets-and-events/swan-lake">Book now</a>
+    </article>
+
+    <article class="production" data-genre="ballet"
+             data-start-date="2026-07-09" data-end-date="2026-07-25">
+      <h2 class="production__title">Romeo and Juliet</h2>
+      <p class="production__composer">Sergei Prokofiev</p>
+      <p class="production__choreographer">Kenneth MacMillan</p>
+      <p class="production__venue">Royal Opera House</p>
+      <p class="production__price">£15 – £140</p>
+      <a class="production__cta" href="https://www.rbo.org.uk/tickets-and-events/romeo-and-juliet">Book now</a>
+    </article>
+
+    <article class="production" data-genre="ballet"
+             data-start-date="2026-12-04" data-end-date="2027-01-09">
+      <h2 class="production__title">The Nutcracker</h2>
+      <p class="production__composer">Pyotr Ilyich Tchaikovsky</p>
+      <p class="production__choreographer">Peter Wright after Lev Ivanov</p>
+      <p class="production__venue">Royal Opera House</p>
+      <p class="production__price">£20 – £160</p>
+      <a class="production__cta" href="https://www.rbo.org.uk/tickets-and-events/the-nutcracker">Book now</a>
+    </article>
+
+    <!-- An opera row that this ballet adapter must ignore. -->
+    <article class="production" data-genre="opera"
+             data-start-date="2026-06-18" data-end-date="2026-07-11">
+      <h2 class="production__title">Tosca</h2>
+      <p class="production__composer">Giacomo Puccini</p>
+      <p class="production__venue">Royal Opera House</p>
+      <a class="production__cta" href="https://www.rbo.org.uk/tickets-and-events/tosca">Book now</a>
+    </article>
+
+    <!-- A malformed row (missing dates) the normalizer must reject. -->
+    <article class="production" data-genre="ballet"
+             data-start-date="" data-end-date="">
+      <h2 class="production__title">Gala (date TBC)</h2>
+      <p class="production__venue">Royal Opera House</p>
+    </article>
+  </main>
+</body>
+</html>

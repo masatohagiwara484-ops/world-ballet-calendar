@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "npx tsx scripts/seed.ts"
+    "seed": "npx tsx scripts/seed.ts",
+    "validate:data": "npx tsx scripts/validate-data.ts",
+    "scrape": "npx tsx scripts/scrapers/run.ts"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

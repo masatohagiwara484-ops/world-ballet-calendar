@@ -1,0 +1,47 @@
+name: Weekly Scrape
+
+# Refreshes performance data from each company's website once a week and
+# upserts it into Supabase. Each adapter runs in isolation; a single failing
+# source never fails the whole job (the CLI handles per-adapter errors and
+# `continue-on-error` guards the step).
+
+on:
+  schedule:
+    # Every Monday 04:17 UTC (off-the-hour to avoid cron congestion).
+    - cron: '17 4 * * 1'
+  workflow_dispatch: {}
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate static dataset
+        run: npm run validate:data
+
+      - name: Run scrapers (live, upsert to Supabase)
+        # The CLI exits 0 in live mode even if some adapters fail, and
+        # continue-on-error guarantees the workflow is never marked failed by
+        # a single flaky source.
+        continue-on-error: true
+        run: npx tsx scripts/scrapers/run.ts --all --live
