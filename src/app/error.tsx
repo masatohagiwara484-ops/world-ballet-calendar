@@ -1,11 +1,13 @@
 'use client'
 
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  console.error('Error caught by error boundary:', error)
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}>
       <div className="text-center">

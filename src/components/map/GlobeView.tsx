@@ -33,8 +33,10 @@ function Earth() {
     '/textures/earth-clouds.png',
   ])
 
-  colorMap.colorSpace = THREE.SRGBColorSpace
-  colorMap.anisotropy = 8
+  if (colorMap) {
+    colorMap.colorSpace = THREE.SRGBColorSpace
+    colorMap.anisotropy = 8
+  }
 
   const cloudsRef = useRef<THREE.Mesh>(null)
   useFrame((_, delta) => {
@@ -262,11 +264,13 @@ function GlobeScene({
 export default function GlobeView({ focusCountry, highlightedCompanyIds }: GlobeViewProps) {
   const [companies, setCompanies] = useState<Company[]>([])
   const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const groupRef = useRef<THREE.Group | null>(null)
   const draggingRef = useRef(false)
   const pointer = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
+    setIsLoading(false)
     fetch('/api/companies')
       .then((res) => res.json())
       .then((data) => setCompanies(data.companies ?? []))
@@ -295,9 +299,14 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
     draggingRef.current = false
   }
 
+  if (typeof window === 'undefined') {
+    return <div className="w-full h-full bg-[#1B2A4A]" />
+  }
+
   return (
     <div
       className="relative w-full h-full cursor-grab active:cursor-grabbing"
+      style={{ position: 'relative', width: '100%', height: '100%' }}
       aria-hidden="true"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -308,6 +317,7 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
         camera={{ position: [0, 0, 5.2], fov: 42 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
+        style={{ width: '100%', height: '100%' }}
       >
         <ambientLight intensity={0.55} />
         <directionalLight position={[5, 3, 5]} intensity={1.7} color="#fff6e8" />
@@ -315,7 +325,7 @@ export default function GlobeView({ focusCountry, highlightedCompanyIds }: Globe
 
         <Atmosphere />
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<><Atmosphere /></>}>
           <GlobeScene
             groupRef={groupRef}
             draggingRef={draggingRef}
