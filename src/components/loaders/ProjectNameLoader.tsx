@@ -3,24 +3,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from '@/lib/gsap'
 
+/**
+ * First-load brand curtain: "World Ballet & Opera Calendar" in Playfair serif,
+ * fade in (1s) · hold (3s) · fade out (1s). Shown once per browser.
+ */
 export default function ProjectNameLoader() {
   const loaderRef = useRef<HTMLDivElement>(null)
-  const [showLoader, setShowLoader] = useState(true)
+  const [show, setShow] = useState(false)
 
   useEffect(() => {
-    if (!loaderRef.current) return
+    const seen =
+      typeof window !== 'undefined' && localStorage.getItem('wboc_visited')
+    if (seen) return
 
-    const isFirstLoad = typeof window !== 'undefined' && !localStorage.getItem('ballet_visited')
+    setShow(true)
+  }, [])
 
-    if (!isFirstLoad) {
-      setShowLoader(false)
-      return
-    }
+  useEffect(() => {
+    if (!show || !loaderRef.current) return
+    document.body.style.overflow = 'hidden'
 
     const tl = gsap.timeline({
       onComplete: () => {
-        setShowLoader(false)
-        localStorage.setItem('ballet_visited', 'true')
+        localStorage.setItem('wboc_visited', 'true')
+        document.body.style.overflow = ''
+        setShow(false)
       },
     })
 
@@ -29,24 +36,30 @@ export default function ProjectNameLoader() {
       { opacity: 0 },
       { opacity: 1, duration: 1.0, ease: 'power2.inOut' }
     )
-      .to(loaderRef.current, { opacity: 1, duration: 2.5 })
-      .to(loaderRef.current, { opacity: 0, duration: 0.5, ease: 'power2.inOut' })
-  }, [])
+      .to(loaderRef.current, { opacity: 1, duration: 3.0 })
+      .to(loaderRef.current, { opacity: 0, duration: 1.0, ease: 'power2.inOut' })
 
-  if (!showLoader) return null
+    return () => {
+      tl.kill()
+      document.body.style.overflow = ''
+    }
+  }, [show])
+
+  if (!show) return null
 
   return (
     <div
       ref={loaderRef}
-      className="fixed inset-0 flex flex-col items-center justify-center z-[9999] opacity-0"
-      style={{ background: 'rgba(255,255,255,0.98)' }}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-8 opacity-0"
+      style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}
     >
-      <h1 className="font-serif text-6xl md:text-7xl lg:text-8xl font-light text-[#1A1A1A] text-center px-8 leading-tight">
+      <p className="text-[#D4AF37] text-[11px] tracking-[0.5em] uppercase mb-7">
+        Presenting
+      </p>
+      <h1 className="font-serif font-light text-[#1A1A1A] text-center leading-[1.08] text-4xl sm:text-6xl lg:text-7xl max-w-4xl">
         World Ballet &amp; Opera Calendar
       </h1>
-      <p className="mt-6 text-[#D4AF37] text-[11px] tracking-[0.5em] uppercase">
-        The World Calendar
-      </p>
+      <div className="mt-8 h-px w-24 bg-[#D4AF37]/50" />
     </div>
   )
 }

@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -123,19 +122,6 @@ export default function PartnersPage() {
       className="min-h-screen"
       style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}
     >
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5 bg-white/[0.92] backdrop-blur-md border-b border-[#1A1A1A]/[0.08] shadow-sm">
-        <Link
-          href="/"
-          className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase hover:opacity-70 transition-opacity duration-300"
-        >
-          ← World Calendar
-        </Link>
-        <span className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase">
-          Partners
-        </span>
-      </nav>
-
       {/* Hero */}
       <section className="pt-40 pb-16 px-8 md:px-16 lg:px-24 border-b border-[#1A1A1A]/[0.08]">
         <div className="max-w-5xl mx-auto text-center">
@@ -208,21 +194,6 @@ export default function PartnersPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-[#1A1A1A]/[0.08] py-8 px-8">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase hover:text-[#1A1A1A] transition-colors duration-300"
-          >
-            ← Back to Calendar
-          </Link>
-          <p className="text-[#1A1A1A]/30 text-xs">
-            World Ballet &amp; Opera Calendar &copy; 2026
-          </p>
-        </div>
-      </footer>
     </main>
   )
 }

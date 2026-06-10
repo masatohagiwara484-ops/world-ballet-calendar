@@ -1,47 +1,39 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import type { Company, Performance } from '@/lib/supabase'
-import PerformanceCard from '@/components/performance/PerformanceCard'
+import type { Metadata } from 'next'
+import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
+import { gradientFor, monogram, typeLabel } from '@/components/shared/design'
+import PerformanceListItem from '@/components/shared/PerformanceListItem'
+import type { Company, PerformanceWithCompany } from '@/lib/types'
+
+export const revalidate = 3600
 
 interface Props {
   params: { slug: string }
 }
 
 export async function generateStaticParams() {
-  const { data } = await supabase
-    .from('companies')
-    .select('slug')
-    .eq('is_active', true)
-
-  return (data ?? []).map(({ slug }) => ({ slug }))
+  const companies = await getCompanies()
+  return companies.map((c) => ({ slug: c.slug }))
 }
 
-export async function generateMetadata({ params }: Props) {
-  const { data } = await supabase
-    .from('companies')
-    .select('name, description_short, city, country')
-    .eq('slug', params.slug)
-    .single()
-
-  if (!data) return {}
-
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const company = await getCompanyBySlug(params.slug)
+  if (!company) return {}
+  const desc =
+    company.description_short ??
+    `${company.name} — ${typeLabel(company.type)} in ${company.city}, ${company.country}.`
   return {
-    title: `${data.name} — World Ballet & Opera Calendar`,
-    description: data.description_short ?? `${data.name} performances in ${data.city}`,
-    openGraph: {
-      title: data.name,
-      description: data.description_short ?? `${data.name} performances in ${data.city}`,
-    },
+    title: company.name,
+    description: desc,
+    openGraph: { title: company.name, description: desc },
   }
 }
 
-/* ---------- JSON-LD structured data helpers ---------- */
-
-type JsonLd = Record<string, unknown>
-
-function buildPerformingGroup(company: Company): JsonLd {
-  const node: JsonLd = {
+function buildJsonLd(
+  company: Company,
+  performances: PerformanceWithCompany[]
+): Record<string, unknown>[] {
+  const group: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'PerformingGroup',
     name: company.name,
@@ -51,253 +43,157 @@ function buildPerformingGroup(company: Company): JsonLd {
       addressCountry: company.country,
     },
   }
-  if (company.founded_year) node.foundingDate = String(company.founded_year)
-  if (company.website) node.url = company.website
-  if (company.description_short ?? company.description) {
-    node.description = company.description_short ?? company.description
-  }
-  return node
-}
+  if (company.founded_year) group.foundingDate = String(company.founded_year)
+  if (company.website) group.url = company.website
+  if (company.description ?? company.description_short)
+    group.description = company.description ?? company.description_short
 
-function buildTheaterEvents(
-  company: Company,
-  performances: Performance[]
-): JsonLd[] {
-  const performer: JsonLd = {
-    '@type': 'PerformingGroup',
-    name: company.name,
-  }
-
-  return performances.map((perf) => {
-    const event: JsonLd = {
+  const events = performances.map((p) => {
+    const event: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'TheaterEvent',
-      name: perf.title,
-      startDate: perf.start_date,
-      performer,
+      name: p.title,
+      startDate: p.start_date,
+      endDate: p.end_date,
+      performer: { '@type': 'PerformingGroup', name: company.name },
     }
-    if (perf.end_date) event.endDate = perf.end_date
-
-    if (perf.venue) {
-      const place: JsonLd = {
-        '@type': 'Place',
-        name: perf.venue,
-      }
-      if (perf.venue_address) {
-        place.address = perf.venue_address
-      }
-      event.location = place
-    }
-
-    const ticketUrl = perf.affiliate_url ?? perf.ticket_url
-    if (ticketUrl) {
+    if (p.venue) event.location = { '@type': 'Place', name: p.venue }
+    const ticket = p.affiliate_url ?? p.ticket_url
+    if (ticket)
       event.offers = {
         '@type': 'Offer',
-        url: ticketUrl,
+        url: ticket,
         availability: 'https://schema.org/InStock',
       }
-    }
     return event
   })
+
+  return [group, ...events]
 }
 
 export default async function CompanyPage({ params }: Props) {
-  const today = new Date().toISOString().split('T')[0]
+  const company = await getCompanyBySlug(params.slug)
+  if (!company) notFound()
 
-  const { data: company, error } = await supabase
-    .from('companies')
-    .select('*')
-    .eq('slug', params.slug)
-    .single()
-
-  if (error || !company) notFound()
-
-  const { data: performancesData } = await supabase
-    .from('performances')
-    .select('*')
-    .eq('company_id', company.id)
-    .gte('start_date', today)
-    .order('start_date')
-
-  const performances: Performance[] = performancesData ?? []
-
-  const structuredData: JsonLd[] = [
-    buildPerformingGroup(company),
-    ...buildTheaterEvents(company, performances),
-  ]
-
-  const heritageYears = company.founded_year ? 2026 - company.founded_year : null
+  const performances = await getPerformances({ company_slug: company.slug })
+  const jsonLd = buildJsonLd(company, performances)
+  const heritage = company.founded_year ? 2026 - company.founded_year : null
 
   return (
-    <main
-      className="min-h-screen"
-      style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}
-    >
-      {/* SEO — JSON-LD structured data */}
+    <main className="min-h-screen">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5 bg-white/[0.92] backdrop-blur-md border-b border-[#1A1A1A]/[0.08] shadow-sm">
-        <Link
-          href="/"
-          className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase hover:opacity-70 transition-opacity duration-300"
+      {/* Editorial gradient hero */}
+      <section
+        className="relative pt-36 pb-20 px-6 md:px-10 overflow-hidden"
+        style={{ background: gradientFor(company.slug) }}
+      >
+        <div
+          aria-hidden
+          className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-20 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
+        />
+        <span
+          aria-hidden
+          className="absolute -bottom-16 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
+          style={{ fontSize: 'clamp(16rem, 42vw, 40rem)' }}
         >
-          ← World Calendar
-        </Link>
-        <span className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase">
-          {company.type} · {company.city}
+          {monogram(company.name)}
         </span>
-      </nav>
 
-      {/* Hero */}
-      {company.hero_image ? (
-        <section className="relative pt-40 pb-20 px-8 md:px-16 lg:px-24 border-b border-[#1A1A1A]/[0.08] overflow-hidden">
-          {/* Hero background image */}
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${company.hero_image})` }}
-            aria-hidden
-          />
-          {/* White gradient overlay for legibility */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.82) 55%, #F5F0EA 100%)',
-            }}
-            aria-hidden
-          />
-          <div className="relative max-w-5xl mx-auto">
-            <HeroContent company={company} heritageYears={heritageYears} />
-          </div>
-        </section>
-      ) : (
-        <section className="pt-40 pb-20 px-8 md:px-16 lg:px-24 border-b border-[#1A1A1A]/[0.08]">
-          <div className="max-w-5xl mx-auto">
-            <HeroContent company={company} heritageYears={heritageYears} />
-          </div>
-        </section>
-      )}
+        <div className="relative max-w-5xl mx-auto">
+          <p className="text-[#D4AF37] text-[11px] tracking-[0.34em] uppercase mb-5">
+            {typeLabel(company.type)} · {company.country}
+          </p>
+          <h1 className="font-serif text-5xl md:text-7xl font-light text-white leading-[1.05]">
+            {company.name}
+          </h1>
+          {company.name_local && company.name_local !== company.name && (
+            <p className="mt-3 text-white/60 text-lg font-light">
+              {company.name_local}
+            </p>
+          )}
 
-      {/* Performances */}
-      <section className="py-20 px-8 md:px-16 lg:px-24">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-baseline justify-between mb-12">
-            <h2 className="font-serif text-3xl font-light text-[#1A1A1A]">
-              Upcoming Performances
-            </h2>
-            <span className="text-[#1A1A1A]/40 text-sm">
-              {performances.length} scheduled
-            </span>
+          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-white/70 text-sm">
+            <span>{company.city}</span>
+            {company.venue && <span>{company.venue}</span>}
+            {company.founded_year && <span>Founded {company.founded_year}</span>}
+            {heritage && heritage > 0 && (
+              <span className="text-[#D4AF37]">{heritage}+ years of heritage</span>
+            )}
           </div>
 
-          {performances.length > 0 ? (
-            <div className="grid gap-6">
-              {performances.map((perf) => (
-                <PerformanceCard
-                  key={perf.id}
-                  performance={perf}
-                  companyCity={company.city}
-                  companyCountry={company.country}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="py-24 text-center border border-[#1A1A1A]/[0.08] rounded-lg bg-white/60">
-              <p className="text-[#1A1A1A]/30 text-xs tracking-[0.3em] uppercase mb-3">
-                No upcoming performances
-              </p>
-              <p className="text-[#1A1A1A]/40 text-sm">
-                Check back for the next season announcement.
-              </p>
+          {(company.website || company.instagram) && (
+            <div className="mt-8 flex flex-wrap gap-3">
+              {company.website && (
+                <a
+                  href={company.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 border border-[#D4AF37] text-[#D4AF37] text-[11px] tracking-[0.2em] uppercase hover:bg-[#D4AF37]/15 transition-colors"
+                >
+                  Official site
+                </a>
+              )}
+              {company.instagram && (
+                <a
+                  href={`https://instagram.com/${company.instagram.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 border border-white/25 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:border-white/60 transition-colors"
+                >
+                  Instagram
+                </a>
+              )}
             </div>
           )}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[#1A1A1A]/[0.08] py-8 px-8">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-[#1A1A1A]/40 text-xs tracking-widest uppercase hover:text-[#1A1A1A] transition-colors duration-300"
-          >
-            ← Back to Calendar
-          </Link>
-          <p className="text-[#1A1A1A]/30 text-xs">
-            World Ballet &amp; Opera Calendar &copy; 2026
-          </p>
-        </div>
-      </footer>
-    </main>
-  )
-}
-
-/* ---------- Hero content (shared between image / text hero) ---------- */
-
-function HeroContent({
-  company,
-  heritageYears,
-}: {
-  company: Company
-  heritageYears: number | null
-}) {
-  return (
-    <>
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-        <div>
-          <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase mb-4">
-            {company.country}
-            {company.founded_year ? ` · Est. ${company.founded_year}` : ''}
-          </p>
-          <h1 className="font-serif text-5xl md:text-7xl font-light leading-tight mb-4 text-[#1A1A1A]">
-            {company.name}
-          </h1>
-          {company.name_local && company.name_local !== company.name && (
-            <p className="text-[#1A1A1A]/40 text-lg font-light">
-              {company.name_local}
+      {/* Description */}
+      {(company.description || company.description_short) && (
+        <section className="py-16 md:py-20 px-6 md:px-10 border-b border-[#1A1A1A]/[0.08]">
+          <div className="max-w-3xl mx-auto">
+            <p className="font-serif text-xl md:text-2xl font-light text-[#1A1A1A]/80 leading-relaxed md:leading-loose">
+              {company.description ?? company.description_short}
             </p>
-          )}
-          {heritageYears !== null && heritageYears > 0 && (
-            <p className="mt-4 text-[#D4AF37] text-[11px] tracking-[0.25em] uppercase font-medium">
-              {heritageYears}+ years of heritage
-            </p>
-          )}
-        </div>
-
-        {/* External links */}
-        <div className="flex flex-wrap gap-3">
-          {company.website && (
-            <a
-              href={company.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 border border-[#D4AF37] text-[#D4AF37] text-xs tracking-widest uppercase hover:bg-[#D4AF37]/10 transition-all duration-300"
-            >
-              Official Site
-            </a>
-          )}
-          {company.instagram && (
-            <a
-              href={`https://instagram.com/${company.instagram}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 border border-[#1A1A1A]/30 text-[#1A1A1A]/60 text-xs tracking-widest uppercase hover:border-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-all duration-300"
-            >
-              Instagram
-            </a>
-          )}
-        </div>
-      </div>
-
-      {company.description && (
-        <p className="mt-10 font-serif text-[#1A1A1A]/70 text-lg md:text-xl leading-relaxed md:leading-loose max-w-3xl font-light">
-          {company.description}
-        </p>
+          </div>
+        </section>
       )}
-    </>
+
+      {/* Season */}
+      <section className="py-16 md:py-24 px-6 md:px-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-baseline justify-between mb-8">
+            <h2 className="font-serif text-3xl md:text-4xl font-light text-[#1A1A1A]">
+              2026 – 27 Season
+            </h2>
+            <span className="text-[#1A1A1A]/40 text-sm">
+              {performances.length} {performances.length === 1 ? 'production' : 'productions'}
+            </span>
+          </div>
+
+          {performances.length > 0 ? (
+            <div className="border-b border-[#1A1A1A]/[0.08]">
+              {performances.map((p) => (
+                <PerformanceListItem key={p.id} performance={p} hideCompany />
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center border-y border-[#1A1A1A]/[0.08]">
+              <p className="text-[#1A1A1A]/35 text-xs tracking-[0.3em] uppercase mb-3">
+                Season to be announced
+              </p>
+              <p className="text-[#1A1A1A]/45 text-sm">
+                This company&rsquo;s 2026–27 programme will appear here soon.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+    </main>
   )
 }

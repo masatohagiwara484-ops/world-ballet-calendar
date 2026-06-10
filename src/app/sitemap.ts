@@ -1,48 +1,43 @@
 import type { MetadataRoute } from 'next'
+import { getCompanies, getPerformances } from '@/lib/data'
+
+export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    'https://worldballetoperacalender.vercel.app'
+
+  const now = new Date()
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${baseUrl}/calendar`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/partners`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
+  ]
 
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      throw new Error('Missing Supabase env vars')
-    }
+    const [companies, performances] = await Promise.all([
+      getCompanies(),
+      getPerformances(),
+    ])
 
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-
-    const { data: companies } = await supabase
-      .from('companies')
-      .select('slug, updated_at')
-      .eq('is_active', true)
-
-    const companyPages = (companies ?? []).map(c => ({
+    const companyPages: MetadataRoute.Sitemap = companies.map((c) => ({
       url: `${baseUrl}/companies/${c.slug}`,
-      lastModified: new Date(c.updated_at),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.7,
     }))
 
-    return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily' as const,
-        priority: 1.0,
-      },
-      ...companyPages,
-    ]
+    const performancePages: MetadataRoute.Sitemap = performances.map((p) => ({
+      url: `${baseUrl}/performances/${p.id}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+
+    return [...staticRoutes, ...companyPages, ...performancePages]
   } catch {
-    return [
-      {
-        url: baseUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily' as const,
-        priority: 1.0,
-      },
-    ]
+    return staticRoutes
   }
 }
