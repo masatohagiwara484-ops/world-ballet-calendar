@@ -83,15 +83,15 @@ export default async function PerformancePage({ params }: Props) {
         <div className="relative max-w-4xl mx-auto">
           <Link
             href={`/companies/${p.company.slug}`}
-            className="inline-flex items-center gap-1.5 text-[#D4AF37] text-[11px] tracking-[0.2em] uppercase hover:text-white transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-gold text-[11px] tracking-[0.2em] uppercase hover:text-gold-bright transition-colors mb-6"
           >
             <ArrowLeft size={14} />
             {p.company.name}
           </Link>
-          <p className="text-[#D4AF37] text-[11px] tracking-[0.34em] uppercase mb-4">
+          <p className="text-gold text-[11px] tracking-[0.34em] uppercase mb-4">
             {KIND_LABEL[p.kind]} · {p.company.country}
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl font-light text-white leading-[1.05]">
+          <h1 className="font-serif text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
             {p.title}
           </h1>
           {p.title_original && p.title_original !== p.title && (
@@ -110,7 +110,7 @@ export default async function PerformancePage({ params }: Props) {
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_16rem] gap-12">
           <div>
             {p.description && (
-              <p className="font-serif text-xl md:text-2xl font-light text-[#1A1A1A]/80 leading-relaxed md:leading-loose mb-12">
+              <p className="font-serif text-xl md:text-2xl text-ivory/80 leading-relaxed md:leading-loose mb-12">
                 {p.description}
               </p>
             )}
@@ -127,11 +127,11 @@ export default async function PerformancePage({ params }: Props) {
 
           {/* Booking aside */}
           <aside className="md:sticky md:top-28 h-fit">
-            <div className="border border-[#1A1A1A]/[0.08] rounded-md bg-white p-6 shadow-card">
-              <p className="text-[10px] tracking-[0.3em] uppercase text-[#1A1A1A]/40 mb-2">
+            <div className="glass-panel specular p-6">
+              <p className="text-[10px] tracking-[0.3em] uppercase text-ivory/40 mb-2">
                 Reserve your seat
               </p>
-              <p className="font-serif text-xl font-light text-[#1A1A1A] mb-5">
+              <p className="font-serif text-xl text-ivory mb-5">
                 {p.company.name}
               </p>
               {ticket ? (
@@ -139,19 +139,19 @@ export default async function PerformancePage({ params }: Props) {
                   href={ticket}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-[#D4AF37] text-white text-xs tracking-[0.2em] uppercase hover:bg-[#B8941F] transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-full bg-gold text-stage font-medium text-xs tracking-[0.2em] uppercase hover:shadow-glow-gold transition-all"
                 >
                   Book tickets
                   <ExternalLink size={14} />
                 </a>
               ) : (
-                <p className="text-[#1A1A1A]/45 text-sm">
+                <p className="text-ivory/62 text-sm">
                   Booking opens closer to the performance dates.
                 </p>
               )}
               <Link
                 href={`/companies/${p.company.slug}`}
-                className="block text-center mt-3 text-[#1B2A4A] text-[11px] tracking-[0.18em] uppercase hover:text-[#D4AF37] transition-colors"
+                className="block text-center mt-4 text-ivory/62 text-[11px] tracking-[0.18em] uppercase hover:text-gold transition-colors"
               >
                 View company
               </Link>
@@ -174,12 +174,12 @@ function Detail({
 }) {
   return (
     <div>
-      <dt className="text-[10px] tracking-[0.24em] uppercase text-[#1A1A1A]/35 mb-1.5">
+      <dt className="text-[10px] tracking-[0.24em] uppercase text-ivory/38 mb-1.5">
         {label}
       </dt>
-      <dd className="text-[#1A1A1A] text-base">
+      <dd className="text-ivory text-base">
         {href ? (
-          <Link href={href} className="hover:text-[#D4AF37] transition-colors">
+          <Link href={href} className="hover:text-gold transition-colors">
             {value}
           </Link>
         ) : (

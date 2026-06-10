@@ -105,10 +105,10 @@ export default async function CompanyPage({ params }: Props) {
         </span>
 
         <div className="relative max-w-5xl mx-auto">
-          <p className="text-[#D4AF37] text-[11px] tracking-[0.34em] uppercase mb-5">
+          <p className="text-gold text-[11px] tracking-[0.34em] uppercase mb-5">
             {typeLabel(company.type)} · {company.country}
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl font-light text-white leading-[1.05]">
+          <h1 className="font-serif text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
             {company.name}
           </h1>
           {company.name_local && company.name_local !== company.name && (
@@ -122,7 +122,7 @@ export default async function CompanyPage({ params }: Props) {
             {company.venue && <span>{company.venue}</span>}
             {company.founded_year && <span>Founded {company.founded_year}</span>}
             {heritage && heritage > 0 && (
-              <span className="text-[#D4AF37]">{heritage}+ years of heritage</span>
+              <span className="text-gold">{heritage}+ years of heritage</span>
             )}
           </div>
 
@@ -133,7 +133,7 @@ export default async function CompanyPage({ params }: Props) {
                   href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 border border-[#D4AF37] text-[#D4AF37] text-[11px] tracking-[0.2em] uppercase hover:bg-[#D4AF37]/15 transition-colors"
+                  className="glass-pill px-6 py-3 border border-gold/50 text-gold text-[11px] tracking-[0.2em] uppercase hover:bg-gold/10 hover:shadow-glow-gold transition-all"
                 >
                   Official site
                 </a>
@@ -143,7 +143,7 @@ export default async function CompanyPage({ params }: Props) {
                   href={`https://instagram.com/${company.instagram.replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 border border-white/25 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:border-white/60 transition-colors"
+                  className="glass-pill px-6 py-3 border border-ivory/30 text-ivory/80 text-[11px] tracking-[0.2em] uppercase hover:border-ivory/60 transition-colors"
                 >
                   Instagram
                 </a>
@@ -155,9 +155,9 @@ export default async function CompanyPage({ params }: Props) {
 
       {/* Description */}
       {(company.description || company.description_short) && (
-        <section className="py-16 md:py-20 px-6 md:px-10 border-b border-[#1A1A1A]/[0.08]">
+        <section className="py-16 md:py-20 px-6 md:px-10 bg-stage-elevated">
           <div className="max-w-3xl mx-auto">
-            <p className="font-serif text-xl md:text-2xl font-light text-[#1A1A1A]/80 leading-relaxed md:leading-loose">
+            <p className="font-serif text-xl md:text-2xl text-ivory/80 leading-relaxed md:leading-loose">
               {company.description ?? company.description_short}
             </p>
           </div>
@@ -168,26 +168,28 @@ export default async function CompanyPage({ params }: Props) {
       <section className="py-16 md:py-24 px-6 md:px-10">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-baseline justify-between mb-8">
-            <h2 className="font-serif text-3xl md:text-4xl font-light text-[#1A1A1A]">
+            <h2 className="font-serif text-3xl md:text-4xl text-ivory">
               2026 – 27 Season
             </h2>
-            <span className="text-[#1A1A1A]/40 text-sm">
+            <span className="text-ivory/40 text-sm">
               {performances.length} {performances.length === 1 ? 'production' : 'productions'}
             </span>
           </div>
 
           {performances.length > 0 ? (
-            <div className="border-b border-[#1A1A1A]/[0.08]">
-              {performances.map((p) => (
-                <PerformanceListItem key={p.id} performance={p} hideCompany />
+            <div className="glass-panel specular px-5 sm:px-8 py-2">
+              {performances.map((p, i) => (
+                <div key={p.id} className={i === 0 ? '[&>a]:border-t-0' : ''}>
+                  <PerformanceListItem performance={p} hideCompany />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="py-20 text-center border-y border-[#1A1A1A]/[0.08]">
-              <p className="text-[#1A1A1A]/35 text-xs tracking-[0.3em] uppercase mb-3">
+            <div className="glass-panel py-20 text-center">
+              <p className="text-ivory/40 text-xs tracking-[0.3em] uppercase mb-3">
                 Season to be announced
               </p>
-              <p className="text-[#1A1A1A]/45 text-sm">
+              <p className="text-ivory/62 text-sm">
                 This company&rsquo;s 2026–27 programme will appear here soon.
               </p>
             </div>

@@ -45,7 +45,7 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
         <div
           role="group"
           aria-label="Filter by type"
-          className="inline-flex border border-[#1A1A1A]/[0.12] rounded overflow-hidden self-start"
+          className="glass-pill inline-flex p-1 self-start"
         >
           {TYPE_OPTIONS.map((o) => (
             <button
@@ -53,10 +53,10 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
               onClick={() => setType(o.value)}
               aria-pressed={type === o.value}
               className={clsx(
-                'px-5 py-2.5 text-[11px] tracking-[0.18em] uppercase transition-colors',
+                'px-5 py-2 rounded-full text-[11px] tracking-[0.18em] uppercase transition-colors',
                 type === o.value
-                  ? 'bg-[#1B2A4A] text-white'
-                  : 'bg-white text-[#1A1A1A]/55 hover:text-[#1A1A1A]'
+                  ? 'bg-gold text-stage font-medium'
+                  : 'text-ivory/62 hover:text-ivory'
               )}
             >
               {o.label}
@@ -64,14 +64,14 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
           ))}
         </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[#1A1A1A]/35">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-ivory/38">
             Country
           </span>
           <select
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="bg-white border border-[#1A1A1A]/[0.12] rounded px-4 py-2.5 text-sm focus:border-[#D4AF37] outline-none cursor-pointer min-w-[12rem]"
+            className="glass-pill bg-transparent px-5 py-2.5 text-sm text-ivory outline-none cursor-pointer min-w-[12rem] [&>option]:bg-stage-elevated [&>option]:text-ivory"
           >
             <option value="">All countries</option>
             {countries.map((c) => (
@@ -82,27 +82,27 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 lg:ml-auto w-full lg:w-72">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[#1A1A1A]/35">
+        <label className="flex flex-col gap-1.5 lg:ml-auto w-full lg:w-72">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-ivory/38">
             Search
           </span>
           <div className="relative">
             <Search
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1A1A1A]/30"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-ivory/40 z-10"
             />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Company, city, country"
-              className="w-full bg-white border border-[#1A1A1A]/[0.12] rounded pl-9 pr-4 py-2.5 text-sm focus:border-[#D4AF37] outline-none"
+              className="glass-pill w-full bg-transparent pl-10 pr-4 py-2.5 text-sm text-ivory placeholder:text-ivory/38 outline-none"
             />
           </div>
         </label>
       </div>
 
-      <p className="text-[#1A1A1A]/40 text-xs tracking-[0.15em] uppercase mb-6">
+      <p className="text-ivory/40 text-xs tracking-[0.15em] uppercase mb-6">
         {filtered.length} {filtered.length === 1 ? 'company' : 'companies'}
       </p>
 
@@ -113,7 +113,7 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
           ))}
         </div>
       ) : (
-        <p className="py-20 text-center text-[#1A1A1A]/40 text-sm">
+        <p className="py-20 text-center text-ivory/40 text-sm">
           No companies match these filters.
         </p>
       )}

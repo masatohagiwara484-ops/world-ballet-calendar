@@ -9,17 +9,17 @@ export default function Error({
 }) {
   console.error('Error caught by error boundary:', error)
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}>
-      <div className="text-center">
-        <h1 className="font-serif text-4xl md:text-5xl font-light text-[#1A1A1A] mb-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-stage">
+      <div className="glass-panel specular text-center px-10 py-14 max-w-md mx-auto">
+        <h1 className="font-serif text-4xl md:text-5xl text-ivory mb-4">
           Something went wrong
         </h1>
-        <p className="text-[#1A1A1A]/60 mb-8 max-w-md mx-auto">
+        <p className="text-ivory/62 mb-8 max-w-md mx-auto leading-relaxed">
           We encountered an error while processing your request. Please try again.
         </p>
         <button
           onClick={() => reset()}
-          className="px-8 py-3 bg-[#D4AF37] text-white text-sm tracking-widest uppercase font-medium rounded hover:bg-[#B8941F] transition-colors"
+          className="px-8 py-3 bg-gold text-stage text-sm tracking-widest uppercase font-medium rounded-full hover:shadow-glow-gold transition-all duration-300"
         >
           Try Again
         </button>

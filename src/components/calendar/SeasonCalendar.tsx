@@ -119,7 +119,7 @@ export default function SeasonCalendar() {
           <div
             role="group"
             aria-label="Filter by type"
-            className="inline-flex border border-[#1A1A1A]/[0.12] rounded overflow-hidden"
+            className="glass-pill inline-flex p-1"
           >
             {(['all', 'ballet', 'opera'] as KindFilter[]).map((k) => (
               <button
@@ -127,10 +127,10 @@ export default function SeasonCalendar() {
                 onClick={() => setKind(k)}
                 aria-pressed={kind === k}
                 className={clsx(
-                  'px-5 py-2.5 text-[11px] tracking-[0.18em] uppercase transition-colors',
+                  'px-5 py-2 rounded-full text-[11px] tracking-[0.18em] uppercase transition-colors',
                   kind === k
-                    ? 'bg-[#1B2A4A] text-white'
-                    : 'bg-white text-[#1A1A1A]/55 hover:text-[#1A1A1A]'
+                    ? 'bg-gold text-stage font-medium'
+                    : 'text-ivory/62 hover:text-ivory'
                 )}
               >
                 {k === 'all' ? 'All' : KIND_LABEL[k]}
@@ -157,7 +157,7 @@ export default function SeasonCalendar() {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="text-[#1A1A1A]/45 text-[11px] tracking-[0.18em] uppercase hover:text-[#D4AF37] transition-colors py-2.5"
+              className="text-ivory/45 text-[11px] tracking-[0.18em] uppercase hover:text-gold transition-colors py-2.5"
             >
               Clear
             </button>
@@ -168,7 +168,7 @@ export default function SeasonCalendar() {
         <div
           role="group"
           aria-label="Calendar view"
-          className="inline-flex border border-[#1A1A1A]/[0.12] rounded overflow-hidden self-start"
+          className="glass-pill inline-flex p-1 self-start"
         >
           {(['grid', 'season'] as ViewMode[]).map((v) => (
             <button
@@ -176,10 +176,10 @@ export default function SeasonCalendar() {
               onClick={() => setView(v)}
               aria-pressed={view === v}
               className={clsx(
-                'px-5 py-2.5 text-[11px] tracking-[0.18em] uppercase transition-colors',
+                'px-5 py-2 rounded-full text-[11px] tracking-[0.18em] uppercase transition-colors',
                 view === v
-                  ? 'bg-[#D4AF37] text-white'
-                  : 'bg-white text-[#1A1A1A]/55 hover:text-[#1A1A1A]'
+                  ? 'bg-gold text-stage font-medium'
+                  : 'text-ivory/62 hover:text-ivory'
               )}
             >
               {v === 'grid' ? 'Month' : 'Season'}
@@ -233,6 +233,7 @@ function GridView({
   setSelectedDay: (d: string | null) => void
   loading: boolean
 }) {
+  const todayIso = format(new Date(), 'yyyy-MM-dd')
   return (
     <div>
       {/* Month nav */}
@@ -240,17 +241,17 @@ function GridView({
         <button
           onClick={() => setMonth(addMonths(month, -1))}
           aria-label="Previous month"
-          className="p-2 text-[#1A1A1A]/50 hover:text-[#D4AF37] transition-colors"
+          className="glass-pill p-2.5 text-ivory/62 hover:text-gold transition-colors"
         >
           <ChevronLeft size={22} />
         </button>
-        <h2 className="font-serif text-3xl md:text-4xl font-light text-[#1A1A1A]">
+        <h2 className="font-serif text-3xl md:text-4xl text-ivory">
           {format(month, 'MMMM yyyy')}
         </h2>
         <button
           onClick={() => setMonth(addMonths(month, 1))}
           aria-label="Next month"
-          className="p-2 text-[#1A1A1A]/50 hover:text-[#D4AF37] transition-colors"
+          className="glass-pill p-2.5 text-ivory/62 hover:text-gold transition-colors"
         >
           <ChevronRight size={22} />
         </button>
@@ -262,18 +263,19 @@ function GridView({
           {WEEKDAYS.map((w) => (
             <div
               key={w}
-              className="text-center text-[10px] tracking-[0.2em] uppercase text-[#1A1A1A]/35 py-2"
+              className="text-center text-[10px] tracking-[0.2em] uppercase text-ivory/38 py-2"
             >
               {w}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-px bg-[#1A1A1A]/[0.07] border border-[#1A1A1A]/[0.07] rounded-md overflow-hidden">
+        <div className="glass-panel specular grid grid-cols-7 gap-px overflow-hidden p-px">
           {days.map((day) => {
             const iso = format(day, 'yyyy-MM-dd')
             const inMonth = isSameMonth(day, month)
             const list = perfsByDay.get(iso) ?? []
             const hasPerf = list.length > 0
+            const isToday = iso === todayIso
             return (
               <button
                 key={iso}
@@ -281,17 +283,19 @@ function GridView({
                 aria-label={`${format(day, 'd MMMM yyyy')}${hasPerf ? `, ${list.length} performances` : ''}`}
                 disabled={!hasPerf}
                 className={clsx(
-                  'min-h-[112px] text-left p-2.5 transition-colors',
-                  inMonth ? 'bg-white' : 'bg-[#FAF8F5]',
-                  hasPerf && 'hover:bg-[#D4AF37]/[0.06] cursor-pointer',
-                  selectedDay === iso && 'ring-1 ring-inset ring-[#D4AF37] shadow-[inset_0_0_20px_rgba(212,175,55,0.18)]'
+                  'relative min-h-[112px] text-left p-2.5 transition-colors border border-white/[0.06]',
+                  inMonth ? 'bg-white/[0.02]' : 'bg-transparent',
+                  hasPerf && 'hover:bg-gold/[0.07] cursor-pointer',
+                  isToday && 'ring-1 ring-inset ring-gold/70',
+                  selectedDay === iso && 'ring-1 ring-inset ring-gold shadow-[inset_0_0_24px_rgba(212,175,55,0.22)]'
                 )}
               >
                 <span
                   className={clsx(
                     'text-xs tabular-nums',
-                    inMonth ? 'text-[#1A1A1A]/70' : 'text-[#1A1A1A]/25',
-                    hasPerf && 'font-medium text-[#1A1A1A]'
+                    inMonth ? 'text-ivory/70' : 'text-ivory/25',
+                    hasPerf && 'font-medium text-ivory',
+                    isToday && 'text-gold font-semibold'
                   )}
                 >
                   {format(day, 'd')}
@@ -299,14 +303,14 @@ function GridView({
                 <div className="mt-1.5 space-y-1">
                   {list.slice(0, 3).map((p) => (
                     <div key={p.id} className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shrink-0" />
-                      <span className="text-[11px] text-[#1A1A1A]/70 truncate leading-tight">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+                      <span className="text-[11px] text-ivory/70 truncate leading-tight">
                         {p.title}
                       </span>
                     </div>
                   ))}
                   {list.length > 3 && (
-                    <span className="text-[10px] text-[#D4AF37] tracking-wide">
+                    <span className="text-[10px] text-gold tracking-wide">
                       +{list.length - 3} more
                     </span>
                   )}
@@ -328,25 +332,25 @@ function GridView({
               <button
                 key={iso}
                 onClick={() => setSelectedDay(iso)}
-                className="w-full text-left flex gap-4 py-4 border-b border-[#1A1A1A]/[0.08]"
+                className="w-full text-left flex gap-4 py-4 border-b border-white/[0.08]"
               >
                 <div className="w-12 shrink-0 text-center">
-                  <p className="font-serif text-2xl font-light text-[#1A1A1A] leading-none">
+                  <p className="font-serif text-2xl text-ivory leading-none">
                     {format(day, 'd')}
                   </p>
-                  <p className="text-[10px] tracking-[0.15em] uppercase text-[#1A1A1A]/40 mt-1">
+                  <p className="text-[10px] tracking-[0.15em] uppercase text-ivory/40 mt-1">
                     {format(day, 'EEE')}
                   </p>
                 </div>
                 <div className="min-w-0 flex-1">
                   {list.slice(0, 3).map((p) => (
-                    <p key={p.id} className="text-sm text-[#1A1A1A]/75 truncate">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4AF37] mr-2 align-middle" />
+                    <p key={p.id} className="text-sm text-ivory/75 truncate">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold mr-2 align-middle" />
                       {p.title}
                     </p>
                   ))}
                   {list.length > 3 && (
-                    <p className="text-[11px] text-[#D4AF37] mt-1">+{list.length - 3} more</p>
+                    <p className="text-[11px] text-gold mt-1">+{list.length - 3} more</p>
                   )}
                 </div>
               </button>
@@ -354,7 +358,7 @@ function GridView({
           })}
         {days.filter((d) => isSameMonth(d, month) && (perfsByDay.get(format(d, 'yyyy-MM-dd'))?.length ?? 0) > 0).length === 0 &&
           !loading && (
-            <p className="py-16 text-center text-[#1A1A1A]/40 text-sm">
+            <p className="py-16 text-center text-ivory/40 text-sm">
               No performances this month with the current filters.
             </p>
           )}
@@ -372,7 +376,7 @@ function SeasonView({
 }) {
   if (groups.length === 0) {
     return (
-      <p className="py-20 text-center text-[#1A1A1A]/40 text-sm">
+      <p className="py-20 text-center text-ivory/40 text-sm">
         No performances match the current filters.
       </p>
     )
@@ -381,24 +385,24 @@ function SeasonView({
     <div className="space-y-14">
       {groups.map(([key, list]) => (
         <div key={key}>
-          <h2 className="font-serif text-3xl font-light text-[#1A1A1A] mb-2">
+          <h2 className="font-serif text-3xl text-ivory mb-4">
             {format(parseISO(`${key}-01`), 'MMMM yyyy')}
           </h2>
-          <div className="border-t border-[#1A1A1A]/[0.08]">
+          <div className="glass-panel specular px-5 sm:px-8 py-2">
             {list.map((p) => (
               <a
                 key={p.id}
                 href={`/performances/${p.id}`}
-                className="group grid grid-cols-[7rem_1fr] sm:grid-cols-[10rem_1fr] gap-4 sm:gap-8 py-5 border-b border-[#1A1A1A]/[0.08] hover:bg-white/60 transition-colors px-2 -mx-2"
+                className="group grid grid-cols-[7rem_1fr] sm:grid-cols-[10rem_1fr] gap-4 sm:gap-8 py-5 border-b border-white/[0.08] last:border-0 hover:bg-white/[0.04] transition-colors px-3 -mx-3 rounded-glass-sm"
               >
-                <p className="text-[#1A1A1A]/70 text-sm tabular-nums pt-0.5">
+                <p className="text-gold text-sm tabular-nums pt-0.5">
                   {formatRange(p.start_date, p.end_date)}
                 </p>
                 <div>
-                  <h3 className="font-serif text-lg font-light text-[#1A1A1A] group-hover:text-[#1B2A4A] transition-colors">
+                  <h3 className="font-serif text-lg text-ivory group-hover:text-gold-bright transition-colors">
                     {p.title}
                   </h3>
-                  <p className="text-[#1A1A1A]/50 text-sm mt-0.5">
+                  <p className="text-ivory/62 text-sm mt-0.5">
                     {p.company.name} · {KIND_LABEL[p.kind]}
                   </p>
                 </div>
@@ -431,22 +435,22 @@ function DayPanel({
       aria-label={`Performances on ${heading}`}
     >
       <div
-        className="absolute inset-0 bg-[#1A1A1A]/30 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-stage-deep/70 backdrop-blur-[3px]"
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative mt-auto sm:mt-0 w-full sm:w-[420px] max-h-[80vh] sm:max-h-none bg-white sm:h-full overflow-y-auto shadow-card-hover animate-fade-in-up sm:animate-fade-in rounded-t-xl sm:rounded-none">
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-[#1A1A1A]/[0.08] px-6 py-5 flex items-start justify-between">
+      <div className="glass-panel specular relative mt-auto sm:mt-0 w-full sm:w-[420px] max-h-[80vh] sm:max-h-none sm:h-full overflow-y-auto animate-fade-in-up sm:animate-fade-in rounded-t-glass-lg sm:rounded-none">
+        <div className="sticky top-0 z-10 bg-stage-elevated/80 backdrop-blur-glass border-b border-white/[0.1] px-6 py-5 flex items-start justify-between">
           <div>
-            <p className="text-[#D4AF37] text-[10px] tracking-[0.3em] uppercase mb-1">
+            <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">
               {list.length} {list.length === 1 ? 'performance' : 'performances'}
             </p>
-            <h3 className="font-serif text-xl font-light text-[#1A1A1A]">{heading}</h3>
+            <h3 className="font-serif text-xl text-ivory">{heading}</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-[#1A1A1A]/40 hover:text-[#1A1A1A] transition-colors mt-1"
+            className="text-ivory/40 hover:text-ivory transition-colors mt-1"
           >
             <X size={20} />
           </button>
@@ -455,17 +459,17 @@ function DayPanel({
           {list.map((p) => {
             const url = bookingUrl(p)
             return (
-              <div key={p.id} className="py-6 border-b border-[#1A1A1A]/[0.07] last:border-0">
-                <p className="text-[#D4AF37] text-[10px] tracking-[0.28em] uppercase mb-2">
+              <div key={p.id} className="py-6 border-b border-white/[0.08] last:border-0">
+                <p className="text-gold text-[10px] tracking-[0.28em] uppercase mb-2">
                   {KIND_LABEL[p.kind]} · {formatRange(p.start_date, p.end_date)}
                 </p>
                 <a
                   href={`/performances/${p.id}`}
-                  className="font-serif text-xl font-light text-[#1A1A1A] hover:text-[#1B2A4A] transition-colors block"
+                  className="font-serif text-xl text-ivory hover:text-gold-bright transition-colors block"
                 >
                   {p.title}
                 </a>
-                <p className="text-[#1A1A1A]/55 text-sm mt-1">
+                <p className="text-ivory/62 text-sm mt-1">
                   {p.company.name}
                   {p.venue ? ` · ${p.venue}` : ''}
                 </p>
@@ -474,7 +478,7 @@ function DayPanel({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block mt-3 px-5 py-2 bg-[#D4AF37] text-white text-[11px] tracking-[0.2em] uppercase hover:bg-[#B8941F] transition-colors"
+                    className="inline-block mt-3 px-5 py-2 rounded-full bg-gold text-stage font-medium text-[11px] tracking-[0.2em] uppercase hover:shadow-glow-gold transition-all"
                   >
                     Book tickets
                   </a>
@@ -502,14 +506,14 @@ function FilterSelect({
   options: { value: string; label: string }[]
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] tracking-[0.2em] uppercase text-[#1A1A1A]/35">
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[10px] tracking-[0.2em] uppercase text-ivory/38">
         {label}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-white border border-[#1A1A1A]/[0.12] rounded px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#D4AF37] outline-none min-w-[10rem] cursor-pointer"
+        className="glass-pill bg-transparent px-5 py-2.5 text-sm text-ivory outline-none min-w-[10rem] cursor-pointer [&>option]:bg-stage-elevated [&>option]:text-ivory"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

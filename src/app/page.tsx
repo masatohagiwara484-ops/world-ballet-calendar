@@ -39,22 +39,21 @@ export default async function HomePage() {
       {/* This Week on Stage */}
       <section
         aria-label="This week on stage"
-        className="py-20 md:py-28 px-6 md:px-10"
-        style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FAF8F5 100%)' }}
+        className="relative py-20 md:py-28 px-6 md:px-10"
       >
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
             <div>
-              <p className="text-[#D4AF37] text-[11px] tracking-[0.4em] uppercase mb-3">
+              <p className="text-gold text-[11px] tracking-[0.4em] uppercase mb-3">
                 On Stage Now
               </p>
-              <h2 className="font-serif text-4xl md:text-5xl font-light text-[#1A1A1A]">
+              <h2 className="font-serif text-4xl md:text-5xl text-gradient-gold">
                 This week on stage
               </h2>
             </div>
             <Link
               href="/calendar"
-              className="inline-flex items-center gap-1.5 text-[#1B2A4A] text-xs tracking-[0.2em] uppercase hover:text-[#D4AF37] transition-colors"
+              className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
             >
               Full calendar
               <ArrowUpRight size={14} />
@@ -62,13 +61,15 @@ export default async function HomePage() {
           </div>
 
           {strip.length > 0 ? (
-            <div className="border-b border-[#1A1A1A]/[0.08]">
-              {strip.map((p) => (
-                <PerformanceListItem key={p.id} performance={p} />
+            <div className="glass-panel specular px-5 sm:px-8 py-2">
+              {strip.map((p, i) => (
+                <div key={p.id} className={i === 0 ? '[&>a]:border-t-0' : ''}>
+                  <PerformanceListItem performance={p} />
+                </div>
               ))}
             </div>
           ) : (
-            <p className="py-16 text-center text-[#1A1A1A]/40 text-sm border-y border-[#1A1A1A]/[0.08]">
+            <p className="py-16 text-center text-ivory/40 text-sm glass-panel">
               The new season is being announced. Check back soon.
             </p>
           )}
@@ -78,22 +79,25 @@ export default async function HomePage() {
       {/* Companies teaser */}
       <section
         aria-label="Featured companies"
-        className="py-20 md:py-28 px-6 md:px-10"
-        style={{ background: 'linear-gradient(180deg, #FAF8F5 0%, #FFFFFF 100%)' }}
+        className="relative py-20 md:py-28 px-6 md:px-10 bg-stage-elevated"
+        style={{
+          backgroundImage:
+            'radial-gradient(ellipse at 80% 0%, rgba(27,42,74,0.18) 0%, rgba(10,9,8,0) 55%)',
+        }}
       >
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
             <div>
-              <p className="text-[#D4AF37] text-[11px] tracking-[0.4em] uppercase mb-3">
+              <p className="text-gold text-[11px] tracking-[0.4em] uppercase mb-3">
                 Directory
               </p>
-              <h2 className="font-serif text-4xl md:text-5xl font-light text-[#1A1A1A]">
+              <h2 className="font-serif text-4xl md:text-5xl text-ivory">
                 The companies
               </h2>
             </div>
             <Link
               href="/companies"
-              className="inline-flex items-center gap-1.5 text-[#1B2A4A] text-xs tracking-[0.2em] uppercase hover:text-[#D4AF37] transition-colors"
+              className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
             >
               All companies
               <ArrowUpRight size={14} />
@@ -111,11 +115,10 @@ export default async function HomePage() {
       {/* How it works */}
       <section
         aria-label="How it works"
-        className="py-20 md:py-28 px-6 md:px-10 border-t border-[#1A1A1A]/[0.08]"
-        style={{ background: '#FAF8F5' }}
+        className="py-20 md:py-28 px-6 md:px-10"
       >
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#1A1A1A]/[0.07] border border-[#1A1A1A]/[0.07] rounded-md overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
               {
                 step: '01',
@@ -133,14 +136,14 @@ export default async function HomePage() {
                 body: 'Open a company to read its story and see every production of the 2026–27 season.',
               },
             ].map((item) => (
-              <div key={item.step} className="bg-white p-10">
-                <p className="font-serif text-3xl font-light text-[#D4AF37] mb-5">
+              <div key={item.step} className="glass-card specular p-10">
+                <p className="font-serif text-3xl text-gradient-gold mb-5">
                   {item.step}
                 </p>
-                <h3 className="font-serif text-xl font-light text-[#1A1A1A] mb-3">
+                <h3 className="font-serif text-xl text-ivory mb-3">
                   {item.title}
                 </h3>
-                <p className="text-[#1A1A1A]/55 text-sm leading-relaxed">
+                <p className="text-ivory/62 text-sm leading-relaxed">
                   {item.body}
                 </p>
               </div>

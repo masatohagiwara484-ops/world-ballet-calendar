@@ -87,26 +87,27 @@ const travelPartners: Partner[] = [
 function PartnerCard({ partner }: { partner: Partner }) {
   const accent = accentMap[partner.accent]
   return (
-    <article className="group relative bg-white rounded-lg overflow-hidden border border-[#1A1A1A]/[0.08] shadow-card hover:shadow-card-hover hover:scale-[1.02] transition-all duration-300">
+    <article className="group glass-card specular relative overflow-hidden rounded-glass">
       {/* Top accent bar */}
       <div className="h-1 w-full" style={{ backgroundColor: accent }} />
       <div className="p-8">
         {/* Logo placeholder — serif monogram */}
         <div
-          className="w-16 h-16 flex items-center justify-center rounded border-2 mb-6"
-          style={{ borderColor: accent }}
+          className="w-16 h-16 flex items-center justify-center rounded-glass-sm border mb-6"
+          style={{
+            borderColor: 'rgba(212,175,55,0.45)',
+            background:
+              'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))',
+          }}
         >
-          <span
-            className="font-serif text-2xl font-light"
-            style={{ color: accent }}
-          >
+          <span className="font-serif text-2xl text-gold">
             {partner.monogram}
           </span>
         </div>
-        <h3 className="font-serif text-xl font-light text-[#1A1A1A] mb-3">
+        <h3 className="font-serif text-xl text-ivory mb-3">
           {partner.name}
         </h3>
-        <p className="text-[#1A1A1A]/60 text-sm leading-relaxed">
+        <p className="text-ivory/62 text-sm leading-relaxed">
           {partner.description}
         </p>
       </div>
@@ -118,20 +119,17 @@ function PartnerCard({ partner }: { partner: Partner }) {
 
 export default function PartnersPage() {
   return (
-    <main
-      className="min-h-screen"
-      style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)' }}
-    >
+    <main className="min-h-screen bg-stage">
       {/* Hero */}
-      <section className="pt-40 pb-16 px-8 md:px-16 lg:px-24 border-b border-[#1A1A1A]/[0.08]">
+      <section className="pt-40 pb-16 px-8 md:px-16 lg:px-24">
         <div className="max-w-5xl mx-auto text-center">
-          <p className="text-[#D4AF37] text-xs tracking-[0.3em] uppercase mb-5">
+          <p className="text-gold text-xs tracking-[0.3em] uppercase mb-5">
             Trusted Network
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl font-light leading-tight text-[#1A1A1A] mb-6">
+          <h1 className="font-serif text-5xl md:text-7xl leading-tight text-gradient-gold mb-6">
             Our Partners
           </h1>
-          <p className="text-[#1A1A1A]/60 text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-light">
+          <p className="text-ivory/62 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
             We work alongside the world’s most respected ticketing platforms
             and travel partners to bring every performance — and every journey to
             it — within reach.
@@ -143,10 +141,10 @@ export default function PartnersPage() {
       <section className="py-20 px-8 md:px-16 lg:px-24">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-baseline justify-between mb-12">
-            <h2 className="font-serif text-3xl font-light text-[#1A1A1A]">
+            <h2 className="font-serif text-3xl text-ivory">
               Ticketing Partners
             </h2>
-            <span className="text-[#1A1A1A]/40 text-sm">
+            <span className="text-ivory/40 text-sm">
               {ticketingPartners.length} venues
             </span>
           </div>
@@ -162,10 +160,10 @@ export default function PartnersPage() {
       <section className="pb-20 px-8 md:px-16 lg:px-24">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-baseline justify-between mb-12">
-            <h2 className="font-serif text-3xl font-light text-[#1A1A1A]">
+            <h2 className="font-serif text-3xl text-ivory">
               Travel Partners
             </h2>
-            <span className="text-[#1A1A1A]/40 text-sm">
+            <span className="text-ivory/40 text-sm">
               {travelPartners.length} services
             </span>
           </div>
@@ -180,11 +178,11 @@ export default function PartnersPage() {
       {/* Affiliate disclosure */}
       <section className="pb-24 px-8 md:px-16 lg:px-24">
         <div className="max-w-3xl mx-auto">
-          <div className="border border-[#1A1A1A]/[0.08] rounded-lg bg-white/60 p-6">
-            <p className="text-[#1A1A1A]/40 text-[10px] tracking-[0.3em] uppercase mb-3">
+          <div className="glass-panel p-6">
+            <p className="text-gold/80 text-[10px] tracking-[0.3em] uppercase mb-3">
               Affiliate Disclosure
             </p>
-            <p className="text-[#1A1A1A]/50 text-xs leading-relaxed">
+            <p className="text-ivory/62 text-xs leading-relaxed">
               World Ballet &amp; Opera Calendar may earn a commission when you
               book tickets, flights, or accommodation through links to our
               partners. This comes at no additional cost to you and helps us keep
