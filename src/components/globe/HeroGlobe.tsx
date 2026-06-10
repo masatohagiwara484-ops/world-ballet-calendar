@@ -6,20 +6,19 @@ import { useEffect, useRef, useState } from 'react'
 import { X, ArrowUpRight } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { useCompanies } from '@/hooks/useCompanies'
-import { useElementSize } from '@/hooks/useElementSize'
 import { typeLabel } from '@/components/shared/design'
 import type { Company } from '@/lib/types'
+import type { MarkerHover } from './Markers'
 
-const GlobeInner = dynamic(() => import('./GlobeInner'), {
+const GlassGlobe = dynamic(() => import('./GlassGlobe'), {
   ssr: false,
   loading: () => null,
 })
 
 export default function HeroGlobe() {
   const { companies } = useCompanies()
-  const [containerRef, size] = useElementSize<HTMLDivElement>()
   const [selected, setSelected] = useState<Company | null>(null)
-  const [, setHovered] = useState<Company | null>(null)
+  const [hover, setHover] = useState<MarkerHover | null>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   // GSAP entrance for the headline overlay.
@@ -35,7 +34,7 @@ export default function HeroGlobe() {
         duration: 1.1,
         ease: 'power3.out',
         stagger: 0.14,
-        delay: 0.25,
+        delay: 0.3,
       }
     )
   }, [])
@@ -46,42 +45,20 @@ export default function HeroGlobe() {
       className="relative w-full overflow-hidden"
       style={{ height: 'min(100svh, 980px)', minHeight: '620px' }}
     >
-      {/* Soft radial vignette behind the dark globe so it floats on white */}
+      {/* Gold radial aura behind the globe on the near-black stage */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 60% 60% at 62% 50%, rgba(27,42,74,0.10) 0%, rgba(212,175,55,0.06) 35%, rgba(255,255,255,0) 70%), linear-gradient(135deg, #FFFFFF 0%, #F5F0EA 100%)',
+            'radial-gradient(ellipse 55% 60% at 66% 50%, rgba(212,175,55,0.16) 0%, rgba(74,31,46,0.10) 38%, rgba(10,9,8,0) 72%)',
         }}
       />
 
-      {/* Globe canvas — measured container fed to the WebGL globe */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0"
-        aria-hidden
-      >
-        {size.width > 0 && size.height > 0 && (
-          <GlobeInner
-            companies={companies}
-            width={size.width}
-            height={size.height}
-            onSelect={setSelected}
-            onHover={setHovered}
-          />
-        )}
+      {/* Globe canvas — full-bleed, sits behind the headline */}
+      <div className="absolute inset-0 md:left-[18%]">
+        <GlassGlobe companies={companies} onSelect={setSelected} onHover={setHover} />
       </div>
-
-      {/* Legibility scrim on the left where the headline sits */}
-      <div
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-full md:w-3/5 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(90deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.72) 45%, rgba(255,255,255,0) 100%)',
-        }}
-      />
 
       {/* Headline overlay */}
       <div
@@ -91,52 +68,70 @@ export default function HeroGlobe() {
         <div className="max-w-xl pointer-events-auto">
           <p
             data-hero-anim
-            className="text-[#D4AF37] text-[11px] tracking-[0.42em] uppercase mb-6"
+            className="text-gold text-[11px] tracking-[0.42em] uppercase mb-6"
           >
             World Ballet &amp; Opera Calendar
           </p>
           <h1
             data-hero-anim
-            className="font-serif font-light text-[#1A1A1A] leading-[1.04] text-5xl sm:text-6xl lg:text-7xl"
+            className="font-serif leading-[1.04] text-5xl sm:text-6xl lg:text-7xl tracking-[0.02em]"
           >
-            Every stage.
+            <span className="text-gradient-gold">Every stage.</span>
             <br />
-            Every season.
+            <span className="text-gradient-gold">Every season.</span>
           </h1>
           <p
             data-hero-anim
-            className="mt-7 text-[#1A1A1A]/60 text-base md:text-lg leading-relaxed font-light max-w-md"
+            className="mt-7 text-ivory/60 text-base md:text-lg leading-relaxed font-light max-w-md"
           >
             Spin the globe to discover the world&rsquo;s great ballet and opera
-            companies — then plan your season, performance by performance.
+            companies &mdash; then plan your season, performance by performance.
           </p>
           <div data-hero-anim className="mt-9 flex flex-wrap gap-3">
             <Link
               href="/calendar"
-              className="px-7 py-3 bg-[#1B2A4A] text-white text-xs tracking-[0.2em] uppercase hover:bg-[#13203a] transition-colors duration-300"
+              className="px-7 py-3 rounded-full bg-gold text-stage text-xs tracking-[0.2em] uppercase font-medium transition-all duration-300 hover:bg-gold-bright hover:shadow-glow-gold"
             >
               Open the calendar
             </Link>
             <Link
               href="/companies"
-              className="px-7 py-3 border border-[#1A1A1A]/20 text-[#1A1A1A]/70 text-xs tracking-[0.2em] uppercase hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors duration-300"
+              className="glass-pill specular px-7 py-3 text-ivory/80 text-xs tracking-[0.2em] uppercase transition-all duration-300 hover:text-gold hover:border-[rgba(212,175,55,0.35)]"
             >
               Browse companies
             </Link>
           </div>
           <p
             data-hero-anim
-            className="mt-8 text-[#1A1A1A]/35 text-[11px] tracking-[0.18em] uppercase"
+            className="mt-8 text-ivory/38 text-[11px] tracking-[0.18em] uppercase"
           >
-            Drag to rotate · Tap a marker to explore
+            Drag to rotate &middot; Tap a marker to explore
           </p>
         </div>
       </div>
 
+      {/* Hover tooltip — fed by marker onHover, positioned over the canvas box */}
+      {hover && !selected && (
+        <div
+          className="glass-panel specular pointer-events-none absolute z-30 px-4 py-3 max-w-[220px] -translate-x-1/2 -translate-y-full"
+          style={{
+            left: `${hover.x * 100}%`,
+            top: `calc(${hover.y * 100}% - 14px)`,
+          }}
+        >
+          <p className="text-ivory font-serif text-base leading-snug">
+            {hover.company.name}
+          </p>
+          <p className="text-gold/80 text-[10px] tracking-[0.2em] uppercase mt-1">
+            {hover.company.city} &middot; {hover.company.country}
+          </p>
+        </div>
+      )}
+
       {/* Selected company card */}
       {selected && (
-        <div className="absolute z-20 bottom-6 right-6 left-6 sm:left-auto sm:w-[340px] animate-fade-in-up">
-          <div className="relative bg-white border border-[#1A1A1A]/[0.08] shadow-card-hover rounded-md overflow-hidden">
+        <div className="absolute z-30 bottom-6 right-6 left-6 sm:left-auto sm:w-[340px] animate-fade-in-up">
+          <div className="glass-card specular relative overflow-hidden">
             <div
               className="h-1 w-full"
               style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }}
@@ -144,24 +139,24 @@ export default function HeroGlobe() {
             <button
               onClick={() => setSelected(null)}
               aria-label="Close"
-              className="absolute top-3 right-3 text-[#1A1A1A]/30 hover:text-[#1A1A1A] transition-colors"
+              className="absolute top-3 right-3 text-ivory/40 hover:text-gold transition-colors"
             >
               <X size={18} />
             </button>
             <div className="p-6">
-              <p className="text-[#D4AF37] text-[10px] tracking-[0.3em] uppercase mb-3">
-                {typeLabel(selected.type)} · {selected.country}
+              <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-3">
+                {typeLabel(selected.type)} &middot; {selected.country}
               </p>
-              <h3 className="font-serif text-2xl font-light text-[#1A1A1A] mb-1">
+              <h3 className="font-serif text-2xl text-ivory mb-1">
                 {selected.name}
               </h3>
-              <p className="text-[#1A1A1A]/45 text-sm mb-5">
+              <p className="text-ivory/45 text-sm mb-5">
                 {selected.city}
                 {selected.venue ? ` · ${selected.venue}` : ''}
               </p>
               <Link
                 href={`/companies/${selected.slug}`}
-                className="inline-flex items-center gap-1.5 text-[#1B2A4A] text-xs tracking-[0.2em] uppercase hover:text-[#D4AF37] transition-colors"
+                className="inline-flex items-center gap-1.5 text-gold text-xs tracking-[0.2em] uppercase hover:text-gold-bright transition-colors"
               >
                 View company
                 <ArrowUpRight size={14} />
