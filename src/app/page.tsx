@@ -69,7 +69,7 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="py-16 text-center text-ivory/40 text-sm glass-panel">
+            <p className="py-16 text-center text-ivory/60 text-sm glass-panel">
               The new season is being announced. Check back soon.
             </p>
           )}
@@ -82,7 +82,7 @@ export default async function HomePage() {
         className="relative py-20 md:py-28 px-6 md:px-10 bg-stage-elevated"
         style={{
           backgroundImage:
-            'radial-gradient(ellipse at 80% 0%, rgba(27,42,74,0.18) 0%, rgba(10,9,8,0) 55%)',
+            'radial-gradient(ellipse at 80% 0%, rgba(27,42,74,0.10) 0%, transparent 55%)',
         }}
       >
         <div className="max-w-7xl mx-auto">
@@ -122,18 +122,18 @@ export default async function HomePage() {
             {[
               {
                 step: '01',
-                title: 'Discover by globe',
-                body: 'Spin the world and find companies in every cultural capital, from London to Tokyo.',
+                title: 'Search by one word',
+                body: 'Type a work, an artist, or a city — and surface every matching performance on Earth instantly.',
               },
               {
                 step: '02',
-                title: 'Plan by calendar',
-                body: 'Browse the full season month by month, filtered to ballet or opera, country or company.',
+                title: 'Filter the world',
+                body: 'Narrow results by date, price, discipline, company, or choreographer across every major stage.',
               },
               {
                 step: '03',
-                title: 'Follow companies',
-                body: 'Open a company to read its story and see every production of the 2026–27 season.',
+                title: 'Follow & never miss',
+                body: 'Get on-sale alerts for your favourite companies and works the moment tickets go live. Coming soon.',
               },
             ].map((item) => (
               <div key={item.step} className="glass-card specular p-10">

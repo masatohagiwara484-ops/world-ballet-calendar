@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { getPerformances } from '@/lib/data'
 import { formatRange } from '@/components/shared/format'
-import { gradientFor, monogram, KIND_LABEL, bookingUrl } from '@/components/shared/design'
+import { gradientFor, monogram, KIND_LABEL, bookingUrl, creditLine } from '@/components/shared/design'
 import type { PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -95,65 +95,96 @@ export default async function PerformancePage({ params }: Props) {
             {p.title}
           </h1>
           {p.title_original && p.title_original !== p.title && (
-            <p className="mt-3 text-white/55 text-lg font-light italic">
+            <p className="mt-3 text-white/60 text-lg font-light italic">
               {p.title_original}
             </p>
           )}
-          <p className="mt-7 text-white/80 text-lg">
+          <p className="mt-7 text-white/85 text-lg font-medium">
             {formatRange(p.start_date, p.end_date)}
           </p>
+          {venue && (
+            <p className="mt-2 text-white/65 text-sm">{venue}</p>
+          )}
+          {creditLine(p) && (
+            <p className="mt-4 text-white/50 text-sm tracking-wide">{creditLine(p)}</p>
+          )}
+          {p.price_range && (
+            <p className="mt-3 text-gold text-sm font-medium">{p.price_range}</p>
+          )}
+          {ticket && (
+            <div className="mt-8">
+              <a
+                href={ticket}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold text-[#111] font-semibold text-xs tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold-strong transition-all"
+              >
+                Book tickets
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Detail body */}
-      <section className="py-16 md:py-20 px-6 md:px-10">
+      <section className="py-16 md:py-20 px-6 md:px-10 bg-stage-raised">
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_16rem] gap-12">
           <div>
             {p.description && (
-              <p className="font-serif text-xl md:text-2xl text-ivory/80 leading-relaxed md:leading-loose mb-12">
+              <p className="font-serif text-xl md:text-2xl text-ivory/75 leading-relaxed md:leading-loose mb-12">
                 {p.description}
               </p>
             )}
 
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-7 gap-x-10">
-              <Detail label="Company" value={p.company.name} href={`/companies/${p.company.slug}`} />
-              {venue && <Detail label="Venue" value={venue} />}
-              <Detail label="Dates" value={formatRange(p.start_date, p.end_date)} />
-              {p.composer && <Detail label="Composer" value={p.composer} />}
-              {p.choreographer && <Detail label="Choreographer" value={p.choreographer} />}
-              {p.price_range && <Detail label="Tickets from" value={p.price_range} />}
-            </dl>
+            {/* Key facts strip */}
+            <div className="glass-panel p-6 mb-10">
+              <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-5">Production details</p>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-7 gap-x-10">
+                <Detail label="Company" value={p.company.name} href={`/companies/${p.company.slug}`} />
+                {venue && <Detail label="Venue" value={venue} />}
+                <Detail label="Dates" value={formatRange(p.start_date, p.end_date)} />
+                <Detail label="Discipline" value={KIND_LABEL[p.kind]} />
+                {p.composer && <Detail label="Composer" value={p.composer} />}
+                {p.choreographer && <Detail label="Choreography" value={p.choreographer} />}
+                {p.price_range && <Detail label="Tickets from" value={p.price_range} />}
+              </dl>
+            </div>
           </div>
 
           {/* Booking aside */}
           <aside className="md:sticky md:top-28 h-fit">
             <div className="glass-panel specular p-6">
-              <p className="text-[10px] tracking-[0.3em] uppercase text-ivory/40 mb-2">
+              <p className="text-[10px] tracking-[0.3em] uppercase text-ivory/50 mb-2">
                 Reserve your seat
               </p>
-              <p className="font-serif text-xl text-ivory mb-5">
+              <p className="font-serif text-xl text-ivory mb-1">
                 {p.company.name}
               </p>
+              {p.price_range && (
+                <p className="text-gold-deep text-sm mb-5">{p.price_range}</p>
+              )}
+              {!p.price_range && <div className="mb-5" />}
               {ticket ? (
                 <a
                   href={ticket}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-full bg-gold text-stage font-medium text-xs tracking-[0.2em] uppercase hover:shadow-glow-gold transition-all"
+                  className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-full bg-gold text-stage font-semibold text-xs tracking-[0.2em] uppercase hover:shadow-glow-gold hover:bg-gold-bright transition-all"
                 >
                   Book tickets
                   <ExternalLink size={14} />
                 </a>
               ) : (
-                <p className="text-ivory/62 text-sm">
+                <p className="text-ivory/62 text-sm leading-relaxed">
                   Booking opens closer to the performance dates.
                 </p>
               )}
               <Link
                 href={`/companies/${p.company.slug}`}
-                className="block text-center mt-4 text-ivory/62 text-[11px] tracking-[0.18em] uppercase hover:text-gold transition-colors"
+                className="block text-center mt-5 text-ivory/55 text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep transition-colors"
               >
-                View company
+                View company &rarr;
               </Link>
             </div>
           </aside>

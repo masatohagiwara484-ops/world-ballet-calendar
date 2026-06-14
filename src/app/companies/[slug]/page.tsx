@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
 import { gradientFor, monogram, typeLabel } from '@/components/shared/design'
@@ -117,7 +118,7 @@ export default async function CompanyPage({ params }: Props) {
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-white/70 text-sm">
+          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-white/75 text-sm">
             <span>{company.city}</span>
             {company.venue && <span>{company.venue}</span>}
             {company.founded_year && <span>Founded {company.founded_year}</span>}
@@ -143,7 +144,7 @@ export default async function CompanyPage({ params }: Props) {
                   href={`https://instagram.com/${company.instagram.replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-pill px-6 py-3 border border-ivory/30 text-ivory/80 text-[11px] tracking-[0.2em] uppercase hover:border-ivory/60 transition-colors"
+                  className="glass-pill px-6 py-3 border border-white/30 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:border-white/60 transition-colors"
                 >
                   Instagram
                 </a>
@@ -164,16 +165,57 @@ export default async function CompanyPage({ params }: Props) {
         </section>
       )}
 
+      {/* Key facts strip */}
+      {(company.founded_year || company.venue || company.city || company.country) && (
+        <section className="py-10 px-6 md:px-10 bg-stage-deep">
+          <div className="max-w-5xl mx-auto">
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-8 gap-x-8">
+              {company.founded_year && (
+                <div>
+                  <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Founded</dt>
+                  <dd className="font-serif text-2xl text-ivory">{company.founded_year}</dd>
+                </div>
+              )}
+              {company.venue && (
+                <div>
+                  <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Venue</dt>
+                  <dd className="text-ivory text-sm leading-snug">{company.venue}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">City</dt>
+                <dd className="text-ivory text-sm">{company.city}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Country</dt>
+                <dd className="text-ivory text-sm">{company.country}</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+      )}
+
       {/* Season */}
       <section className="py-16 md:py-24 px-6 md:px-10">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-baseline justify-between mb-8">
-            <h2 className="font-serif text-3xl md:text-4xl text-ivory">
-              2026 – 27 Season
-            </h2>
-            <span className="text-ivory/40 text-sm">
-              {performances.length} {performances.length === 1 ? 'production' : 'productions'}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 mb-8">
+            <div>
+              <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-2">Programme</p>
+              <h2 className="font-serif text-3xl md:text-4xl text-ivory">
+                2026 – 27 Season
+              </h2>
+            </div>
+            <div className="flex items-center gap-6">
+              <span className="text-ivory/50 text-sm">
+                {performances.length} {performances.length === 1 ? 'production' : 'productions'}
+              </span>
+              <Link
+                href={`/search?company_slug=${company.slug}`}
+                className="glass-pill px-5 py-2 text-[11px] tracking-[0.18em] uppercase text-gold-deep border border-gold/40 hover:border-gold hover:text-gold transition-colors"
+              >
+                Search all &rarr;
+              </Link>
+            </div>
           </div>
 
           {performances.length > 0 ? (

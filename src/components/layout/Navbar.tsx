@@ -45,14 +45,23 @@ export default function Navbar() {
           'pointer-events-auto mx-auto max-w-5xl rounded-glass specular',
           'border transition-all duration-500',
           scrolled || open
-            ? 'bg-white/[0.07] backdrop-blur-[28px] backdrop-saturate-150 border-white/[0.14] shadow-[0_16px_48px_rgba(0,0,0,0.45)]'
-            : 'bg-white/[0.04] backdrop-blur-[20px] backdrop-saturate-150 border-white/[0.10] shadow-[0_8px_28px_rgba(0,0,0,0.35)]'
+            ? [
+                'backdrop-blur-[28px] backdrop-saturate-[140%]',
+                'shadow-[0_16px_48px_rgba(26,22,15,0.14),inset_0_1px_0_rgba(255,255,255,0.95)]',
+                'bg-white/80 border-[rgba(26,22,15,0.10)]',
+              ]
+            : [
+                'backdrop-blur-[20px] backdrop-saturate-[140%]',
+                'shadow-[0_8px_28px_rgba(26,22,15,0.09),inset_0_1px_0_rgba(255,255,255,0.85)]',
+                'bg-white/62 border-[rgba(26,22,15,0.08)]',
+              ]
         )}
       >
         <div className="px-5 sm:px-7 py-3.5 flex items-center justify-between">
+          {/* Brand wordmark in Cormorant / serif */}
           <Link
             href="/"
-            className="font-serif text-base sm:text-lg tracking-[0.18em] uppercase text-ivory hover:text-gold transition-colors duration-300"
+            className="font-serif text-base sm:text-lg tracking-[0.18em] uppercase text-ivory hover:text-gold-deep transition-colors duration-300"
           >
             Ballet &amp; Opera
           </Link>
@@ -66,20 +75,20 @@ export default function Navbar() {
                 className={clsx(
                   'relative text-[11px] tracking-[0.22em] uppercase transition-colors duration-300',
                   isActive(link.href)
-                    ? 'text-gold'
-                    : 'text-ivory/55 hover:text-ivory'
+                    ? 'text-gold-deep'
+                    : 'text-ivory/70 hover:text-ivory'
                 )}
               >
                 {link.label}
                 {isActive(link.href) && (
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-px w-5 bg-gold shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-px w-5 bg-gold-deep" />
                 )}
               </Link>
             ))}
           </div>
 
           <button
-            className="md:hidden text-ivory p-1 hover:text-gold transition-colors duration-300"
+            className="md:hidden text-ivory p-1 hover:text-gold-deep transition-colors duration-300"
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -88,8 +97,17 @@ export default function Navbar() {
           </button>
         </div>
 
+        {/* Mobile menu — solid light background for readability */}
         {open && (
-          <div className="md:hidden border-t border-white/[0.10] px-5 pb-3 pt-1">
+          <div
+            className="md:hidden px-5 pb-4 pt-1"
+            style={{
+              borderTop: '1px solid rgba(26,22,15,0.09)',
+              background: 'rgba(255,255,255,0.96)',
+              borderBottomLeftRadius: '20px',
+              borderBottomRightRadius: '20px',
+            }}
+          >
             <div className="flex flex-col">
               {LINKS.map((link) => (
                 <Link
@@ -97,10 +115,11 @@ export default function Navbar() {
                   href={link.href}
                   aria-current={isActive(link.href) ? 'page' : undefined}
                   className={clsx(
-                    'py-3 text-sm tracking-[0.18em] uppercase border-b border-white/[0.07] last:border-0 transition-colors duration-300',
+                    'py-3 text-sm tracking-[0.18em] uppercase transition-colors duration-300',
+                    'border-b last:border-0',
                     isActive(link.href)
-                      ? 'text-gold'
-                      : 'text-ivory/70 hover:text-ivory'
+                      ? 'text-gold-deep border-[rgba(26,22,15,0.08)]'
+                      : 'text-ivory/80 hover:text-ivory border-[rgba(26,22,15,0.06)]'
                   )}
                 >
                   {link.label}

@@ -37,8 +37,8 @@ export default function SortControl({ current = 'date' }: Props) {
           className={clsx(
             'px-3.5 py-1.5 text-[11px] tracking-[0.18em] uppercase rounded-full transition-all duration-200',
             current === opt.value
-              ? 'bg-gold/[0.15] border border-gold/40 text-gold'
-              : 'text-ivory/50 hover:text-ivory/80 border border-white/[0.08] hover:border-white/[0.16]'
+              ? 'bg-gold/[0.15] border border-gold/40 text-gold-deep'
+              : 'text-ivory/60 hover:text-ivory border border-black/[0.10] hover:border-black/[0.20]'
           )}
         >
           {opt.label}

@@ -39,8 +39,8 @@ export default function Pagination({ page, pageSize, total }: Props) {
         className={clsx(
           'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-all duration-200',
           hasPrev
-            ? 'glass-pill text-ivory/70 hover:text-ivory hover:border-white/[0.2] cursor-pointer'
-            : 'text-ivory/20 border border-white/[0.06] cursor-not-allowed'
+            ? 'glass-pill text-ivory/70 hover:text-ivory hover:border-black/[0.18] cursor-pointer'
+            : 'text-ivory/30 border border-black/[0.08] cursor-not-allowed'
         )}
       >
         <ChevronLeft size={16} />
@@ -59,8 +59,8 @@ export default function Pagination({ page, pageSize, total }: Props) {
         className={clsx(
           'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-all duration-200',
           hasNext
-            ? 'glass-pill text-ivory/70 hover:text-ivory hover:border-white/[0.2] cursor-pointer'
-            : 'text-ivory/20 border border-white/[0.06] cursor-not-allowed'
+            ? 'glass-pill text-ivory/70 hover:text-ivory hover:border-black/[0.18] cursor-pointer'
+            : 'text-ivory/30 border border-black/[0.08] cursor-not-allowed'
         )}
       >
         Next

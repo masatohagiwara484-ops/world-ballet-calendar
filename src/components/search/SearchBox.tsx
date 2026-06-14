@@ -139,12 +139,12 @@ export default function SearchBox({ size = 'default', initialQuery = '' }: Props
             aria-controls={open ? 'search-suggestions' : undefined}
             aria-activedescendant={active >= 0 ? `suggestion-${active}` : undefined}
             className={clsx(
-              'w-full glass-panel',
-              'bg-white/[0.04] hover:bg-white/[0.07] focus:bg-white/[0.07]',
-              'text-ivory placeholder:text-ivory/38',
-              'border border-white/[0.12] focus:border-gold/50',
+              'w-full',
+              'bg-white hover:bg-white focus:bg-white',
+              'text-ivory placeholder:text-ivory/40',
+              'border border-black/[0.12] focus:border-gold/60',
+              'shadow-sm focus:shadow-[0_0_0_2px_rgba(212,175,55,0.25),0_8px_24px_rgba(0,0,0,0.10)]',
               'outline-none transition-all duration-300',
-              'focus:shadow-[0_0_0_2px_rgba(212,175,55,0.35),0_16px_48px_rgba(0,0,0,0.45)]',
               isHero
                 ? 'text-lg pl-14 pr-12 py-5 rounded-glass'
                 : 'text-sm pl-11 pr-9 py-3.5 rounded-glass'
@@ -175,7 +175,7 @@ export default function SearchBox({ size = 'default', initialQuery = '' }: Props
           id="search-suggestions"
           role="listbox"
           aria-label="Suggestions"
-          className="absolute top-full mt-2 left-0 right-0 z-50 glass-panel overflow-hidden animate-fade-in"
+          className="absolute top-full mt-2 left-0 right-0 z-50 bg-white border border-black/[0.10] rounded-glass shadow-lg overflow-hidden animate-fade-in"
         >
           {suggestions.map((s, i) => (
             <li
@@ -185,8 +185,8 @@ export default function SearchBox({ size = 'default', initialQuery = '' }: Props
               aria-selected={i === active}
               className={clsx(
                 'flex items-center gap-3 px-5 py-3.5 cursor-pointer transition-colors duration-150',
-                'border-b border-white/[0.06] last:border-0',
-                i === active ? 'bg-gold/[0.12]' : 'hover:bg-white/[0.06]'
+                'border-b border-black/[0.06] last:border-0',
+                i === active ? 'bg-gold/[0.10]' : 'hover:bg-black/[0.03]'
               )}
               onMouseDown={(e) => {
                 e.preventDefault()
@@ -202,7 +202,7 @@ export default function SearchBox({ size = 'default', initialQuery = '' }: Props
                   <span className="ml-2 text-ivory/40 text-xs">{s.sublabel}</span>
                 )}
               </div>
-              <span className="text-[10px] tracking-[0.22em] uppercase text-ivory/30 flex-shrink-0">
+              <span className="text-[10px] tracking-[0.22em] uppercase text-ivory/40 flex-shrink-0">
                 {TYPE_LABEL[s.type]}
               </span>
             </li>

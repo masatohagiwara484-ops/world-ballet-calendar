@@ -1,6 +1,5 @@
 import type { MetadataRoute } from 'next'
 import { getCompanies, getPerformances } from '@/lib/data'
-
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

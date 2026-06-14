@@ -20,7 +20,7 @@ export default function CompanyCard({ company }: { company: Company }) {
         <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-3">
           {company.city} · {company.country}
         </p>
-        <h3 className="font-serif text-xl text-ivory group-hover:text-gold-bright transition-colors">
+        <h3 className="font-serif text-xl text-ivory group-hover:text-gold-deep transition-colors">
           {company.name}
         </h3>
         {company.description_short && (

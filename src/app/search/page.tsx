@@ -142,7 +142,7 @@ export default function SearchPage({ searchParams }: PageProps) {
 
         {/* Results count + Sort */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-          <p className="text-ivory/55 text-sm">
+          <p className="text-ivory/60 text-sm">
             <span className="text-ivory font-medium">{result.total}</span>
             {' '}performance{result.total !== 1 ? 's' : ''}
             {q ? ` matching "${q}"` : ''}
@@ -168,8 +168,8 @@ export default function SearchPage({ searchParams }: PageProps) {
               </div>
             ) : (
               <div className="glass-panel p-16 text-center">
-                <p className="font-serif text-2xl text-ivory/40 mb-3">No performances found</p>
-                <p className="text-ivory/30 text-sm">
+                <p className="font-serif text-2xl text-ivory/60 mb-3">No performances found</p>
+                <p className="text-ivory/50 text-sm">
                   No performances match — try widening your filters.
                 </p>
               </div>

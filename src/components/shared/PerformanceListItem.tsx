@@ -16,19 +16,19 @@ export default function PerformanceListItem({ performance: p, hideCompany }: Pro
   return (
     <Link
       href={`/performances/${p.id}`}
-      className="group grid grid-cols-[auto_1fr_auto] items-start gap-5 sm:gap-8 py-7 border-t border-white/[0.08] hover:bg-white/[0.04] transition-colors duration-300 px-3 -mx-3 rounded-glass-sm"
+      className="group grid grid-cols-[auto_1fr_auto] items-start gap-5 sm:gap-8 py-7 border-t border-[rgba(26,22,15,0.10)] hover:bg-gold/[0.04] transition-colors duration-300 px-3 -mx-3 rounded-glass-sm"
     >
       <div className="pt-1 w-28 sm:w-36 shrink-0">
         <p className="text-gold text-sm font-medium tabular-nums">
           {formatRange(p.start_date, p.end_date)}
         </p>
-        <p className="mt-1 text-ivory/40 text-[10px] tracking-[0.28em] uppercase">
+        <p className="mt-1 text-ivory/50 text-[10px] tracking-[0.28em] uppercase">
           {KIND_LABEL[p.kind]}
         </p>
       </div>
 
       <div className="min-w-0">
-        <h3 className="font-serif text-xl sm:text-2xl text-ivory group-hover:text-gold-bright transition-colors">
+        <h3 className="font-serif text-xl sm:text-2xl text-ivory group-hover:text-gold-deep transition-colors">
           {p.title}
         </h3>
         {!hideCompany && (

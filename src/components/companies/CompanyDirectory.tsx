@@ -102,8 +102,8 @@ export default function CompanyDirectory({ companies }: { companies: Company[] }
         </label>
       </div>
 
-      <p className="text-ivory/40 text-xs tracking-[0.15em] uppercase mb-6">
-        {filtered.length} {filtered.length === 1 ? 'company' : 'companies'}
+      <p className="text-ivory/38 text-[10px] tracking-[0.22em] uppercase mb-8">
+        {filtered.length} {filtered.length === 1 ? 'company' : 'companies'} found
       </p>
 
       {filtered.length > 0 ? (

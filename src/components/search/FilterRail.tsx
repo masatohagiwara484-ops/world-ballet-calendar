@@ -73,19 +73,19 @@ function FacetSection({ title, facets, activeValue, paramKey, onToggle }: FacetS
   if (facets.length === 0) return null
 
   return (
-    <div className="border-b border-white/[0.08] pb-4 mb-4">
+    <div className="border-b border-black/[0.07] pb-4 mb-4">
       <button
         type="button"
         onClick={() => setSectionOpen((v) => !v)}
         className="flex items-center justify-between w-full mb-3 group"
         aria-expanded={sectionOpen}
       >
-        <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory/80 transition-colors">
+        <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory transition-colors">
           {title}
         </span>
         <ChevronDown
           size={14}
-          className={clsx('text-ivory/30 transition-transform duration-200', sectionOpen ? 'rotate-180' : '')}
+          className={clsx('text-ivory/40 transition-transform duration-200', sectionOpen ? 'rotate-180' : '')}
         />
       </button>
 
@@ -103,12 +103,12 @@ function FacetSection({ title, facets, activeValue, paramKey, onToggle }: FacetS
                 className={clsx(
                   'flex items-center justify-between w-full px-3 py-2 rounded-glass-sm text-sm transition-all duration-200',
                   isActive
-                    ? 'bg-gold/[0.12] border border-gold/30 text-gold'
-                    : 'text-ivory/62 hover:bg-white/[0.06] hover:text-ivory border border-transparent'
+                    ? 'bg-gold/[0.10] border border-gold/30 text-gold-deep'
+                    : 'text-ivory/70 hover:bg-black/[0.04] hover:text-ivory border border-transparent'
                 )}
               >
                 <span className="truncate text-left">{f.label}</span>
-                <span className={clsx('ml-2 text-xs flex-shrink-0', isActive ? 'text-gold/70' : 'text-ivory/30')}>
+                <span className={clsx('ml-2 text-xs flex-shrink-0', isActive ? 'text-gold-deep/70' : 'text-ivory/40')}>
                   {f.count}
                 </span>
               </button>
@@ -143,7 +143,7 @@ export default function FilterRail({ facets, filters }: Props) {
     filters.price_max != null
 
   const rail = (
-    <div className="glass-panel p-5 space-y-0">
+    <div className="bg-white border border-black/[0.08] rounded-glass shadow-sm p-5 space-y-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <p className="text-[11px] tracking-[0.32em] uppercase text-ivory/55">Filters</p>
@@ -160,7 +160,7 @@ export default function FilterRail({ facets, filters }: Props) {
       </div>
 
       {/* Discipline */}
-      <div className="border-b border-white/[0.08] pb-4 mb-4">
+      <div className="border-b border-black/[0.07] pb-4 mb-4">
         <p className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 mb-3">Discipline</p>
         <div className="space-y-1">
           {KIND_OPTIONS.map((opt) => {
@@ -177,13 +177,13 @@ export default function FilterRail({ facets, filters }: Props) {
                 className={clsx(
                   'flex items-center justify-between w-full px-3 py-2 rounded-glass-sm text-sm transition-all duration-200',
                   isActive
-                    ? 'bg-gold/[0.12] border border-gold/30 text-gold'
-                    : 'text-ivory/62 hover:bg-white/[0.06] hover:text-ivory border border-transparent'
+                    ? 'bg-gold/[0.10] border border-gold/30 text-gold-deep'
+                    : 'text-ivory/70 hover:bg-black/[0.04] hover:text-ivory border border-transparent'
                 )}
               >
                 <span>{opt.label}</span>
                 {fc && (
-                  <span className={clsx('text-xs', isActive ? 'text-gold/70' : 'text-ivory/30')}>
+                  <span className={clsx('text-xs', isActive ? 'text-gold-deep/70' : 'text-ivory/40')}>
                     {fc.count}
                   </span>
                 )}
@@ -200,25 +200,25 @@ export default function FilterRail({ facets, filters }: Props) {
       <FacetSection title="Composer" facets={facets.composer} activeValue={filters.composer_slug} paramKey="composer" onToggle={toggle} />
 
       {/* Date range */}
-      <div className="border-b border-white/[0.08] pb-4 mb-4">
+      <div className="border-b border-black/[0.07] pb-4 mb-4">
         <button
           type="button"
           onClick={() => setDateOpen((v) => !v)}
           className="flex items-center justify-between w-full mb-3 group"
           aria-expanded={dateOpen}
         >
-          <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory/80 transition-colors">
+          <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory transition-colors">
             Date range
           </span>
           <ChevronDown
             size={14}
-            className={clsx('text-ivory/30 transition-transform duration-200', dateOpen ? 'rotate-180' : '')}
+            className={clsx('text-ivory/40 transition-transform duration-200', dateOpen ? 'rotate-180' : '')}
           />
         </button>
         {dateOpen && (
           <div className="space-y-2">
             <div>
-              <label htmlFor="filter-start" className="text-[10px] tracking-[0.24em] uppercase text-ivory/38 mb-1 block">
+              <label htmlFor="filter-start" className="text-[10px] tracking-[0.24em] uppercase text-ivory/50 mb-1 block">
                 From
               </label>
               <input
@@ -226,11 +226,11 @@ export default function FilterRail({ facets, filters }: Props) {
                 type="date"
                 value={filters.start_date ?? ''}
                 onChange={(e) => push('start', e.target.value || null)}
-                className="w-full bg-white/[0.04] border border-white/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 focus:bg-white/[0.07] transition-all"
+                className="w-full bg-white border border-black/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 focus:bg-white transition-all"
               />
             </div>
             <div>
-              <label htmlFor="filter-end" className="text-[10px] tracking-[0.24em] uppercase text-ivory/38 mb-1 block">
+              <label htmlFor="filter-end" className="text-[10px] tracking-[0.24em] uppercase text-ivory/50 mb-1 block">
                 To
               </label>
               <input
@@ -238,7 +238,7 @@ export default function FilterRail({ facets, filters }: Props) {
                 type="date"
                 value={filters.end_date ?? ''}
                 onChange={(e) => push('end', e.target.value || null)}
-                className="w-full bg-white/[0.04] border border-white/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 focus:bg-white/[0.07] transition-all"
+                className="w-full bg-white border border-black/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -253,12 +253,12 @@ export default function FilterRail({ facets, filters }: Props) {
           className="flex items-center justify-between w-full mb-3 group"
           aria-expanded={priceOpen}
         >
-          <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory/80 transition-colors">
+          <span className="text-[11px] tracking-[0.32em] uppercase text-ivory/55 group-hover:text-ivory transition-colors">
             Max price (EUR)
           </span>
           <ChevronDown
             size={14}
-            className={clsx('text-ivory/30 transition-transform duration-200', priceOpen ? 'rotate-180' : '')}
+            className={clsx('text-ivory/40 transition-transform duration-200', priceOpen ? 'rotate-180' : '')}
           />
         </button>
         {priceOpen && (
@@ -266,10 +266,10 @@ export default function FilterRail({ facets, filters }: Props) {
             value={filters.price_max?.toString() ?? ''}
             onChange={(e) => push('price_max', e.target.value || null)}
             aria-label="Maximum price in EUR"
-            className="w-full bg-white/[0.04] border border-white/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 transition-all appearance-none cursor-pointer"
+            className="w-full bg-white border border-black/[0.12] rounded-glass-sm text-ivory/70 text-sm px-3 py-2 focus:outline-none focus:border-gold/40 transition-all appearance-none cursor-pointer"
           >
             {PRICE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} style={{ background: '#0A0908' }}>
+              <option key={opt.value} value={opt.value} style={{ background: '#FFFFFF' }}>
                 {opt.label}
               </option>
             ))}

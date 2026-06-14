@@ -269,7 +269,7 @@ function GridView({
             </div>
           ))}
         </div>
-        <div className="glass-panel specular grid grid-cols-7 gap-px overflow-hidden p-px">
+        <div className="glass-panel specular grid grid-cols-7 gap-px overflow-hidden p-px bg-stage-deep">
           {days.map((day) => {
             const iso = format(day, 'yyyy-MM-dd')
             const inMonth = isSameMonth(day, month)
@@ -283,11 +283,11 @@ function GridView({
                 aria-label={`${format(day, 'd MMMM yyyy')}${hasPerf ? `, ${list.length} performances` : ''}`}
                 disabled={!hasPerf}
                 className={clsx(
-                  'relative min-h-[112px] text-left p-2.5 transition-colors border border-white/[0.06]',
-                  inMonth ? 'bg-white/[0.02]' : 'bg-transparent',
-                  hasPerf && 'hover:bg-gold/[0.07] cursor-pointer',
+                  'relative min-h-[112px] text-left p-2.5 transition-colors border border-[rgba(26,22,15,0.07)]',
+                  inMonth ? 'bg-stage-elevated' : 'bg-stage',
+                  hasPerf && 'hover:bg-gold-pale/60 cursor-pointer',
                   isToday && 'ring-1 ring-inset ring-gold/70',
-                  selectedDay === iso && 'ring-1 ring-inset ring-gold shadow-[inset_0_0_24px_rgba(212,175,55,0.22)]'
+                  selectedDay === iso && 'ring-1 ring-inset ring-gold bg-gold-pale/40 shadow-[inset_0_0_24px_rgba(212,175,55,0.10)]'
                 )}
               >
                 <span
@@ -332,7 +332,7 @@ function GridView({
               <button
                 key={iso}
                 onClick={() => setSelectedDay(iso)}
-                className="w-full text-left flex gap-4 py-4 border-b border-white/[0.08]"
+                className="w-full text-left flex gap-4 py-4 border-b border-[rgba(26,22,15,0.10)] hover:bg-gold/[0.04] transition-colors rounded-sm"
               >
                 <div className="w-12 shrink-0 text-center">
                   <p className="font-serif text-2xl text-ivory leading-none">
@@ -393,13 +393,13 @@ function SeasonView({
               <a
                 key={p.id}
                 href={`/performances/${p.id}`}
-                className="group grid grid-cols-[7rem_1fr] sm:grid-cols-[10rem_1fr] gap-4 sm:gap-8 py-5 border-b border-white/[0.08] last:border-0 hover:bg-white/[0.04] transition-colors px-3 -mx-3 rounded-glass-sm"
+                className="group grid grid-cols-[7rem_1fr] sm:grid-cols-[10rem_1fr] gap-4 sm:gap-8 py-5 border-b border-[rgba(26,22,15,0.10)] last:border-0 hover:bg-gold/[0.04] transition-colors px-3 -mx-3 rounded-glass-sm"
               >
                 <p className="text-gold text-sm tabular-nums pt-0.5">
                   {formatRange(p.start_date, p.end_date)}
                 </p>
                 <div>
-                  <h3 className="font-serif text-lg text-ivory group-hover:text-gold-bright transition-colors">
+                  <h3 className="font-serif text-lg text-ivory group-hover:text-gold-deep transition-colors">
                     {p.title}
                   </h3>
                   <p className="text-ivory/62 text-sm mt-0.5">
@@ -435,12 +435,12 @@ function DayPanel({
       aria-label={`Performances on ${heading}`}
     >
       <div
-        className="absolute inset-0 bg-stage-deep/70 backdrop-blur-[3px]"
+        className="absolute inset-0 bg-midnight/25 backdrop-blur-[3px]"
         onClick={onClose}
         aria-hidden
       />
       <div className="glass-panel specular relative mt-auto sm:mt-0 w-full sm:w-[420px] max-h-[80vh] sm:max-h-none sm:h-full overflow-y-auto animate-fade-in-up sm:animate-fade-in rounded-t-glass-lg sm:rounded-none">
-        <div className="sticky top-0 z-10 bg-stage-elevated/80 backdrop-blur-glass border-b border-white/[0.1] px-6 py-5 flex items-start justify-between">
+        <div className="sticky top-0 z-10 bg-stage-elevated/90 backdrop-blur-glass border-b border-[rgba(26,22,15,0.10)] px-6 py-5 flex items-start justify-between">
           <div>
             <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">
               {list.length} {list.length === 1 ? 'performance' : 'performances'}
@@ -459,13 +459,13 @@ function DayPanel({
           {list.map((p) => {
             const url = bookingUrl(p)
             return (
-              <div key={p.id} className="py-6 border-b border-white/[0.08] last:border-0">
+              <div key={p.id} className="py-6 border-b border-[rgba(26,22,15,0.10)] last:border-0">
                 <p className="text-gold text-[10px] tracking-[0.28em] uppercase mb-2">
                   {KIND_LABEL[p.kind]} · {formatRange(p.start_date, p.end_date)}
                 </p>
                 <a
                   href={`/performances/${p.id}`}
-                  className="font-serif text-xl text-ivory hover:text-gold-bright transition-colors block"
+                  className="font-serif text-xl text-ivory hover:text-gold-deep transition-colors block"
                 >
                   {p.title}
                 </a>

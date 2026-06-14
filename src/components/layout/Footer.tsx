@@ -16,32 +16,55 @@ export default function Footer() {
             <p className="font-serif text-xl tracking-[0.06em] text-gradient-gold">
               World Ballet &amp; Opera Calendar
             </p>
-            <p className="mt-4 text-ivory/60 text-sm leading-relaxed">
+            <p className="mt-4 text-ivory/70 text-sm leading-relaxed">
               The world&rsquo;s great ballet and opera, gathered into one
               living season — discover by globe, plan by calendar, follow the
               companies you love.
             </p>
           </div>
           <nav aria-label="Footer" className="flex flex-col gap-3">
-            <p className="text-ivory/40 text-[10px] tracking-[0.3em] uppercase mb-1">
+            <p
+              className="mb-1"
+              style={{
+                color: 'rgba(26,26,26,0.45)',
+                fontSize: '10px',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+              }}
+            >
               Explore
             </p>
             {NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-ivory/65 text-sm hover:text-gold transition-colors duration-300 w-fit"
+                className="text-ivory/70 text-sm hover:text-gold-deep transition-colors duration-300 w-fit"
               >
                 {item.label}
               </Link>
             ))}
           </nav>
         </div>
-        <div className="mt-12 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-ivory/35 text-xs">
+        <div
+          className="mt-12 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          style={{ borderTop: '1px solid rgba(26,22,15,0.10)' }}
+        >
+          <p
+            style={{
+              color: 'rgba(26,26,26,0.45)',
+              fontSize: '12px',
+            }}
+          >
             World Ballet &amp; Opera Calendar &copy; 2026
           </p>
-          <p className="text-ivory/35 text-[10px] tracking-[0.2em] uppercase">
+          <p
+            style={{
+              color: 'rgba(26,26,26,0.40)',
+              fontSize: '10px',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+            }}
+          >
             Designed for lovers of the stage
           </p>
         </div>
