@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getCompanies, getPerformances } from '@/lib/data'
-import HeroGlobe from '@/components/globe/HeroGlobe'
+import SearchHero from '@/components/home/SearchHero'
 import CompanyCard from '@/components/shared/CompanyCard'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 
@@ -34,7 +34,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroGlobe />
+      <SearchHero />
 
       {/* This Week on Stage */}
       <section

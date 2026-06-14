@@ -7,7 +7,8 @@ import { Menu, X } from 'lucide-react'
 import clsx from 'clsx'
 
 const LINKS = [
-  { href: '/', label: 'Globe' },
+  { href: '/', label: 'Home' },
+  { href: '/search', label: 'Search' },
   { href: '/calendar', label: 'Calendar' },
   { href: '/companies', label: 'Companies' },
   { href: '/partners', label: 'Partners' },
