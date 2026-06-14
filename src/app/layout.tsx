@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { Manrope, Italiana } from 'next/font/google'
+import { Manrope, Cormorant_Garamond } from 'next/font/google'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ProjectNameLoader from '@/components/loaders/ProjectNameLoader'
 import './globals.css'
 
-// Body / UI — Manrope (variable weights 300–700)
+// Body / UI — Manrope (refined geometric sans, weights 300–700)
 const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-sans',
@@ -13,12 +13,12 @@ const manrope = Manrope({
   weight: ['300', '400', '500', '600', '700'],
 })
 
-// Display / headlines — Italiana (single weight, 400)
-const italiana = Italiana({
+// Display / headlines — Cormorant Garamond (couture serif, 400–600)
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
   variable: '--font-serif',
   display: 'swap',
-  weight: '400',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -67,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${italiana.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${cormorant.variable}`}>
       <body className="bg-stage text-ivory font-sans antialiased">
         <script
           type="application/ld+json"
