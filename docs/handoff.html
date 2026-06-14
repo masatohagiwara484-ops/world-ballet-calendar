@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Handoff — World Ballet &amp; Opera Calendar</title>
+<style>
+  :root{
+    --stage:#0A0908; --elevated:#121110; --raised:#1A1816;
+    --gold:#D4AF37; --gold-bright:#E8C96A; --gold-pale:#F5E7C1;
+    --ivory:#F5F1E8; --ivory-2:rgba(245,241,232,.62); --ivory-3:rgba(245,241,232,.40);
+    --wine:#4A1F2E; --midnight:#1B2A4A; --line:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--stage); color:var(--ivory);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 75% 0%, rgba(212,175,55,.10) 0%, rgba(10,9,8,0) 55%),
+      radial-gradient(ellipse 70% 60% at 10% 20%, rgba(74,31,46,.16) 0%, rgba(10,9,8,0) 55%),
+      radial-gradient(ellipse 90% 70% at 50% 110%, rgba(27,42,74,.18) 0%, rgba(10,9,8,0) 60%);
+    background-attachment:fixed; background-repeat:no-repeat;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:56px 24px 120px}
+  .eyebrow{color:var(--gold);font-size:11px;letter-spacing:.4em;text-transform:uppercase;margin:0 0 14px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-weight:500;font-size:clamp(34px,6vw,56px);
+     line-height:1.05;margin:0 0 18px;
+     background:linear-gradient(135deg,var(--gold-pale),var(--gold-bright) 42%,var(--gold));
+     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  h2{font-family:Georgia,serif;font-weight:500;font-size:clamp(22px,3.4vw,30px);color:var(--ivory);
+     margin:56px 0 16px;padding-top:18px;border-top:1px solid var(--line)}
+  h3{font-family:Georgia,serif;font-weight:500;font-size:19px;color:var(--gold-bright);margin:28px 0 8px}
+  p{color:var(--ivory-2);margin:0 0 14px}
+  a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(212,175,55,.3)}
+  a:hover{color:var(--gold-bright)}
+  strong{color:var(--ivory)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;
+       background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--gold-pale)}
+  pre{background:var(--elevated);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+      overflow:auto;color:var(--ivory-2);font-size:13.5px;line-height:1.6;
+      box-shadow:0 16px 48px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10)}
+  pre code{background:none;border:none;padding:0;color:inherit}
+  .card{background:rgba(255,255,255,.05);backdrop-filter:blur(22px);border:1px solid var(--line);
+        border-radius:18px;padding:24px 26px;margin:18px 0;
+        box-shadow:0 16px 48px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16)}
+  .lede{font-size:18px;color:var(--ivory)}
+  .pill{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+        padding:4px 12px;border-radius:999px;border:1px solid var(--line);
+        background:rgba(255,255,255,.05);color:var(--ivory-2);margin:0 6px 8px 0}
+  .pill.gold{border-color:rgba(212,175,55,.4);color:var(--gold-pale)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--gold);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+  td{color:var(--ivory-2)}
+  ul,ol{color:var(--ivory-2);padding-left:22px}
+  li{margin:7px 0}
+  .ok{color:#7ed8a6}.warn{color:var(--gold-bright)}.todo{color:#e09b9b}
+  .toc{columns:2;column-gap:32px;font-size:14.5px}
+  .toc a{display:block;border:none;color:var(--ivory-2);padding:4px 0}
+  .toc a:hover{color:var(--gold)}
+  .meta{color:var(--ivory-3);font-size:13px;letter-spacing:.04em}
+  .quote{border-left:2px solid var(--gold);padding:6px 0 6px 18px;margin:14px 0;color:var(--ivory);font-style:italic}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  .footnote{color:var(--ivory-3);font-size:13px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Session Handoff · Read me first</p>
+  <h1>World Ballet &amp; Opera Calendar</h1>
+  <p class="lede">A complete handoff so a fresh Claude Code session continues with zero context loss — the vision, the decisions, the monetization plan, what's already built, the working method, and the exact next steps with ready-to-paste prompts.</p>
+  <p class="meta">Updated 2026-06-14 · Branch <code>claude/modest-fermat-4jv93k</code> · Live <a href="https://worldballetoperacalender.vercel.app">worldballetoperacalender.vercel.app</a> · Canonical machine-readable copy: <code>docs/HANDOFF.md</code></p>
+
+  <div class="card">
+    <strong style="color:var(--gold)">⚡ For the next session, in one breath:</strong>
+    <p style="margin-top:10px">Build a <strong>luxury, global, cross-cutting search engine for high-art performances</strong>. The punchline: <em>type one word — a work, a choreographer, a dancer, a city — and see every matching performance on Earth, then filter it down.</em> The owner approved building the <strong>entity-graph search first ("Plan A")</strong>. That foundation is <span class="ok">built &amp; pushed</span>. Pick up at <a href="#status">Current Status</a> → <a href="#prompts">Next Steps</a>.</p>
+  </div>
+
+  <h2>Contents</h2>
+  <div class="toc">
+    <a href="#product">1 · What this product is</a>
+    <a href="#verdict">2 · The consulting verdict</a>
+    <a href="#decisions">3 · Decisions made</a>
+    <a href="#money">4 · Monetization plan</a>
+    <a href="#arch">5 · Architecture (entity graph)</a>
+    <a href="#files">6 · Files built</a>
+    <a href="#method">7 · Working methodology</a>
+    <a href="#status">8 · Current status</a>
+    <a href="#prompts">9 · Ready-to-paste prompts</a>
+    <a href="#log">10 · Conversation recap</a>
+  </div>
+
+  <h2 id="product">1 · What this product is</h2>
+  <p>A single, beautiful place to discover ballet &amp; opera worldwide with deep, interconnected metadata. Audience = <strong>affluent, high-travel-intent culture lovers</strong> who can't currently search across dozens of siloed opera-house sites. The structural opportunity: <strong>each house only lists its own shows; nobody lets you search the world by work, artist, or city.</strong></p>
+  <div class="quote">"Every stage in the world. One search."<br>Where can I see <strong>Swan Lake</strong> this year? — one page, every company.<br>Show me everything <strong>Nureyev</strong> choreographed, playing in <strong>Paris</strong> in <strong>October</strong>, under <strong>€80</strong>.</div>
+  <p>This is why the literal name "World Ballet Calendar" undersells it — it's a knowledge graph, not a calendar.</p>
+
+  <h2 id="verdict">2 · The consulting verdict (agreed)</h2>
+  <ul>
+    <li><strong>Drop ad revenue.</strong> Niche traffic → trivial income, and ads break the Apple/Rolex brand. <span class="ok">Decided.</span></li>
+    <li><strong>The current data is fake</strong> and <code>/partners</code> lists <strong>fictional partners</strong> — a credibility risk to replace/remove. <span class="warn">Still in repo.</span></li>
+    <li><strong>The moat = cross-cutting, entity-first search.</strong> No competitor does it; houses structurally can't. SEO gold ("Swan Lake 2026 tickets"). <span class="ok">Now the core being built.</span></li>
+    <li><strong>Stay niche, deepen vertically.</strong> No museums / pop concerts. Only adjacency = <strong>classical concerts</strong>. <span class="ok">Decided.</span></li>
+    <li><strong>Design:</strong> keep the dark "Liquid Glass × Champagne Noir" theme; make the hero <strong>search-first</strong>; don't over-apply react-three-fiber / scroll-jacking to a utility tool; gate on Lighthouse mobile 90+ &amp; reduced-motion.</li>
+  </ul>
+
+  <h2 id="decisions">3 · Decisions made this session</h2>
+  <table>
+    <tr><th>Topic</th><th>Decision</th><th>Status</th></tr>
+    <tr><td>Build order</td><td>Entity-graph search first, then email→paid alerts</td><td class="ok">A built; B pending</td></tr>
+    <tr><td>App vs Web</td><td><strong>Web-first, NO rebuild.</strong> PWA now; native via Expo later sharing the API. (SEO, Apple 30%, affiliate-app rejection)</td><td class="ok">Decided</td></tr>
+    <tr><td>Ads</td><td>Dropped as a pillar</td><td class="ok">Decided</td></tr>
+    <tr><td>Scope</td><td>Niche (ballet+opera); only adjacency = classical concerts</td><td class="ok">Decided</td></tr>
+    <tr><td>Real data</td><td>AI scraping/ingestion agent + human review queue</td><td class="warn">Scaffolded</td></tr>
+    <tr><td>Name</td><td>Rebrand needed; top proposal <strong>"Grand Tier"</strong> (also Ouverture, Encore Atlas, Première)</td><td class="todo">OPEN — owner to choose</td></tr>
+  </table>
+
+  <h2 id="money">4 · Monetization plan</h2>
+  <p>Ads are out. The pillars, in priority order:</p>
+  <ul>
+    <li><strong>A · Ticket on-sale alerts</strong> — the subscription core. Popular runs sell out in hours; "notify me when tickets go on sale" is the one thing this audience pays for.</li>
+    <li><strong>B · "Performance Trip" bundled affiliate</strong> — hotels near the venue (Booking/Expedia deep-linked by lat/lng), flights, and <strong>Tiqets / GetYourGuide</strong> tours (best fit). Replaces the fake partners page.</li>
+    <li><strong>C · Newsletter + sponsorship</strong> — weekly "This Week on Stage"; high sponsor CPMs + retention funnel. Email capture = #1 CTA site-wide.</li>
+    <li><strong>D · B2B featured listings</strong> — houses pay to feature seasons / tours.</li>
+    <li><strong>E · Data licensing / API</strong> (long-term) — the normalized world performance graph is itself the asset.</li>
+  </ul>
+  <h3>Subscription — Free vs Grand Tier (~$6/mo · $48/yr)</h3>
+  <p><strong>Rule (immutable):</strong> never paywall content (kills SEO). Monetize <em>tools</em> — notification, sync, planning.</p>
+  <table>
+    <tr><th>Capability</th><th>Free</th><th>Grand Tier</th></tr>
+    <tr><td>Full calendar + work/artist info</td><td>✅ (SEO)</td><td>✅</td></tr>
+    <tr><td>Weekly newsletter</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Ticket on-sale alerts (work/company/city)</td><td>—</td><td>✅ core</td></tr>
+    <tr><td>Artist tracking (notify when a dancer performs)</td><td>—</td><td>✅</td></tr>
+    <tr><td>Calendar sync (iCal / Google)</td><td>—</td><td>✅</td></tr>
+    <tr><td>Trip planner (what's on during my stay)</td><td>—</td><td>✅</td></tr>
+    <tr><td>City opera-going guide PDFs</td><td>—</td><td>✅ annual</td></tr>
+  </table>
+  <p>Billing via <strong>Stripe (web)</strong>, not in-app — avoids Apple's 30%.</p>
+
+  <h2 id="arch">5 · Architecture — the entity graph</h2>
+  <p>The old data was <strong>flat</strong> (free-text composer/choreographer strings) — unsearchable by artist. We introduced a normalized graph:</p>
+  <pre><code>people        choreographers, composers, dancers, conductors… (de-duped by slug)
+works         the abstract piece — "Swan Lake" — merged across ALL companies
+venues        one per company location (first-class for multi-venue later)
+productions   a staging: work × company × choreographer
+performances  the scheduled run — the searchable unit
+performance_credits   performance ↔ person + role  ← powers "search any artist"</code></pre>
+  <p><strong>Key choice:</strong> the graph is <strong>built deterministically from the existing data at runtime</strong> (<code>src/lib/graph.ts</code>), so search works <em>today</em>; the SAME shape is mirrored by the Supabase schema (<code>003_entity_graph.sql</code>) for when real scraped data lands. The shared normalizer means a scraped "Kenneth MacMillan" resolves to the same id as a seeded one.</p>
+  <p><strong>Filters:</strong> free-text, discipline, country, city, company, <strong>person (any role)</strong>, choreographer, composer, work, date range, <strong>price band (cross-currency via EUR)</strong>, sort, pagination — plus live facet counts &amp; autocomplete.</p>
+  <div class="card"><strong>Verified working</strong> on the real seed: <code>"Swan Lake"</code> → <strong>14 companies worldwide</strong>; <code>"Kenneth MacMillan"</code> → his productions in London &amp; New York; price + facet filters correct.</div>
+
+  <h2 id="files">6 · Files built this session</h2>
+  <h3>Core engine (Opus — load-bearing)</h3>
+  <p><code>src/lib/types.ts</code> (graph + search contracts) · <code>src/lib/normalize.ts</code> (slugify, parseCredits, parsePrice, workTitleKey) · <code>src/lib/graph.ts</code> (buildGraph) · <code>src/lib/search.ts</code> (search + suggest) · <code>src/app/api/search/route.ts</code> · <code>src/app/api/suggest/route.ts</code></p>
+  <h3>Search UI (Sonnet sub-agent, to spec)</h3>
+  <p><code>src/app/search/page.tsx</code> (server-rendered, SEO) · <code>src/components/search/*</code> (SearchBox, FilterRail, ResultCard, ActiveFilters, Pagination, SortControl) · <code>src/components/home/SearchHero.tsx</code> (search-first hero, replaced the globe) · edited <code>page.tsx</code>, <code>Navbar.tsx</code>, and <code>tsconfig.json</code> (<strong>added <code>"target":"ES2017"</code> — required, this was the Vercel failure</strong>).</p>
+  <h3>Real-data infrastructure</h3>
+  <p><code>supabase/migrations/003_entity_graph.sql</code> (tables, FTS, <code>search_performances</code> RPC, RLS, review-queue/provenance) · <code>docs/SOURCES.md</code> (owner's homework list) · <code>docs/INGESTION.md</code> (pipeline architecture) · <code>.claude/skills/data-ingest/SKILL.md</code>.</p>
+
+  <h2 id="method">7 · How the owner wants you to work</h2>
+  <ol>
+    <li><strong>Working Backwards / CEO Agent</strong> (see <code>CLAUDE.md</code>): define the browser end-state first; Apple/Ferrari/Rolex quality; reject mediocrity.</li>
+    <li><strong>Multi-agent parallelization</strong> — independent file-sets, concurrent sub-agents, each with a tight frozen contract.</li>
+    <li><strong>Model tiering to save tokens:</strong> <span class="warn">Opus</span> plans/reviews + load-bearing logic; <span class="warn">Sonnet</span> builds quality-sensitive UI; <span class="warn">Haiku</span> does bulk/mechanical work (review its output).</li>
+    <li><strong>Subdivide</strong> large tasks; polish each.</li>
+    <li><strong>Verify renders, not just builds</strong> — failure mode here is "compiles fine, renders blank". Use the <code>verifier-web</code> skill after UI changes.</li>
+    <li><strong>Bilingual day reports</strong> (<code>reports/day-XX-report.md</code>, EN + 日本語). Next = <code>day-10</code>.</li>
+    <li><strong>Autonomously create agents/skills</strong> when they raise quality.</li>
+    <li><strong>Git:</strong> branch <code>claude/modest-fermat-4jv93k</code>; clear messages; push; no PR unless asked. Reply to the owner in <strong>Japanese</strong>; code/docs in English.</li>
+  </ol>
+
+  <h2 id="status">8 · Current status</h2>
+  <h3 class="ok">Done &amp; pushed</h3>
+  <p>Entity-graph model + builder + normalizer · faceted search engine + APIs · search UI + search-first hero + Navbar · Supabase migration 003 · SOURCES/INGESTION docs + data-ingest skill · build green · <strong>Vercel deploy fixed</strong> (tsconfig target) — commit <code>99c828b</code>.</p>
+  <h3 class="todo">Pending — do these next</h3>
+  <ol>
+    <li><strong>Render-verify the new UI</strong> (verifier-web): home hero, <code>/search?q=swan%20lake</code>, filters, autocomplete, mobile. <em>(Interrupted by container restarts — do first.)</em></li>
+    <li><strong>SEO entity pages</strong> <code>/works/[slug]</code> &amp; <code>/people/[slug]</code> — the real moat (every company's Swan Lake; an artist's whole catalogue).</li>
+    <li><strong>Populate Supabase entity tables</strong> from the built graph; optionally switch search to the RPC (keep in-memory fallback).</li>
+    <li><strong>Email capture + on-sale alerts</strong> (Pillar A).</li>
+    <li><strong>PWA</strong> (installable + web push) — no rebuild.</li>
+    <li><strong>Real data ingestion</strong> — adapters from filled <code>SOURCES.md</code>, cron, review queue.</li>
+    <li><strong>Replace fake <code>/partners</code></strong> with real bundled affiliates (Pillar B).</li>
+    <li><strong>Rebrand</strong> once a name is chosen. Write <code>reports/day-10-report.md</code>.</li>
+  </ol>
+  <h3 class="warn">Open questions for the owner</h3>
+  <ul>
+    <li>Final <strong>project name</strong> (Grand Tier?).</li>
+    <li>Remove the globe entirely, or keep it as a secondary "explore by map" view?</li>
+    <li>Are <strong>Supabase production credentials</strong> available to populate real tables?</li>
+    <li>Which <strong>affiliate networks</strong> is the owner approved for (Tiqets / GetYourGuide / Booking / Expedia)?</li>
+  </ul>
+
+  <h2 id="prompts">9 · Ready-to-paste prompts</h2>
+  <p>Full text in <code>docs/HANDOFF.md §10</code>. Summary:</p>
+  <ol>
+    <li><strong>Render-verify the search release</strong> (Opus drives verifier-web; screenshot home + /search variants + mobile; fix blanks).</li>
+    <li><strong>SEO entity pages</strong> <code>/works/[slug]</code> &amp; <code>/people/[slug]</code> on the existing graph (Sonnet builds, Opus reviews; JSON-LD + sitemap; link from ResultCard credits).</li>
+    <li><strong>Populate Supabase</strong> via <code>scripts/seed-graph.ts</code> mirroring migration 003; optional RPC-backed search path with in-memory fallback.</li>
+    <li><strong>Email capture + alerts</strong> (Supabase subscribers + follows; alerts gated behind a Stripe stub; content stays free).</li>
+    <li><strong>PWA</strong> (manifest + SW + icons; Lighthouse ≥ 90; reduced-motion).</li>
+    <li><strong>Real ingestion</strong> via the data-ingest skill (3 feed sources → adapters → review queue; never auto-publish date changes).</li>
+  </ol>
+
+  <h2 id="log">10 · Conversation recap (intent &amp; tone)</h2>
+  <p>The owner is a <strong>business + web-design hybrid (3D web dev)</strong>, worried the niche site lacks a hook and a reason to pay/visit.</p>
+  <ol>
+    <li><strong>Owner:</strong> harshly review design / profitability / monetization; (1) better name, (2) add monetization pillars + a Free-vs-paid package, (3) niche vs expand (museums? music?), (4) design review + maybe scroll-animation / react-three-fiber.</li>
+    <li><strong>Claude:</strong> the verdict above — drop ads; it's a knowledge graph; the moat is cross-cutting search; stay niche (+concerts only); search-first hero; don't over-do 3D; proposed <strong>Grand Tier</strong>; Free-vs-Grand-Tier table; 6-step roadmap.</li>
+    <li><strong>Owner (3 Qs):</strong> app vs web / rebuild? · confirmed the database-like search vision (Nureyev → all his works worldwide, filter by Paris/October) · can an AI agent auto-scrape real data every 1–2 days?</li>
+    <li><strong>Claude:</strong> web-first/no rebuild (PWA→Expo); yes, needs the entity-graph schema; yes, adapter infra is ~80% there — go LLM-extraction + cron + review queue, trust-first (wrong dates kill the brand).</li>
+    <li><strong>Owner:</strong> "Implement Plan A. Database-like global filtering search (location, per-ticket cost, choreographer, dancer, performer, datetime + more), save to Supabase, add a search bar, overhaul the UI for beauty (replace globe/calendar at your discretion), replace fake data with real later (tell me my tasks). Use <strong>multi-agent</strong>, create agents/skills autonomously, <strong>save tokens</strong> (top model plans/reviews, Haiku builds), subdivide and craft carefully."</li>
+    <li><strong>Claude:</strong> built the foundation (Opus) + delegated UI (Sonnet) + schema + owner-homework docs + scraping skill; smoke-tested ("Swan Lake" → 14 companies); build passed; <strong>fixed the Vercel tsconfig failure and pushed</strong>.</li>
+    <li><strong>Owner:</strong> moving to a new session (rate limits) — "create a thorough Markdown + HTML handoff with all memory, the plan, the methodology, and concrete prompts." → <strong>this package.</strong></li>
+  </ol>
+  <p><strong>Expectations:</strong> ambitious, quality-obsessed, decisive over exhaustive, cost-conscious on tokens, proactively autonomous; communicates in Japanese (reply in Japanese, build in English).</p>
+
+  <p class="footnote">End of handoff. Canonical machine-readable version: <code>docs/HANDOFF.md</code>. Start at §8 → §9. Keep cross-cutting search at the center; verify the pixels; use the right model tier.</p>
+
+</div>
+</body>
+</html>
