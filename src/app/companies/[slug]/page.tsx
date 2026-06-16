@@ -109,7 +109,7 @@ export default async function CompanyPage({ params }: Props) {
           <p className="text-gold text-[11px] tracking-[0.34em] uppercase mb-5">
             {typeLabel(company.type)} · {company.country}
           </p>
-          <h1 className="font-serif text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
+          <h1 className="font-warbler text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
             {company.name}
           </h1>
           {company.name_local && company.name_local !== company.name && (
@@ -158,7 +158,7 @@ export default async function CompanyPage({ params }: Props) {
       {(company.description || company.description_short) && (
         <section className="py-16 md:py-20 px-6 md:px-10 bg-stage-elevated">
           <div className="max-w-3xl mx-auto">
-            <p className="font-serif text-xl md:text-2xl text-ivory/80 leading-relaxed md:leading-loose">
+            <p className="font-warbler text-xl md:text-2xl text-ivory/80 leading-relaxed md:leading-loose">
               {company.description ?? company.description_short}
             </p>
           </div>

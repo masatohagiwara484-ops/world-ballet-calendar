@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Manrope, Cormorant_Garamond } from 'next/font/google'
+import { Manrope, Cormorant_Garamond, Italiana, Fraunces } from 'next/font/google'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ProjectNameLoader from '@/components/loaders/ProjectNameLoader'
@@ -19,6 +19,26 @@ const cormorant = Cormorant_Garamond({
   variable: '--font-serif',
   display: 'swap',
   weight: ['400', '500', '600', '700'],
+})
+
+// "The Seasons" substitute — Italiana (delicate high-fashion display serif)
+// Scoped to the hero headline/tagline and footer brand text only.
+const italiana = Italiana({
+  subsets: ['latin'],
+  variable: '--font-seasons',
+  display: 'swap',
+  weight: ['400'],
+})
+
+// "Warbler" substitute — Fraunces, soft axis (vintage-feel display serif)
+// Scoped to company names and descriptions only.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-warbler',
+  display: 'swap',
+  weight: 'variable',
+  style: ['normal', 'italic'],
+  axes: ['SOFT', 'opsz'],
 })
 
 export const metadata: Metadata = {
@@ -67,7 +87,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${cormorant.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${italiana.variable} ${fraunces.variable}`}>
       <body className="bg-stage text-ivory font-sans antialiased">
         <script
           type="application/ld+json"

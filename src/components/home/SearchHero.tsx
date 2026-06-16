@@ -45,7 +45,7 @@ export default function SearchHero() {
 
         {/* Headline */}
         <h1
-          className="font-serif text-5xl sm:text-6xl md:text-[4.5rem] text-gradient-gold leading-[1.07] mb-5 animate-fade-in-up"
+          className="font-seasons text-5xl sm:text-6xl md:text-[4.5rem] text-gradient-gold leading-[1.07] mb-5 animate-fade-in-up"
           style={{ animationDelay: '80ms' }}
         >
           Every stage
@@ -55,7 +55,7 @@ export default function SearchHero() {
 
         {/* Tagline */}
         <p
-          className="font-serif text-xl sm:text-2xl text-ivory/70 italic mb-4 animate-fade-in-up"
+          className="font-seasons text-xl sm:text-2xl text-ivory/70 italic mb-4 animate-fade-in-up"
           style={{ animationDelay: '140ms' }}
         >
           One search.

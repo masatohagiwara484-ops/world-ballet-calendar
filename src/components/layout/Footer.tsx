@@ -13,10 +13,10 @@ export default function Footer() {
       <div className="glass-panel specular mx-auto max-w-7xl px-6 md:px-12 py-14">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10">
           <div className="max-w-sm">
-            <p className="font-serif text-xl tracking-[0.06em] text-gradient-gold">
+            <p className="font-seasons text-xl tracking-[0.06em] text-gradient-gold">
               World Ballet &amp; Opera Calendar
             </p>
-            <p className="mt-4 text-ivory/70 text-sm leading-relaxed">
+            <p className="font-seasons mt-4 text-ivory/70 text-sm leading-relaxed">
               The world&rsquo;s great ballet and opera, gathered into one
               living season — discover by globe, plan by calendar, follow the
               companies you love.

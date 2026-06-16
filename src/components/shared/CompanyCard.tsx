@@ -20,11 +20,11 @@ export default function CompanyCard({ company }: { company: Company }) {
         <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-3">
           {company.city} · {company.country}
         </p>
-        <h3 className="font-serif text-xl text-ivory group-hover:text-gold-deep transition-colors">
+        <h3 className="font-warbler text-xl text-ivory group-hover:text-gold-deep transition-colors">
           {company.name}
         </h3>
         {company.description_short && (
-          <p className="mt-3 text-ivory/62 text-sm leading-relaxed line-clamp-2">
+          <p className="font-warbler mt-3 text-ivory/62 text-sm leading-relaxed line-clamp-2">
             {company.description_short}
           </p>
         )}
