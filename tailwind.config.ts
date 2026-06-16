@@ -29,6 +29,8 @@ const config: Config = {
         seasons: ["var(--font-seasons)", "ui-serif", "Georgia", "serif"],
         // "Warbler" substitute (Fraunces) — company name + description text only.
         warbler: ["var(--font-warbler)", "ui-serif", "Georgia", "serif"],
+        // Footer brand serif (Playfair Display) — weighted elegant serif.
+        playfair: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
       },
       colors: {
         // Stage — warm whites (remapped: backgrounds now read light)

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 import SearchBox from '@/components/search/SearchBox'
+import { SparkleHeadline, GlowText } from './SparkleHeadline'
 
 const EXAMPLE_CHIPS = [
   { label: 'Swan Lake', href: '/search?q=Swan%20Lake' },
@@ -43,27 +44,31 @@ export default function SearchHero() {
           World Ballet &amp; Opera Calendar
         </p>
 
-        {/* Headline */}
+        {/* Headline — 1.8× scale + shimmering sparkle (framer-motion) */}
         <h1
-          className="font-seasons text-5xl sm:text-6xl md:text-[4.5rem] text-gradient-gold leading-[1.07] mb-5 animate-fade-in-up"
+          className="leading-[1.05] mb-6 animate-fade-in-up"
           style={{ animationDelay: '80ms' }}
         >
-          Every stage
-          <br />
-          in the world.
+          <SparkleHeadline className="font-seasons text-[5.4rem] sm:text-[6.75rem] md:text-[8.1rem] leading-[1.05]">
+            Every stage
+            <br />
+            in the world.
+          </SparkleHeadline>
         </h1>
 
-        {/* Tagline */}
+        {/* Tagline — 1.8× scale + gentle gold glow */}
         <p
-          className="font-seasons text-xl sm:text-2xl text-ivory/70 italic mb-4 animate-fade-in-up"
+          className="mb-5 animate-fade-in-up"
           style={{ animationDelay: '140ms' }}
         >
-          One search.
+          <GlowText className="font-seasons text-[2.25rem] sm:text-[2.7rem] text-ivory/80 italic">
+            One search.
+          </GlowText>
         </p>
 
-        {/* Subhead */}
+        {/* Subhead — The Seasons font (Italiana), 1.3× scale */}
         <p
-          className="text-ivory/60 text-base sm:text-lg mb-10 animate-fade-in-up"
+          className="font-seasons text-ivory/65 text-[1.3rem] sm:text-[1.4625rem] leading-snug mb-10 animate-fade-in-up"
           style={{ animationDelay: '200ms' }}
         >
           Type a work, an artist, a company, or a city — and find every performance on Earth.

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Manrope, Cormorant_Garamond, Italiana, Fraunces } from 'next/font/google'
+import { Manrope, Cormorant_Garamond, Italiana, Fraunces, Playfair_Display } from 'next/font/google'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ProjectNameLoader from '@/components/loaders/ProjectNameLoader'
@@ -39,6 +39,15 @@ const fraunces = Fraunces({
   weight: 'variable',
   style: ['normal', 'italic'],
   axes: ['SOFT', 'opsz'],
+})
+
+// Footer brand serif — Playfair Display (elegant high-contrast serif with TRUE
+// bold weights, so the footer can read at ~700 instead of faux-bolding Italiana).
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+  weight: ['400', '600', '700', '800'],
 })
 
 export const metadata: Metadata = {
@@ -87,7 +96,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${italiana.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${italiana.variable} ${fraunces.variable} ${playfair.variable}`}>
       <body className="bg-stage text-ivory font-sans antialiased">
         <script
           type="application/ld+json"

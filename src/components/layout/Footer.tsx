@@ -12,11 +12,11 @@ export default function Footer() {
     <footer className="mt-24 px-4 pb-6">
       <div className="glass-panel specular mx-auto max-w-7xl px-6 md:px-12 py-14">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10">
-          <div className="max-w-sm">
-            <p className="font-seasons text-xl tracking-[0.06em] text-gradient-gold">
+          <div className="max-w-xl">
+            <p className="font-playfair font-bold text-[2.5rem] leading-tight tracking-[0.02em] text-gradient-gold">
               World Ballet &amp; Opera Calendar
             </p>
-            <p className="font-seasons mt-4 text-ivory/70 text-sm leading-relaxed">
+            <p className="font-playfair font-bold mt-5 text-ivory/70 text-[1.75rem] leading-snug">
               The world&rsquo;s great ballet and opera, gathered into one
               living season — discover by globe, plan by calendar, follow the
               companies you love.
