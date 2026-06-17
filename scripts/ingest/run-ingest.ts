@@ -8,11 +8,14 @@
  *   npx tsx scripts/ingest/run-ingest.ts --selftest
  *     → prove the differ classifies new / unchanged / date-changed / cancelled
  *
- * Pipeline per source: fetch → extract → normalize → resolve → diff → write
- * pending. NOTHING is ever published here; the owner approves via Telegram.
+ * Pipeline per source: discover → fetch → extract → normalize → resolve → diff
+ * → write pending. NOTHING is ever published here; the owner approves via Telegram.
  *
- * Extraction today reuses the existing scraper adapters; the feed/LLM extractors
- * (P4) slot into the same `extract()` seam.
+ * Extraction is feed-first and cost-disciplined:
+ *   • feed_kind ∈ {ical,rss,jsonld} → deterministic parse, NO model call
+ *   • feed_kind = html with a CSS adapter → the adapter (free template path)
+ *   • feed_kind = html with no adapter → one Haiku call, gated by a page-hash
+ *     cache so an unchanged page costs nothing on a re-run
  */
 import { config } from 'dotenv'
 import { readFile } from 'node:fs/promises'
@@ -20,16 +23,20 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { companies } from '../../src/data/companies'
 import { formatDigest, sendDigest, type DigestLine } from '../../src/lib/telegram'
-import type { ScraperAdapter } from '../scrapers/types'
+import type { ScraperAdapter, RawPerformance } from '../scrapers/types'
 import { normalizeMany } from '../scrapers/normalize'
 import royalBallet from '../scrapers/adapters/royal-ballet'
 import parisOperaBallet from '../scrapers/adapters/paris-opera-ballet'
 import wienerStaatsoper from '../scrapers/adapters/wiener-staatsoper'
-import { contentHash } from './hash'
+import { contentHash, pageHash } from './hash'
 import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
+import { extractFeed, type FeedKind } from './extract-feed'
+import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
 import {
   getWriter,
+  getSourceState,
+  saveSourceState,
   fetchExistingForSource,
   upsertEntities,
   upsertCredits,
@@ -43,11 +50,25 @@ config({ path: '.env.local' })
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-/** Source registry — one adapter per source (extends to docs/SOURCES.md in P4). */
-const SOURCES: Record<string, ScraperAdapter> = {
-  'royal-ballet': royalBallet,
-  'paris-opera-ballet': parisOperaBallet,
-  'wiener-staatsoper': wienerStaatsoper,
+/** A data source: a company slug + listing URL + how to extract it. */
+interface SourceConfig {
+  companySlug: string
+  url: string
+  /** 'html' uses the adapter (if present) or the LLM; feeds parse deterministically. */
+  kind: 'html' | FeedKind
+  /** CSS-template adapter for an HTML source; absent → LLM extraction. */
+  adapter?: ScraperAdapter
+}
+
+/**
+ * Source registry. The three existing CSS adapters are templates for HTML
+ * sources; feed/LLM houses are added here as their docs/SOURCES.md rows are
+ * filled (P4/P5). All start from the same SourceConfig contract.
+ */
+const SOURCES: Record<string, SourceConfig> = {
+  'royal-ballet': { companySlug: 'royal-ballet', url: royalBallet.sourceUrl, kind: 'html', adapter: royalBallet },
+  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: parisOperaBallet.sourceUrl, kind: 'html', adapter: parisOperaBallet },
+  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: wienerStaatsoper.sourceUrl, kind: 'html', adapter: wienerStaatsoper },
 }
 
 interface Args {
@@ -62,7 +83,7 @@ function parseArgs(argv: string[]): Args {
   const a: Args = { all: false, fixture: false, live: false, selftest: false }
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i]
-    if (t === '--adapter') a.adapter = argv[++i]
+    if (t === '--adapter' || t === '--source') a.adapter = argv[++i]
     else if (t === '--all') a.all = true
     else if (t === '--fixture') a.fixture = true
     else if (t === '--live') a.live = true
@@ -72,55 +93,78 @@ function parseArgs(argv: string[]): Args {
   return a
 }
 
-async function loadHtml(adapter: ScraperAdapter, live: boolean): Promise<string> {
+async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
   if (live) {
-    const res = await fetch(adapter.sourceUrl, {
+    const res = await fetch(src.url, {
       headers: { 'user-agent': 'WorldBalletCalendarBot/1.0 (+contact)' },
     })
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
     return res.text()
   }
-  return readFile(join(__dirname, '..', 'scrapers', 'fixtures', `${adapter.companySlug}.html`), 'utf8')
+  return readFile(join(__dirname, '..', 'scrapers', 'fixtures', `${src.companySlug}.html`), 'utf8')
+}
+
+/** Extract raw performances by source kind. Confidence: feed/adapter=1.0, LLM=0.85. */
+async function extract(src: SourceConfig, content: string): Promise<{ raws: RawPerformance[]; confidence: number }> {
+  if (src.kind !== 'html') {
+    return { raws: extractFeed(src.kind, content, src.companySlug), confidence: 1 }
+  }
+  if (src.adapter) {
+    return { raws: src.adapter.parse(content), confidence: 1 }
+  }
+  return { raws: await extractWithLlm(content, src.companySlug), confidence: LLM_CONFIDENCE }
 }
 
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
 
 /** Run one source through the full pipeline. */
-async function runSource(adapter: ScraperAdapter, args: Args, runId: string): Promise<boolean> {
+async function runSource(src: SourceConfig, args: Args, runId: string): Promise<boolean> {
   const writer = args.live ? getWriter() : null
-  console.log(`\n=== ${adapter.companySlug} (${args.live ? 'live' : 'fixture'}) ===`)
+  console.log(`\n=== ${src.companySlug} (${args.live ? 'live' : 'fixture'}, ${src.adapter ? 'adapter' : src.kind}) ===`)
 
-  let html: string
+  let content: string
   try {
-    html = await loadHtml(adapter, args.live)
+    content = await loadContent(src, args.live)
   } catch (err) {
     console.warn(`  ! could not load source (${msg(err)}); skipping.`)
     return false
   }
 
+  // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend).
+  if (writer) {
+    const state = await getSourceState(writer, src.companySlug)
+    const hash = pageHash(content)
+    if (state?.last_hash && state.last_hash === hash) {
+      console.log('  · page unchanged since last run — skipping (0 cost)')
+      return true
+    }
+    await saveSourceState(writer, src.companySlug, { last_hash: hash })
+  }
+
   // Extract → normalize.
-  let raws
+  let raws: RawPerformance[]
+  let confidence: number
   try {
-    raws = adapter.parse(html)
+    const r = await extract(src, content)
+    raws = r.raws
+    confidence = r.confidence
   } catch (err) {
-    console.warn(`  ! parser threw (${msg(err)}); skipping.`)
+    console.warn(`  ! extraction threw (${msg(err)}); skipping.`)
     return false
   }
   const { valid, rejected } = normalizeMany(raws, companyIdMap())
-  console.log(`  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected`)
+  console.log(`  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected (confidence ${confidence})`)
 
-  // Provenance for each valid row (feed/adapter = confidence 1.0).
+  // Provenance per valid row.
   const base = new Map<string, Pick<IngestPerformance, 'source_url' | 'content_hash' | 'confidence'>>()
-  for (const v of valid) {
-    base.set(v.id, { source_url: adapter.sourceUrl, content_hash: contentHash(v), confidence: 1 })
-  }
+  for (const v of valid) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
 
   // Resolve entities + enrich performances.
   const resolved = resolveEntities(companies, valid, base)
 
   // Diff against the DB snapshot for this source (empty offline → all 'new').
   const existing = writer
-    ? await fetchExistingForSource(writer, adapter.sourceUrl)
+    ? await fetchExistingForSource(writer, src.url)
     : new Map<string, ExistingRow>()
   const { rows, cancelled, counts } = diffRun(resolved.performances, existing)
 
@@ -143,40 +187,26 @@ async function runSource(adapter: ScraperAdapter, args: Args, runId: string): Pr
   await markCancelledPending(writer, cancelled.map((c) => c.id))
   console.log(`  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled) to Supabase`)
 
-  // One Telegram digest per company per run — only when something actually
-  // changed (unchanged-only runs are silent). The owner approves via the webhook.
+  // One Telegram digest per company per run — only when something changed.
   const changed = rows.filter((r) => r.change_kind !== 'unchanged')
   const allIds = [...changed.map((r) => r.id), ...cancelled.map((c) => c.id)]
   if (allIds.length > 0) {
-    const batchId = `${runId}:${adapter.companySlug}`
+    const batchId = `${runId}:${src.companySlug}`
     const chatId = process.env.TELEGRAM_CHAT_ID ?? null
-    const existingById = existing
     const lines: DigestLine[] = [
       ...changed.map((r) => ({
         change_kind: r.change_kind,
         title: r.title,
         start_date: r.start_date,
         end_date: r.end_date,
-        was: r.change_kind === 'date-changed' ? existingById.get(r.id)?.start_date : undefined,
+        was: r.change_kind === 'date-changed' ? existing.get(r.id)?.start_date : undefined,
       })),
-      ...cancelled.map((c) => ({
-        change_kind: 'cancelled',
-        title: c.id,
-        start_date: c.start_date,
-        end_date: c.end_date,
-      })),
+      ...cancelled.map((c) => ({ change_kind: 'cancelled', title: c.id, start_date: c.start_date, end_date: c.end_date })),
     ]
     let messageId: string | null = null
     if (chatId) {
-      const companyName = companies.find((c) => c.slug === adapter.companySlug)?.name ?? adapter.companySlug
-      const text = formatDigest({
-        companyName,
-        runId,
-        batchId,
-        lines,
-        sourceUrl: adapter.sourceUrl,
-        confidence: 1,
-      })
+      const companyName = companies.find((c) => c.slug === src.companySlug)?.name ?? src.companySlug
+      const text = formatDigest({ companyName, runId, batchId, lines, sourceUrl: src.url, confidence })
       try {
         messageId = await sendDigest(chatId, text, batchId)
       } catch (err) {
@@ -185,7 +215,7 @@ async function runSource(adapter: ScraperAdapter, args: Args, runId: string): Pr
     }
     await recordBatch(writer, {
       id: batchId,
-      company_slug: adapter.companySlug,
+      company_slug: src.companySlug,
       run_id: runId,
       telegram_chat_id: chatId,
       telegram_message_id: messageId,
@@ -213,19 +243,15 @@ function selftest(): void {
     ...over,
   })
   const a = mk({ id: 'p-a' })
-  const b = mk({ id: 'p-b', start_date: '2026-12-05', end_date: '2026-12-30' })
+  const b = mk({ id: 'p-b' })
   const c = mk({ id: 'p-c', price_range: '£20–£100' })
   for (const r of [a, b, c]) r.content_hash = contentHash(r)
 
-  // Existing DB snapshot: b unchanged-hash, c date-same/price-different, plus a
-  // ghost row 'p-gone' that no longer appears → cancellation.
   const existing = new Map<string, ExistingRow>([
-    ['p-b', { id: 'p-b', content_hash: b.content_hash, start_date: '2026-12-08', end_date: '2026-12-30', price_range: null }],
+    ['p-b', { id: 'p-b', content_hash: 'STALE', start_date: '2026-12-08', end_date: '2026-12-30', price_range: null }],
     ['p-c', { id: 'p-c', content_hash: 'STALE', start_date: '2026-09-12', end_date: '2026-10-04', price_range: '£10–£50' }],
     ['p-gone', { id: 'p-gone', content_hash: 'x', start_date: '2026-01-01', end_date: '2026-01-02', price_range: null }],
   ])
-  // Force b to be a date-change: same hash would mark unchanged, so clear it.
-  existing.set('p-b', { ...existing.get('p-b')!, content_hash: 'STALE' })
 
   const { rows, cancelled, counts } = diffRun([a, b, c], existing)
   for (const r of rows) console.log(`  ${badge(r.change_kind)}  ${r.id}`)
@@ -257,7 +283,7 @@ async function main(): Promise<void> {
   if (targets.length === 0) {
     console.error(
       `Usage: tsx scripts/ingest/run-ingest.ts --all [--fixture|--live]\n` +
-        `       tsx scripts/ingest/run-ingest.ts --adapter <name> [--fixture|--live]\n` +
+        `       tsx scripts/ingest/run-ingest.ts --source <name> [--fixture|--live]\n` +
         `       tsx scripts/ingest/run-ingest.ts --selftest\n\n` +
         `Sources: ${Object.keys(SOURCES).join(', ')}`
     )
@@ -266,13 +292,13 @@ async function main(): Promise<void> {
 
   const runId = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
   let anyFailed = false
-  for (const adapter of targets) {
+  for (const src of targets) {
     try {
-      const ok = await runSource(adapter, args, runId)
+      const ok = await runSource(src, args, runId)
       if (!ok) anyFailed = true
     } catch (err) {
       anyFailed = true
-      console.warn(`  ! ${adapter.companySlug} failed: ${msg(err)}`)
+      console.warn(`  ! ${src.companySlug} failed: ${msg(err)}`)
     }
   }
   process.exit(args.fixture && anyFailed ? 1 : 0)
