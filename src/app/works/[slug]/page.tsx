@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
-import { buildGraph } from '@/lib/graph'
-import { search } from '@/lib/search'
+import { buildGraph, buildGraphAsync } from '@/lib/graph'
+import { searchAsync } from '@/lib/search'
 import { gradientFor, monogram } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
 import type { SearchResultItem } from '@/lib/types'
@@ -28,7 +28,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { workBySlug } = buildGraph()
+  const { workBySlug } = await buildGraphAsync()
   const work = workBySlug.get(params.slug)
   if (!work) return {}
 
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function WorkPage({ params }: Props) {
-  const { workBySlug, personBySlug } = buildGraph()
+  const { workBySlug, personBySlug } = await buildGraphAsync()
   const work = workBySlug.get(params.slug)
   if (!work) notFound()
 
@@ -53,7 +53,7 @@ export default async function WorkPage({ params }: Props) {
     : null
 
   // Fetch every performance of this work
-  const { items, total } = search({ work_slug: params.slug, page_size: 200 })
+  const { items, total } = await searchAsync({ work_slug: params.slug, page_size: 200 })
 
   // Group by year for visual organisation
   const byYear = new Map<string, SearchResultItem[]>()

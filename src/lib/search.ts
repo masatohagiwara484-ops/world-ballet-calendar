@@ -17,7 +17,7 @@ import type {
   SearchResponse,
   SearchResultItem,
 } from './types'
-import { buildGraph, type GraphPerformance } from './graph'
+import { buildGraph, buildGraphAsync, type Graph, type GraphPerformance } from './graph'
 import { toEur } from './normalize'
 
 const DEFAULT_PAGE_SIZE = 24
@@ -109,9 +109,12 @@ const KIND_LABELS: Record<string, string> = {
   concert: 'Concert',
 }
 
-/** Run a faceted search over the graph and return results + facet counts. */
-export function search(filters: SearchFilters = {}): SearchResponse {
-  const graph = buildGraph()
+/**
+ * Pure faceted search over a supplied graph. The two public entry points below
+ * (`search` = static graph, `searchAsync` = live Supabase-backed graph) differ
+ * only in where the graph comes from; the pipeline is identical.
+ */
+function runSearch(graph: Graph, filters: SearchFilters = {}): SearchResponse {
   const queryTerms = terms(filters.q)
 
   // Stage 1: full result set under the full query (text + all filters).
@@ -175,6 +178,16 @@ export function search(filters: SearchFilters = {}): SearchResponse {
   return { total: matched.length, page, page_size: pageSize, items, facets }
 }
 
+/** Faceted search over the curated static graph (build-time / tests). */
+export function search(filters: SearchFilters = {}): SearchResponse {
+  return runSearch(buildGraph(), filters)
+}
+
+/** Faceted search over the LIVE Supabase-backed graph (production request path). */
+export async function searchAsync(filters: SearchFilters = {}): Promise<SearchResponse> {
+  return runSearch(await buildGraphAsync(), filters)
+}
+
 /** Light relevance score: title hits weigh more than body hits. */
 function scoreRelevance(perf: GraphPerformance, queryTerms: string[]): number {
   const title = perf.title.toLowerCase()
@@ -222,10 +235,9 @@ export interface Suggestion {
   params: Record<string, string>
 }
 
-export function suggest(q: string, limit = 8): Suggestion[] {
+function runSuggest(graph: Graph, q: string, limit = 8): Suggestion[] {
   const needle = q.trim().toLowerCase()
   if (needle.length < 2) return []
-  const graph = buildGraph()
   const out: Suggestion[] = []
 
   for (const w of graph.works) {
@@ -258,4 +270,14 @@ export function suggest(q: string, limit = 8): Suggestion[] {
       return ap - bp || typeRank[a.type] - typeRank[b.type] || a.label.localeCompare(b.label)
     })
     .slice(0, limit)
+}
+
+/** Autocomplete over the curated static graph. */
+export function suggest(q: string, limit = 8): Suggestion[] {
+  return runSuggest(buildGraph(), q, limit)
+}
+
+/** Autocomplete over the LIVE Supabase-backed graph (production request path). */
+export async function suggestAsync(q: string, limit = 8): Promise<Suggestion[]> {
+  return runSuggest(await buildGraphAsync(), q, limit)
 }

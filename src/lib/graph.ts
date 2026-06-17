@@ -31,6 +31,7 @@ import { PERSON_ROLES } from './types'
 import { companies as staticCompanies } from '@/data/companies'
 import { performances as staticPerformances } from '@/data/performances'
 import { parseCredits, parsePrice, slugify, sortName, toEur, workTitleKey } from './normalize'
+import { getCompanies, getPerformances } from './data'
 
 /** A performance enriched with everything search & the results UI need. */
 export interface GraphPerformance extends PerformanceWithCompany {
@@ -246,4 +247,23 @@ export function buildGraph(
     cached = graph
   }
   return graph
+}
+
+/**
+ * Build the graph from LIVE data — the Supabase-backed data layer when it is
+ * configured & reachable, otherwise the curated static dataset (the data layer
+ * handles that fallback silently). This is the source search & entity pages use
+ * in production so owner-approved scraped rows reach live search.
+ *
+ * `getPerformances()` already filters to review_status='published', so only
+ * approved rows enter the graph. The returned PerformanceWithCompany rows carry
+ * every Performance field plus company_id, so the pure builder above consumes
+ * them unchanged; the static-only memo is intentionally bypassed.
+ */
+export async function buildGraphAsync(): Promise<Graph> {
+  const [companies, performances] = await Promise.all([
+    getCompanies(),
+    getPerformances(),
+  ])
+  return buildGraph(companies, performances)
 }

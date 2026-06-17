@@ -167,6 +167,11 @@ export async function getPerformances(
     let builder = client
       .from('performances')
       .select('*, company:companies!inner(*)')
+      // Only owner-approved rows are ever public. Scraped rows land as
+      // 'pending' and must be approved (via Telegram) before they appear.
+      // Seed rows default to 'published' (migration 002), so this is a no-op
+      // for the curated dataset.
+      .eq('review_status', 'published')
 
     if (query.company_slug) {
       builder = builder.eq('company.slug', query.company_slug)

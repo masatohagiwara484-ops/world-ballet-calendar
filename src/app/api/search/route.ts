@@ -8,7 +8,7 @@
  * Returns SearchResponse { total, page, page_size, items, facets }.
  */
 import { NextResponse, type NextRequest } from 'next/server'
-import { search } from '@/lib/search'
+import { searchAsync } from '@/lib/search'
 import type { SearchFilters, SearchSort, WorkKind } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,7 @@ function num(v: string | null): number | undefined {
   return Number.isFinite(n) ? n : undefined
 }
 
-export function GET(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const kind = sp.get('kind')
   const sort = sp.get('sort')
@@ -43,7 +43,7 @@ export function GET(req: NextRequest) {
     page_size: num(sp.get('page_size')),
   }
 
-  const result = search(filters)
+  const result = await searchAsync(filters)
   return NextResponse.json(result, {
     headers: { 'cache-control': 's-maxage=300, stale-while-revalidate=600' },
   })

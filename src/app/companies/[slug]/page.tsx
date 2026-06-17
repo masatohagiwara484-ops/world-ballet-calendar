@@ -7,6 +7,9 @@ import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import type { Company, PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
+// Companies discovered via ingestion (not in the build-time static params) must
+// render on-demand instead of 404ing until the next full rebuild.
+export const dynamicParams = true
 
 interface Props {
   params: { slug: string }
