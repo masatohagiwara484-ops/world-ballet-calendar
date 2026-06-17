@@ -168,6 +168,35 @@ export async function writePending(
   return rows.map((r) => r.id)
 }
 
+/** Record (or update) the Telegram digest batch — the approval state machine. */
+export async function recordBatch(
+  client: SupabaseClient,
+  batch: {
+    id: string
+    company_slug: string
+    run_id: string
+    telegram_chat_id?: string | null
+    telegram_message_id?: string | null
+    performance_ids: string[]
+    counts: Record<string, number>
+  }
+): Promise<void> {
+  const { error } = await client.from('ingest_batches').upsert(
+    {
+      id: batch.id,
+      company_slug: batch.company_slug,
+      run_id: batch.run_id,
+      telegram_chat_id: batch.telegram_chat_id ?? null,
+      telegram_message_id: batch.telegram_message_id ?? null,
+      status: 'sent',
+      performance_ids: batch.performance_ids,
+      counts: batch.counts,
+    },
+    { onConflict: 'id' }
+  )
+  if (error) throw error
+}
+
 /**
  * Mark cancelled rows as pending review WITHOUT touching their other fields —
  * cancellation is a state the owner confirms, never a silent unpublish.

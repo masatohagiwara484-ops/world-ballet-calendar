@@ -19,6 +19,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { companies } from '../../src/data/companies'
+import { formatDigest, sendDigest, type DigestLine } from '../../src/lib/telegram'
 import type { ScraperAdapter } from '../scrapers/types'
 import { normalizeMany } from '../scrapers/normalize'
 import royalBallet from '../scrapers/adapters/royal-ballet'
@@ -34,6 +35,7 @@ import {
   upsertCredits,
   writePending,
   markCancelledPending,
+  recordBatch,
 } from './state'
 import type { ExistingRow, IngestPerformance } from './types'
 
@@ -84,7 +86,7 @@ async function loadHtml(adapter: ScraperAdapter, live: boolean): Promise<string>
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
 
 /** Run one source through the full pipeline. */
-async function runSource(adapter: ScraperAdapter, args: Args): Promise<boolean> {
+async function runSource(adapter: ScraperAdapter, args: Args, runId: string): Promise<boolean> {
   const writer = args.live ? getWriter() : null
   console.log(`\n=== ${adapter.companySlug} (${args.live ? 'live' : 'fixture'}) ===`)
 
@@ -140,6 +142,57 @@ async function runSource(adapter: ScraperAdapter, args: Args): Promise<boolean> 
   await upsertCredits(writer, resolved.credits)
   await markCancelledPending(writer, cancelled.map((c) => c.id))
   console.log(`  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled) to Supabase`)
+
+  // One Telegram digest per company per run — only when something actually
+  // changed (unchanged-only runs are silent). The owner approves via the webhook.
+  const changed = rows.filter((r) => r.change_kind !== 'unchanged')
+  const allIds = [...changed.map((r) => r.id), ...cancelled.map((c) => c.id)]
+  if (allIds.length > 0) {
+    const batchId = `${runId}:${adapter.companySlug}`
+    const chatId = process.env.TELEGRAM_CHAT_ID ?? null
+    const existingById = existing
+    const lines: DigestLine[] = [
+      ...changed.map((r) => ({
+        change_kind: r.change_kind,
+        title: r.title,
+        start_date: r.start_date,
+        end_date: r.end_date,
+        was: r.change_kind === 'date-changed' ? existingById.get(r.id)?.start_date : undefined,
+      })),
+      ...cancelled.map((c) => ({
+        change_kind: 'cancelled',
+        title: c.id,
+        start_date: c.start_date,
+        end_date: c.end_date,
+      })),
+    ]
+    let messageId: string | null = null
+    if (chatId) {
+      const companyName = companies.find((c) => c.slug === adapter.companySlug)?.name ?? adapter.companySlug
+      const text = formatDigest({
+        companyName,
+        runId,
+        batchId,
+        lines,
+        sourceUrl: adapter.sourceUrl,
+        confidence: 1,
+      })
+      try {
+        messageId = await sendDigest(chatId, text, batchId)
+      } catch (err) {
+        console.warn(`  ! telegram digest failed: ${msg(err)}`)
+      }
+    }
+    await recordBatch(writer, {
+      id: batchId,
+      company_slug: adapter.companySlug,
+      run_id: runId,
+      telegram_chat_id: chatId,
+      telegram_message_id: messageId,
+      performance_ids: allIds,
+      counts,
+    })
+  }
   return true
 }
 
@@ -211,10 +264,11 @@ async function main(): Promise<void> {
     process.exit(args.adapter ? 1 : 0)
   }
 
+  const runId = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
   let anyFailed = false
   for (const adapter of targets) {
     try {
-      const ok = await runSource(adapter, args)
+      const ok = await runSource(adapter, args, runId)
       if (!ok) anyFailed = true
     } catch (err) {
       anyFailed = true
