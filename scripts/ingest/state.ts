@@ -168,6 +168,16 @@ export async function writePending(
   return rows.map((r) => r.id)
 }
 
+/** Publish rows directly (auto-approve path) — skips the review queue. */
+export async function publishIds(client: SupabaseClient, ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const { error } = await client
+    .from('performances')
+    .update({ review_status: 'published', last_verified: new Date().toISOString() })
+    .in('id', ids)
+  if (error) throw error
+}
+
 /** Record (or update) the Telegram digest batch — the approval state machine. */
 export async function recordBatch(
   client: SupabaseClient,

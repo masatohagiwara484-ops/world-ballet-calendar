@@ -22,7 +22,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { companies } from '../../src/data/companies'
-import { formatDigest, sendDigest, type DigestLine } from '../../src/lib/telegram'
+import { formatDigest, sendDigest, sendNotice, type DigestLine } from '../../src/lib/telegram'
 import type { ScraperAdapter, RawPerformance } from '../scrapers/types'
 import { normalizeMany } from '../scrapers/normalize'
 import royalBallet from '../scrapers/adapters/royal-ballet'
@@ -42,6 +42,7 @@ import {
   upsertCredits,
   writePending,
   markCancelledPending,
+  publishIds,
   recordBatch,
 } from './state'
 import type { ExistingRow, IngestPerformance } from './types'
@@ -117,8 +118,14 @@ async function extract(src: SourceConfig, content: string): Promise<{ raws: RawP
 
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
 
+/** Per-source outcome — collected into the end-of-run summary. */
+interface SourceResult {
+  ok: boolean
+  line: string
+}
+
 /** Run one source through the full pipeline. */
-async function runSource(src: SourceConfig, args: Args, runId: string): Promise<boolean> {
+async function runSource(src: SourceConfig, args: Args, runId: string): Promise<SourceResult> {
   const writer = args.live ? getWriter() : null
   console.log(`\n=== ${src.companySlug} (${args.live ? 'live' : 'fixture'}, ${src.adapter ? 'adapter' : src.kind}) ===`)
 
@@ -127,16 +134,18 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     content = await loadContent(src, args.live)
   } catch (err) {
     console.warn(`  ! could not load source (${msg(err)}); skipping.`)
-    return false
+    return { ok: false, line: `⚠️ ${src.companySlug}: load failed (${msg(err)})` }
   }
 
   // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend).
+  let autoApprove = false
   if (writer) {
     const state = await getSourceState(writer, src.companySlug)
+    autoApprove = state?.auto_approve ?? false
     const hash = pageHash(content)
     if (state?.last_hash && state.last_hash === hash) {
       console.log('  · page unchanged since last run — skipping (0 cost)')
-      return true
+      return { ok: true, line: `· ${src.companySlug}: unchanged` }
     }
     await saveSourceState(writer, src.companySlug, { last_hash: hash })
   }
@@ -150,7 +159,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     confidence = r.confidence
   } catch (err) {
     console.warn(`  ! extraction threw (${msg(err)}); skipping.`)
-    return false
+    return { ok: false, line: `⚠️ ${src.companySlug}: extraction failed (${msg(err)})` }
   }
   const { valid, rejected } = normalizeMany(raws, companyIdMap())
   console.log(`  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected (confidence ${confidence})`)
@@ -177,7 +186,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
 
   if (!writer) {
     console.log('  (dry run — set SUPABASE_SERVICE_ROLE_KEY for live writes)')
-    return true
+    return { ok: true, line: `(dry) ${src.companySlug}: ${rows.length} rows` }
   }
 
   // Write: entities first, then pending performances, then credits, then cancels.
@@ -187,12 +196,33 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   await markCancelledPending(writer, cancelled.map((c) => c.id))
   console.log(`  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled) to Supabase`)
 
-  // One Telegram digest per company per run — only when something changed.
   const changed = rows.filter((r) => r.change_kind !== 'unchanged')
+  const chatId = process.env.TELEGRAM_CHAT_ID ?? null
+
+  // AUTO-APPROVE (earned): a trusted source whose run is ALL new additions, at
+  // high confidence, with no date changes or cancellations, publishes directly
+  // with a notify-only summary. Anything else routes to manual review.
+  const autoEligible =
+    autoApprove &&
+    confidence >= 0.9 &&
+    cancelled.length === 0 &&
+    changed.length > 0 &&
+    changed.every((r) => r.change_kind === 'new')
+
+  if (autoEligible) {
+    await publishIds(writer, changed.map((r) => r.id))
+    console.log(`  ✓ auto-approved ${changed.length} new rows (trusted source)`)
+    if (chatId) {
+      const name = companies.find((c) => c.slug === src.companySlug)?.name ?? src.companySlug
+      await sendNotice(chatId, `✅ *${name}* — ${changed.length} new auto-published (run ${runId})`).catch(() => {})
+    }
+    return { ok: true, line: `✅ ${src.companySlug}: ${changed.length} auto-published` }
+  }
+
+  // One Telegram digest per company per run — only when something changed.
   const allIds = [...changed.map((r) => r.id), ...cancelled.map((c) => c.id)]
   if (allIds.length > 0) {
     const batchId = `${runId}:${src.companySlug}`
-    const chatId = process.env.TELEGRAM_CHAT_ID ?? null
     const lines: DigestLine[] = [
       ...changed.map((r) => ({
         change_kind: r.change_kind,
@@ -223,7 +253,11 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
       counts,
     })
   }
-  return true
+  const pendingN = changed.length + cancelled.length
+  return {
+    ok: true,
+    line: pendingN > 0 ? `📝 ${src.companySlug}: ${pendingN} pending review` : `· ${src.companySlug}: no changes`,
+  }
 }
 
 /** Offline proof that the differ tags every change kind correctly. */
@@ -292,13 +326,26 @@ async function main(): Promise<void> {
 
   const runId = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
   let anyFailed = false
+  const summary: string[] = []
   for (const src of targets) {
     try {
-      const ok = await runSource(src, args, runId)
-      if (!ok) anyFailed = true
+      const res = await runSource(src, args, runId)
+      summary.push(res.line)
+      if (!res.ok) anyFailed = true
     } catch (err) {
       anyFailed = true
+      summary.push(`⚠️ ${src.companySlug}: crashed (${msg(err)})`)
       console.warn(`  ! ${src.companySlug} failed: ${msg(err)}`)
+    }
+  }
+
+  // End-of-run report — one Telegram message so the owner sees the whole crawl
+  // at a glance (auto-published, pending, skipped, errors).
+  console.log(`\n=== run ${runId} summary ===\n${summary.join('\n')}`)
+  if (args.live) {
+    const chatId = process.env.TELEGRAM_CHAT_ID
+    if (chatId) {
+      await sendNotice(chatId, `🗂 *Ingest run ${runId}*\n${summary.join('\n')}`).catch(() => {})
     }
   }
   process.exit(args.fixture && anyFailed ? 1 : 0)

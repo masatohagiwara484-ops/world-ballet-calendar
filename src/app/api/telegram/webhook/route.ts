@@ -38,6 +38,38 @@ interface BatchRow {
   counts: Record<string, number>
 }
 
+/** Runs of clean human approvals before a source earns auto-approve. */
+const AUTO_APPROVE_AFTER = 3
+
+/**
+ * Earned trust: a clean Approve grows the source's streak and, at the
+ * threshold, flips auto_approve on. Any Reject resets the streak and revokes
+ * auto-approve — trust is earned slowly and lost immediately.
+ */
+async function adjustTrust(
+  client: SupabaseClient,
+  slug: string,
+  approved: boolean
+): Promise<void> {
+  if (!approved) {
+    await client
+      .from('ingest_sources')
+      .update({ consecutive_clean_runs: 0, auto_approve: false })
+      .eq('slug', slug)
+    return
+  }
+  const { data } = await client
+    .from('ingest_sources')
+    .select('consecutive_clean_runs')
+    .eq('slug', slug)
+    .maybeSingle()
+  const next = ((data as { consecutive_clean_runs: number } | null)?.consecutive_clean_runs ?? 0) + 1
+  await client
+    .from('ingest_sources')
+    .update({ consecutive_clean_runs: next, auto_approve: next >= AUTO_APPROVE_AFTER })
+    .eq('slug', slug)
+}
+
 /** Revalidate every page a publish/reject could have changed. */
 async function revalidateFor(
   client: SupabaseClient,
@@ -126,6 +158,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       .in('id', ids)
       .eq('review_status', 'pending')
     await client.from('ingest_batches').update({ status: 'approved' }).eq('id', batchId)
+    await adjustTrust(client, batch.company_slug, true)
     await revalidateFor(client, batch.company_slug, ids)
     resultText = `✅ *Approved* — ${ids.length} change${ids.length === 1 ? '' : 's'} now live.`
   } else if (action === 'reject') {
@@ -135,6 +168,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       .in('id', ids)
       .eq('review_status', 'pending')
     await client.from('ingest_batches').update({ status: 'rejected' }).eq('id', batchId)
+    await adjustTrust(client, batch.company_slug, false)
     resultText = `🚫 *Rejected* — ${ids.length} change${ids.length === 1 ? '' : 's'} discarded.`
   } else {
     await answerCallback(cq.id, 'Unknown action.')

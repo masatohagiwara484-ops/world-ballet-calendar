@@ -102,6 +102,16 @@ export async function sendDigest(
   return result?.message_id != null ? String(result.message_id) : null
 }
 
+/** Send a plain notice (no buttons) — auto-approve summaries, run reports, alerts. */
+export async function sendNotice(chatId: string, text: string): Promise<void> {
+  await call('sendMessage', {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown',
+    disable_web_page_preview: true,
+  })
+}
+
 /** Acknowledge a button tap (stops the spinner, shows a toast). */
 export async function answerCallback(callbackId: string, text: string): Promise<void> {
   await call('answerCallbackQuery', { callback_query_id: callbackId, text })

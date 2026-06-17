@@ -1,14 +1,16 @@
-name: Weekly Scrape
+name: Ingest
 
-# Refreshes performance data from each company's website once a week and
-# upserts it into Supabase. Each adapter runs in isolation; a single failing
-# source never fails the whole job (the CLI handles per-adapter errors and
-# `continue-on-error` guards the step).
+# Crawls each source's website/feed every 2 days, extracts performances, resolves
+# entities, and writes them to Supabase as review_status='pending'. NOTHING is
+# published here — the owner approves via Telegram (the webhook flips pending →
+# published). Each source runs in isolation; one failing source never fails the
+# whole job (the orchestrator handles per-source errors and `continue-on-error`
+# guards the step).
 
 on:
   schedule:
-    # Every Monday 04:17 UTC (off-the-hour to avoid cron congestion).
-    - cron: '17 4 * * 1'
+    # Every 2 days at 04:17 UTC (off-the-hour to avoid cron congestion).
+    - cron: '17 4 */2 * *'
   workflow_dispatch: {}
 
 concurrency:
@@ -16,12 +18,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  scrape:
+  ingest:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - name: Checkout
@@ -39,9 +44,9 @@ jobs:
       - name: Validate static dataset
         run: npm run validate:data
 
-      - name: Run scrapers (live, upsert to Supabase)
-        # The CLI exits 0 in live mode even if some adapters fail, and
-        # continue-on-error guarantees the workflow is never marked failed by
-        # a single flaky source.
+      - name: Run ingestion (live → pending review)
+        # The orchestrator exits 0 in live mode even if some sources fail, and
+        # continue-on-error guarantees the workflow is never marked failed by a
+        # single flaky source.
         continue-on-error: true
-        run: npx tsx scripts/scrapers/run.ts --all --live
+        run: npx tsx scripts/ingest/run-ingest.ts --all --live
