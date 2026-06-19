@@ -25,6 +25,12 @@ const config: Config = {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
         display: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
+        // "The Seasons" substitute (Italiana) — hero headline/tagline + footer brand text only.
+        seasons: ["var(--font-seasons)", "ui-serif", "Georgia", "serif"],
+        // "Warbler" substitute (Fraunces) — company name + description text only.
+        warbler: ["var(--font-warbler)", "ui-serif", "Georgia", "serif"],
+        // Footer brand serif (Playfair Display) — weighted elegant serif.
+        playfair: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
       },
       colors: {
         // Stage — warm whites (remapped: backgrounds now read light)

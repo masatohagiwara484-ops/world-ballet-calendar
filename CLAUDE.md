@@ -83,12 +83,21 @@ re-request this — it is the default for every Agent invocation.
 npm run dev      # 開発サーバー
 npm run build    # 本番ビルド確認
 npm run seed     # Supabase シードデータ投入
+npm run ingest -- --all --fixture   # 取り込みパイプライン（オフライン・書込なし）
+npm run ingest -- --all --live      # 取り込み（pending として書込＋Telegram 承認）
+npm run ingest:selftest             # 差分エンジンの自己検証
 git push origin main  # Vercel 自動デプロイ
 ```
+
+取り込み（自律スクレイピング＋Telegram 人間承認）の運用手順は
+`docs/INGESTION_SETUP.md`。`review_status` ゲートにより、承認なしに公開されない。
 
 ## Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL` — Vercel 設定済み + `.env.local`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Vercel 設定済み + `.env.local`
+- `SUPABASE_SERVICE_ROLE_KEY` — GitHub Secrets + Vercel（サーバ）+ `.env.local`
+- `ANTHROPIC_API_KEY` — GitHub Secrets + `.env.local`（Haiku 抽出）
+- `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_WEBHOOK_SECRET` — 承認フロー
 
 ## Live URLs
 - Production: https://worldballetoperacalender.vercel.app

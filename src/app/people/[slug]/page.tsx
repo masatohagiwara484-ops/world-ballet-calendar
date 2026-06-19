@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
-import { buildGraph } from '@/lib/graph'
-import { search } from '@/lib/search'
+import { buildGraph, buildGraphAsync } from '@/lib/graph'
+import { searchAsync } from '@/lib/search'
 import { gradientFor, monogram } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
 import type { PersonRole, SearchResultItem } from '@/lib/types'
@@ -48,7 +48,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { personBySlug } = buildGraph()
+  const { personBySlug } = await buildGraphAsync()
   const person = personBySlug.get(params.slug)
   if (!person) return {}
 
@@ -64,12 +64,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PersonPage({ params }: Props) {
-  const { personBySlug } = buildGraph()
+  const { personBySlug } = await buildGraphAsync()
   const person = personBySlug.get(params.slug)
   if (!person) notFound()
 
   // Fetch every performance credited to this person
-  const { items, total } = search({ person_slug: params.slug, page_size: 200 })
+  const { items, total } = await searchAsync({ person_slug: params.slug, page_size: 200 })
 
   // Group performances by the primary role the person holds in each
   // We inspect item.credits to find this person and group by role
