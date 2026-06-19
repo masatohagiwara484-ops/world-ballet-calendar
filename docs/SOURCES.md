@@ -5,6 +5,33 @@ scraper/ingestion pipeline (see `docs/INGESTION.md` and the `data-ingest` skill)
 reads one **adapter** per source. The richer this list, the more of the world's
 stages the catalogue covers.
 
+## ⚡ Start here: auto-discover feeds (run from YOUR machine)
+
+Don't hunt for feeds by hand. Run the probe — it opens every house and reports
+which ones expose an official iCal / RSS / JSON-LD feed, writing a ready-to-read
+table to `docs/FEED_DISCOVERY.md`:
+
+```bash
+npm run discover:feeds                      # all houses
+npm run discover:feeds -- --slug royal-ballet   # one house
+```
+
+**Run it on your own Mac, not a server.** Many houses (Cloudflare) return `403`
+to datacenter IPs but serve a normal browser, so a datacenter run reports every
+site as `bot-blocked` — a local run sees the real feeds. The probe is read-only.
+
+### Source tiers (legality-first — we never evade bot protection)
+
+| Tier | What | Action |
+|---|---|---|
+| **A** | Official machine feed (iCal / RSS / public JSON-LD) | Ingest now — fill the Feed column below |
+| **B** | Authoritative aggregator API with an official agreement | Apply, then integrate |
+| **C** | Official partnership / data request to the house | Email the house's press/data team |
+| **—** | No feed and no agreement | **Skip.** A missing house is fine; evading a site's Terms is not |
+
+A house that the probe marks `bot-blocked` is **not** automatically Tier —;
+re-check it in your browser. The feed may exist behind the bot wall.
+
 > **Your job (the human-in-the-loop):** for each company below, fill the four
 > `TODO` columns, then add new companies at the bottom. You do **not** need to
 > write any code — just research and fill the table. An engineer (or the AI
