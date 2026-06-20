@@ -68,6 +68,13 @@ interface SourceConfig {
   render?: boolean
   /** Best-effort selector to wait for after render (the listings container). */
   waitForSelector?: string
+  /**
+   * Source-scoped title exclusion. Some house calendars list events outside the
+   * company's own art form (the Met's calendar carries ABT ballet + concerts).
+   * A matching title is dropped before write — better a missing row than a
+   * misattributed one. Distinct from JUNK_TITLE, which is the global junk filter.
+   */
+  excludeTitle?: RegExp
 }
 
 /**
@@ -94,7 +101,18 @@ const SOURCES: Record<string, SourceConfig> = {
   // to be single-event files, and the Teatro Colón / Opera Australia WordPress
   // /feed/ URLs were news/empty (verified via `inspect:feed`). Every other house
   // therefore uses the render path below.
-  'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld', performanceKind: 'opera' },
+  // Opera-only: the Met calendar also lists ABT ballet (summer season) and
+  // concerts/galas at the Opera House. Those are dropped so the Metropolitan
+  // Opera page shows only genuine operas. The markers below are specific to the
+  // non-opera events and are checked NOT to match real operas (e.g. "Silent
+  // Night" and "Lincoln in the Bardo" are operas and survive).
+  'metropolitan-opera': {
+    companySlug: 'metropolitan-opera',
+    url: 'https://www.metopera.org/calendar',
+    kind: 'jsonld',
+    performanceKind: 'opera',
+    excludeTitle: /\bABT\b|\bin concert\b|\bconcert\b|\bsymphony\b|\bjubilee\b|\bcelebration\b|\btoast\b|special guest artist|grand finals/i,
+  },
 }
 
 /**
@@ -221,12 +239,13 @@ const JUNK_TITLE = /\b(load[\s-]*test|test\s*prod(uction)?|lorem ipsum|placehold
  * a season calendar. Junk titles are filtered out here too.
  */
 function collapseProductions<T extends { id: string; title: string; start_date: string; end_date: string }>(
-  rows: T[]
+  rows: T[],
+  excludeTitle?: RegExp
 ): { kept: T[]; dropped: number; collapsed: number } {
   const byId = new Map<string, T>()
   let dropped = 0
   for (const r of rows) {
-    if (JUNK_TITLE.test(r.title)) {
+    if (JUNK_TITLE.test(r.title) || (excludeTitle && excludeTitle.test(r.title))) {
       dropped += 1
       continue
     }
@@ -290,7 +309,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   // Collapse per-date events into one row per production, and drop junk. This
   // is what makes the upsert safe (no duplicate ids in a batch) and the calendar
   // correct (one entry per production run, not one per night).
-  const { kept, dropped, collapsed } = collapseProductions(valid)
+  const { kept, dropped, collapsed } = collapseProductions(valid, src.excludeTitle)
   console.log(
     `  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected` +
       ` → ${kept.length} productions (collapsed ${collapsed} dates, dropped ${dropped} junk) (confidence ${confidence})`
