@@ -13,7 +13,8 @@
     "scrape": "npx tsx scripts/scrapers/run.ts",
     "ingest": "npx tsx scripts/ingest/run-ingest.ts",
     "ingest:selftest": "npx tsx scripts/ingest/run-ingest.ts --selftest",
-    "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts"
+    "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts",
+    "inspect:feed": "npx tsx scripts/ingest/inspect-feed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
