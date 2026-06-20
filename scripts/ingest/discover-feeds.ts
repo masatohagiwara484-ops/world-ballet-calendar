@@ -274,7 +274,9 @@ async function main(): Promise<void> {
     process.stdout.write(`  · ${c.slug} … `)
     const f = await probe(c.slug, c.name, c.website)
     findings.push(f)
-    console.log(`${f.tier === 'A' ? '✅ FEED' : f.reachable ? '— none' : '⚠ ' + f.status}  (${f.note})`)
+    const feedUrl = f.ical[0] ?? f.rss[0] ?? (f.jsonLdEvents ? f.listingUrl : null)
+    const urlLine = feedUrl ? `\n    → ${feedUrl}` : ''
+    console.log(`${f.tier === 'A' ? '✅ FEED' : f.reachable ? '— none' : '⚠ ' + f.status}  (${f.note})${urlLine}`)
     await sleep(POLITENESS_MS)
   }
 
