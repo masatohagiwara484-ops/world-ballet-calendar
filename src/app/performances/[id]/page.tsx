@@ -5,6 +5,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { getPerformances } from '@/lib/data'
 import { formatRange } from '@/components/shared/format'
 import { gradientFor, monogram, KIND_LABEL, bookingUrl, creditLine } from '@/components/shared/design'
+import { PlanYourTrip } from '@/components/shared/PlanYourTrip'
 import type { PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -187,6 +188,17 @@ export default async function PerformancePage({ params }: Props) {
                 View company &rarr;
               </Link>
             </div>
+
+            <PlanYourTrip
+              ctx={{
+                city: p.company.city,
+                country: p.company.country,
+                lat: p.company.lat,
+                lng: p.company.lng,
+                startDate: p.start_date,
+                endDate: p.end_date,
+              }}
+            />
           </aside>
         </div>
       </section>
