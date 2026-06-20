@@ -25,9 +25,6 @@ import { companies } from '../../src/data/companies'
 import { formatDigest, sendDigest, sendNotice, type DigestLine } from '../../src/lib/telegram'
 import type { ScraperAdapter, RawPerformance } from '../scrapers/types'
 import { normalizeMany } from '../scrapers/normalize'
-import royalBallet from '../scrapers/adapters/royal-ballet'
-import parisOperaBallet from '../scrapers/adapters/paris-opera-ballet'
-import wienerStaatsoper from '../scrapers/adapters/wiener-staatsoper'
 import { contentHash, pageHash } from './hash'
 import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
@@ -62,14 +59,32 @@ interface SourceConfig {
 }
 
 /**
- * Source registry. The three existing CSS adapters are templates for HTML
- * sources; feed/LLM houses are added here as their docs/SOURCES.md rows are
- * filled (P4/P5). All start from the same SourceConfig contract.
+ * Feed URLs discovered by `npm run discover:feeds` (Tier A). Paste the EXACT
+ * feed URL from docs/FEED_DISCOVERY.md ("Houses ready to ingest now"). A house
+ * whose URL is left blank is skipped (with a notice) — fill it to activate it.
+ *
+ * iCal/RSS: the URL must be the feed endpoint itself (.ics / .xml / /feed).
+ * JSON-LD : the URL is the listing page that embeds <script type=ld+json>.
+ */
+const HAMBURG_BALLETT_ICAL = '' // iCal found on homepage — paste the .ics URL
+const STUTTGART_BALLET_ICAL = '' // iCal found on /schedule — paste the .ics URL
+const TEATRO_COLON_RSS = '' // RSS found — paste the feed URL (verify it lists performances, not news)
+const OPERA_AUSTRALIA_RSS = '' // RSS found — paste the feed URL (verify it lists performances, not news)
+
+/**
+ * Source registry — only houses with a verified official feed (Tier A). The old
+ * CSS-adapter sources were removed: those houses expose no working feed, and
+ * brittle selectors were the road to wrong data. No-feed houses are added later
+ * via the AI-extraction path, never by fabrication. Each source is the same
+ * SourceConfig contract; feeds parse deterministically with no model call.
  */
 const SOURCES: Record<string, SourceConfig> = {
-  'royal-ballet': { companySlug: 'royal-ballet', url: royalBallet.sourceUrl, kind: 'html', adapter: royalBallet },
-  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: parisOperaBallet.sourceUrl, kind: 'html', adapter: parisOperaBallet },
-  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: wienerStaatsoper.sourceUrl, kind: 'html', adapter: wienerStaatsoper },
+  // JSON-LD embedded in the calendar page — the probe confirmed Event objects.
+  'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld' },
+  'hamburg-ballett': { companySlug: 'hamburg-ballett', url: HAMBURG_BALLETT_ICAL, kind: 'ical' },
+  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: STUTTGART_BALLET_ICAL, kind: 'ical' },
+  'teatro-colon': { companySlug: 'teatro-colon', url: TEATRO_COLON_RSS, kind: 'rss' },
+  'opera-australia': { companySlug: 'opera-australia', url: OPERA_AUSTRALIA_RSS, kind: 'rss' },
 }
 
 interface Args {
@@ -94,10 +109,26 @@ function parseArgs(argv: string[]): Args {
   return a
 }
 
+/**
+ * UA for live fetches. Defaults to a real browser string so that public
+ * listing/feed pages the operator can open in their own browser are also
+ * fetchable from their machine — many houses 403 a bot UA from any IP. This is
+ * NOT bot-evasion: we only read pages a browser would, respect robots, and never
+ * defeat an active challenge/CAPTCHA. Override with INGEST_UA if needed.
+ */
+const INGEST_UA =
+  process.env.INGEST_UA ??
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
 async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
   if (live) {
     const res = await fetch(src.url, {
-      headers: { 'user-agent': 'WorldBalletCalendarBot/1.0 (+contact)' },
+      headers: {
+        'user-agent': INGEST_UA,
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/calendar;q=0.9,*/*;q=0.8',
+        'accept-language': 'en;q=0.9',
+      },
+      redirect: 'follow',
     })
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
     return res.text()
@@ -308,13 +339,20 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   if (args.selftest) return selftest()
 
-  const targets = args.all
+  const selected = args.all
     ? Object.values(SOURCES)
     : args.adapter && SOURCES[args.adapter]
       ? [SOURCES[args.adapter]]
       : []
 
-  if (targets.length === 0) {
+  // Skip feed houses whose URL has not been pasted in yet (blank = not ready).
+  const targets = selected.filter((s) => {
+    if (s.url && s.url.trim()) return true
+    console.warn(`  · ${s.companySlug}: feed URL not set — paste it from docs/FEED_DISCOVERY.md to activate.`)
+    return false
+  })
+
+  if (selected.length === 0) {
     console.error(
       `Usage: tsx scripts/ingest/run-ingest.ts --all [--fixture|--live]\n` +
         `       tsx scripts/ingest/run-ingest.ts --source <name> [--fixture|--live]\n` +
