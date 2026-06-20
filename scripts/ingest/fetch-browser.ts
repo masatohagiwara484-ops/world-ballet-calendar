@@ -76,49 +76,133 @@ export interface RenderOptions {
 
 /** Visible text on a "load more"/"next page" control across common houses. */
 const LOAD_MORE_RE =
-  /load\s*more|show\s*more|view\s*more|see\s*more|more\s*(results|events|performances|dates)|next(\s*page)?|voir\s*plus|mehr\s*(laden|anzeigen)|afficher\s*plus/i
+  /load\s*more|show\s*more|view\s*more|see\s*more|load\s*\d+\s*more|more\s*(results|events|performances|dates)|next(\s*page)?|voir\s*plus|mehr\s*(laden|anzeigen)|afficher\s*plus/i
+
+/** Common cookie-consent "accept" controls (OneTrust, Cookiebot, generic). */
+const COOKIE_ACCEPT_SELECTORS = [
+  '#onetrust-accept-btn-handler',
+  '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+  '#CybotCookiebotDialogBodyButtonAccept',
+  'button[aria-label*="accept" i]',
+  'button[data-testid*="accept" i]',
+  '[id*="cookie" i] button',
+]
+const COOKIE_ACCEPT_TEXT_RE = /accept all|allow all|accept cookies|accept all cookies|i accept|agree|got it|allow cookies/i
+
+/** Dismiss a cookie-consent banner so it can't intercept scroll/click. Best-effort. */
+async function dismissCookies(page: any): Promise<boolean> {
+  for (const sel of COOKIE_ACCEPT_SELECTORS) {
+    try {
+      const el = await page.$(sel)
+      if (el && (await el.isVisible().catch(() => false))) {
+        await el.click({ timeout: 2000 }).catch(() => {})
+        await page.waitForTimeout(400)
+        return true
+      }
+    } catch {
+      /* keep trying */
+    }
+  }
+  // Text-based fallback (button/anchor whose label looks like an accept control).
+  const clicked = await page
+    .evaluate((reSrc: string) => {
+      const re = new RegExp(reSrc, 'i')
+      const els = Array.from(document.querySelectorAll('button, a, [role="button"]')) as HTMLElement[]
+      const btn = els.find((e) => re.test((e.textContent || '').trim()) && e.offsetParent !== null)
+      if (btn) {
+        btn.click()
+        return true
+      }
+      return false
+    }, COOKIE_ACCEPT_TEXT_RE.source)
+    .catch(() => false)
+  if (clicked) await page.waitForTimeout(400)
+  return clicked
+}
+
+/** Count likely listing/booking anchors — a far better progress signal than raw
+ *  HTML length (which barely moves when a few cards are appended). */
+async function probeCounts(page: any): Promise<{ links: number; html: number }> {
+  return page
+    .evaluate(() => ({
+      links: document.querySelectorAll(
+        'a[href*="ticket" i], a[href*="event" i], a[href*="performance" i], a[href*="production" i], a[href*="whats-on" i]'
+      ).length,
+      html: document.body.innerHTML.length,
+    }))
+    .catch(() => ({ links: 0, html: 0 }))
+}
 
 /**
- * Exhaust a paginated / infinite-scroll listing: repeatedly scroll to the bottom
- * and click any "load more"/"next" control until the page stops growing (or the
- * round cap is hit). This is purely the same interaction a visitor performs to
- * see the rest of the season — no API/endpoint guessing, no challenge bypass.
+ * Exhaust a paginated / infinite-scroll listing: dismiss any cookie banner, then
+ * repeatedly scroll to the bottom and click any "load more"/"next" control until
+ * the page stops growing (or the round cap is hit). This is purely the same
+ * interaction a visitor performs to see the rest of the season — no API/endpoint
+ * guessing, no challenge bypass. Logs per-round progress so a failed crawl tells
+ * us WHERE it stalled (cookie wall, no pagination control, JS-only nav, …).
  */
-async function exhaustListing(page: any, maxRounds: number): Promise<void> {
-  let lastLen = 0
+async function exhaustListing(page: any, maxRounds: number, debug: boolean): Promise<void> {
+  if (await dismissCookies(page)) console.log('  · dismissed cookie-consent banner')
+
+  const before = await probeCounts(page)
+  console.log(`  · listing start: ${before.links} booking-links, ${before.html} html chars`)
+
+  let lastLinks = before.links
   let stable = 0
   for (let round = 0; round < maxRounds; round++) {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {})
     await page.waitForTimeout(700)
 
-    const clicked: boolean = await page
-      .evaluate((reSrc: string) => {
-        const re = new RegExp(reSrc, 'i')
-        const els = Array.from(
-          document.querySelectorAll('button, a, [role="button"]')
-        ) as HTMLElement[]
-        const btn = els.find(
-          (e) => re.test((e.textContent || '').trim()) && e.offsetParent !== null && !(e as HTMLButtonElement).disabled
-        )
-        if (btn) {
-          btn.click()
-          return true
-        }
-        return false
-      }, LOAD_MORE_RE.source)
-      .catch(() => false)
+    // Prefer a real Playwright click (handles overlays / scroll-into-view) by
+    // locating a control whose visible text matches LOAD_MORE_RE.
+    let clicked = false
+    try {
+      const loc = page
+        .locator('button, a, [role="button"]')
+        .filter({ hasText: LOAD_MORE_RE })
+        .first()
+      if (await loc.count()) {
+        await loc.scrollIntoViewIfNeeded({ timeout: 1500 }).catch(() => {})
+        await loc.click({ timeout: 2000 })
+        clicked = true
+      }
+    } catch {
+      /* fall through to DOM click */
+    }
+    if (!clicked) {
+      clicked = await page
+        .evaluate((reSrc: string) => {
+          const re = new RegExp(reSrc, 'i')
+          const els = Array.from(document.querySelectorAll('button, a, [role="button"]')) as HTMLElement[]
+          const btn = els.find(
+            (e) =>
+              re.test((e.textContent || '').trim()) &&
+              e.offsetParent !== null &&
+              !(e as HTMLButtonElement).disabled
+          )
+          if (btn) {
+            btn.click()
+            return true
+          }
+          return false
+        }, LOAD_MORE_RE.source)
+        .catch(() => false)
+    }
 
-    await page.waitForTimeout(clicked ? 1400 : 400)
+    await page.waitForTimeout(clicked ? 1500 : 400)
 
-    const len: number = await page.evaluate(() => document.body.innerHTML.length).catch(() => 0)
-    if (len > lastLen) {
-      lastLen = len
+    const now = await probeCounts(page)
+    if (debug) console.log(`  · round ${round + 1}: ${now.links} links${clicked ? ' (clicked)' : ''}`)
+
+    if (now.links > lastLinks) {
+      lastLinks = now.links
       stable = 0
       continue
     }
     // No growth and nothing left to click → two quiet rounds means we're done.
     if (!clicked && ++stable >= 2) break
   }
+  console.log(`  · listing end: ${lastLinks} booking-links after pagination`)
 }
 
 /**
@@ -174,13 +258,31 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
       await page.waitForSelector(opts.waitForSelector, { timeout: 10_000 }).catch(() => {})
     }
 
+    const debug = !!process.env.INGEST_DEBUG
+
     // Pull in the rest of the season (page 2, 3, …) the way a visitor would,
     // so the extractor sees the whole listing rather than only the first screen.
     if (opts.paginate !== false) {
-      await exhaustListing(page, opts.maxPaginationRounds ?? 40)
+      await exhaustListing(page, opts.maxPaginationRounds ?? 40, debug)
     }
 
     const html: string = await page.content()
+
+    // INGEST_DEBUG=1 → dump the final rendered HTML so the operator can inspect
+    // exactly what the browser captured (and share it for adapter authoring).
+    if (debug) {
+      try {
+        const { writeFile, mkdir } = await import('node:fs/promises')
+        const host = new URL(url).hostname.replace(/[^a-z0-9.]+/gi, '-')
+        const dir = new URL('./.debug/', import.meta.url)
+        await mkdir(dir, { recursive: true })
+        const file = new URL(`${host}.html`, dir)
+        await writeFile(file, html, 'utf8')
+        console.log(`  · [debug] wrote rendered HTML (${html.length} chars) → scripts/ingest/.debug/${host}.html`)
+      } catch (e) {
+        console.warn(`  · [debug] dump failed: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
     if (CHALLENGE_RE.test(html)) {
       throw new Error('bot-challenge interstitial detected — not bypassing; treat this house as Tier C')
     }
