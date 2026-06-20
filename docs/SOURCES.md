@@ -37,6 +37,40 @@ re-check it in your browser. The feed may exist behind the bot wall.
 > write any code — just research and fill the table. An engineer (or the AI
 > ingestion agent) turns each filled row into an adapter.
 
+## Current ingestion status (two legitimate paths, never fabrication)
+
+The catalogue is **empty** until verified data is ingested and approved. Two
+paths feed it; both end at the Telegram approval gate (nothing publishes itself):
+
+1. **Feed houses (Tier A, deterministic, no model).** `discover:feeds` found
+   official feeds for 5 houses; they are wired in `scripts/ingest/run-ingest.ts`:
+   Metropolitan Opera (JSON-LD), Hamburg Ballett & Stuttgart Ballet (iCal),
+   Teatro Colón & Opera Australia (RSS). Paste each feed URL from
+   `docs/FEED_DISCOVERY.md` into the constants at the top of the registry.
+
+2. **No-feed houses (AI extraction, local browser).** Flagship ballet houses
+   (Royal Ballet, Paris Opera Ballet, ABT, NYCB, SF Ballet) render their
+   listings with JavaScript — a plain fetch sees nothing. These use the
+   **local Playwright path**: a real headless browser renders the page, then
+   Haiku extracts performances, then you approve in Telegram. Set up once:
+
+   ```bash
+   npm install -D playwright
+   npx playwright install chromium
+   ```
+
+   Then fill each house's what's-on URL in `RENDER_SOURCES` and run the ingest.
+   **Guardrail:** the browser only reads public pages a visitor can open; it
+   never solves CAPTCHAs or defeats an active challenge. A house that challenges
+   is left for Tier C (partnership), not bypassed.
+
+**Run the ingest (from your own machine — residential IP + your keys):**
+
+```bash
+npm run ingest -- --all --live          # fetch → extract → write pending → Telegram
+npm run ingest -- --source royal-ballet --live   # one house
+```
+
 ## What to find for each source
 
 | Column | What to put | Why it matters |
