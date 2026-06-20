@@ -15,7 +15,8 @@
     "ingest:selftest": "npx tsx scripts/ingest/run-ingest.ts --selftest",
     "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts",
     "inspect:feed": "npx tsx scripts/ingest/inspect-feed.ts",
-    "review:pending": "npx tsx scripts/ingest/review-pending.ts"
+    "review:pending": "npx tsx scripts/ingest/review-pending.ts",
+    "inspect:dump": "npx tsx scripts/ingest/inspect-dump.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
