@@ -72,9 +72,6 @@ interface SourceConfig {
  * iCal/RSS: the URL must be the feed endpoint itself (.ics / .xml / /feed).
  * JSON-LD : the URL is the listing page that embeds <script type=ld+json>.
  */
-// Stuttgart: discover:feeds reported "iCal on /schedule" but the concrete .ics
-// endpoint is still needed — paste it here (the /schedule page itself is not a feed).
-const STUTTGART_BALLET_ICAL = ''
 // Teatro Colón & Opera Australia: these are WordPress `/feed/` URLs, which by
 // default serve the latest *blog posts* (news), NOT performances — and the RSS
 // extractor maps each item's pubDate to a performance start_date. VERIFY with
@@ -93,13 +90,11 @@ const OPERA_AUSTRALIA_RSS = 'https://opera.org.au/home/feed/'
 const SOURCES: Record<string, SourceConfig> = {
   // JSON-LD embedded in the calendar page — the probe confirmed Event objects.
   'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld' },
-  // Stuttgart's real .ics endpoint is still needed (blank → skipped with a notice).
-  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: STUTTGART_BALLET_ICAL, kind: 'ical' },
   // ⚠️ WordPress /feed/ URLs — verify with `npm run inspect:feed` before --live.
   'teatro-colon': { companySlug: 'teatro-colon', url: TEATRO_COLON_RSS, kind: 'rss' },
   'opera-australia': { companySlug: 'opera-australia', url: OPERA_AUSTRALIA_RSS, kind: 'rss' },
-  // Hamburg's discovered .ics was a SINGLE-event "add to calendar" file, not a
-  // season feed — it is handled via the render path below instead.
+  // Hamburg & Stuttgart's discovered .ics were SINGLE-event "add to calendar"
+  // files, not season feeds — both are handled via the render path below instead.
 }
 
 /**
@@ -119,9 +114,10 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true },
   'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true },
   'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true },
-  // Hamburg exposes only per-event .ics files (no season feed), so render its
-  // English ballet calendar and AI-extract — same as the other no-feed houses.
+  // Hamburg & Stuttgart expose only per-event .ics files (no season feed), so
+  // render their calendar pages and AI-extract — same as the no-feed houses.
   'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true },
+  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
