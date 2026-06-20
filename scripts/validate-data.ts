@@ -139,25 +139,23 @@ for (const p of performances) {
   )
 }
 
-// 5. Volume thresholds.
+// 5. Company volume (these are real institutions — keep the floor).
 check(
   companies.length >= 24,
   `need >= 24 companies, have ${companies.length}`
 )
-check(
-  performances.length >= 150,
-  `need >= 150 performances, have ${performances.length}`
-)
 
-// 6. >= 25 runs overlapping 2026-06-10 .. 2026-08-31 (calendar full today).
+// NOTE: there is deliberately NO minimum on performance count. The old rules
+// (">= 150 performances", ">= 25 summer runs") forced a *full* calendar, which
+// is exactly what produced the fabricated placeholder season. Under the trust
+// policy an EMPTY or small dataset is valid; what is never valid is a row that
+// fails the integrity checks above. Verified-and-small beats full-and-wrong.
+
+// Summer-overlap count is kept for the report only (informational, not a gate).
 const WINDOW_START = '2026-06-10'
 const WINDOW_END = '2026-08-31'
 const overlapping = performances.filter(
   (p) => p.end_date >= WINDOW_START && p.start_date <= WINDOW_END
-)
-check(
-  overlapping.length >= 25,
-  `need >= 25 runs overlapping ${WINDOW_START}..${WINDOW_END}, have ${overlapping.length}`
 )
 
 /* ------------------------------------------------------------------ */

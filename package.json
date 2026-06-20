@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "npx tsx scripts/seed.ts",
+    "purge:performances": "npx tsx scripts/purge-performances.ts",
     "validate:data": "npx tsx scripts/validate-data.ts",
     "scrape": "npx tsx scripts/scrapers/run.ts",
     "ingest": "npx tsx scripts/ingest/run-ingest.ts",
