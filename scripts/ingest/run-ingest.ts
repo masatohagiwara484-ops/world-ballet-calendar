@@ -30,6 +30,7 @@ import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
 import { extractFeed, type FeedKind } from './extract-feed'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
+import { renderPage } from './fetch-browser'
 import {
   getWriter,
   getSourceState,
@@ -56,6 +57,11 @@ interface SourceConfig {
   kind: 'html' | FeedKind
   /** CSS-template adapter for an HTML source; absent → LLM extraction. */
   adapter?: ScraperAdapter
+  /** Render with a headless browser before extracting — for JS-rendered listing
+   *  pages with no static feed. Requires the optional local Playwright tool. */
+  render?: boolean
+  /** Best-effort selector to wait for after render (the listings container). */
+  waitForSelector?: string
 }
 
 /**
@@ -86,6 +92,28 @@ const SOURCES: Record<string, SourceConfig> = {
   'teatro-colon': { companySlug: 'teatro-colon', url: TEATRO_COLON_RSS, kind: 'rss' },
   'opera-australia': { companySlug: 'opera-australia', url: OPERA_AUSTRALIA_RSS, kind: 'rss' },
 }
+
+/**
+ * No-feed ballet houses whose listings are JavaScript-rendered. These use the
+ * local Playwright path (render → AI extract → Telegram review). Fill each
+ * house's real what's-on URL to activate it (blank = skipped). Royal Ballet's
+ * URL is known from the operator; the others need their season/what's-on URL.
+ */
+const PARIS_OPERA_BALLET_LISTING = '' // paste the ballet what's-on URL
+const ABT_LISTING = '' // American Ballet Theatre — paste the season URL
+const NYCB_LISTING = '' // New York City Ballet — paste the season URL
+const SF_BALLET_LISTING = '' // San Francisco Ballet — paste the season URL
+
+const RENDER_SOURCES: Record<string, SourceConfig> = {
+  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true },
+  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true },
+  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true },
+  'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true },
+  'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true },
+}
+
+/** All registered sources (feeds + render). `--all` runs every activated one. */
+const ALL_SOURCES: Record<string, SourceConfig> = { ...SOURCES, ...RENDER_SOURCES }
 
 interface Args {
   adapter?: string
@@ -122,6 +150,10 @@ const INGEST_UA =
 
 async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
   if (live) {
+    // JS-rendered listings need a real browser; static pages/feeds use fetch.
+    if (src.render) {
+      return renderPage(src.url, { ua: INGEST_UA, waitForSelector: src.waitForSelector })
+    }
     const res = await fetch(src.url, {
       headers: {
         'user-agent': INGEST_UA,
@@ -340,15 +372,18 @@ async function main(): Promise<void> {
   if (args.selftest) return selftest()
 
   const selected = args.all
-    ? Object.values(SOURCES)
-    : args.adapter && SOURCES[args.adapter]
-      ? [SOURCES[args.adapter]]
+    ? Object.values(ALL_SOURCES)
+    : args.adapter && ALL_SOURCES[args.adapter]
+      ? [ALL_SOURCES[args.adapter]]
       : []
 
   // Skip feed houses whose URL has not been pasted in yet (blank = not ready).
   const targets = selected.filter((s) => {
     if (s.url && s.url.trim()) return true
-    console.warn(`  · ${s.companySlug}: feed URL not set — paste it from docs/FEED_DISCOVERY.md to activate.`)
+    const how = s.render
+      ? "set its what's-on URL in RENDER_SOURCES"
+      : 'paste its feed URL from docs/FEED_DISCOVERY.md'
+    console.warn(`  · ${s.companySlug}: source URL not set — ${how} to activate.`)
     return false
   })
 
@@ -357,7 +392,7 @@ async function main(): Promise<void> {
       `Usage: tsx scripts/ingest/run-ingest.ts --all [--fixture|--live]\n` +
         `       tsx scripts/ingest/run-ingest.ts --source <name> [--fixture|--live]\n` +
         `       tsx scripts/ingest/run-ingest.ts --selftest\n\n` +
-        `Sources: ${Object.keys(SOURCES).join(', ')}`
+        `Sources: ${Object.keys(ALL_SOURCES).join(', ')}`
     )
     process.exit(args.adapter ? 1 : 0)
   }
