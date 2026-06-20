@@ -55,6 +55,12 @@ interface SourceConfig {
   url: string
   /** 'html' uses the adapter (if present) or the LLM; feeds parse deterministically. */
   kind: 'html' | FeedKind
+  /**
+   * Default performance kind ('ballet'|'opera') applied to any extracted row
+   * that doesn't supply its own. Feeds (iCal/JSON-LD) never set kind, so this
+   * is required for all non-LLM sources. LLM path infers it from page content.
+   */
+  performanceKind?: 'ballet' | 'opera'
   /** CSS-template adapter for an HTML source; absent → LLM extraction. */
   adapter?: ScraperAdapter
   /** Render with a headless browser before extracting — for JS-rendered listing
@@ -88,7 +94,7 @@ const SOURCES: Record<string, SourceConfig> = {
   // to be single-event files, and the Teatro Colón / Opera Australia WordPress
   // /feed/ URLs were news/empty (verified via `inspect:feed`). Every other house
   // therefore uses the render path below.
-  'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld' },
+  'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld', performanceKind: 'opera' },
 }
 
 /**
@@ -103,19 +109,19 @@ const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
 const RENDER_SOURCES: Record<string, SourceConfig> = {
-  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true },
-  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true },
-  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true },
-  'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true },
-  'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true },
+  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet' },
+  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   // Hamburg & Stuttgart expose only per-event .ics files (no season feed), so
   // render their calendar pages and AI-extract — same as the no-feed houses.
-  'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true },
-  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true },
+  'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true, performanceKind: 'ballet' },
+  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true, performanceKind: 'ballet' },
   // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
   // so render the real calendar page and AI-extract instead.
-  'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true },
-  'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true },
+  'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },
+  'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true, performanceKind: 'opera' },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
@@ -176,13 +182,25 @@ async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
 
 /** Extract raw performances by source kind. Confidence: feed/adapter=1.0, LLM=0.85. */
 async function extract(src: SourceConfig, content: string): Promise<{ raws: RawPerformance[]; confidence: number }> {
+  let raws: RawPerformance[]
+  let confidence: number
   if (src.kind !== 'html') {
-    return { raws: extractFeed(src.kind, content, src.companySlug), confidence: 1 }
+    raws = extractFeed(src.kind, content, src.companySlug)
+    confidence = 1
+  } else if (src.adapter) {
+    raws = src.adapter.parse(content)
+    confidence = 1
+  } else {
+    raws = await extractWithLlm(content, src.companySlug)
+    confidence = LLM_CONFIDENCE
   }
-  if (src.adapter) {
-    return { raws: src.adapter.parse(content), confidence: 1 }
+  // Feeds (iCal/JSON-LD) carry no discipline field, so stamp the source's
+  // declared kind onto any row that didn't set its own. Without this every
+  // feed row is rejected by the normalizer ("invalid kind").
+  if (src.performanceKind) {
+    for (const r of raws) if (!r.kind) r.kind = src.performanceKind
   }
-  return { raws: await extractWithLlm(content, src.companySlug), confidence: LLM_CONFIDENCE }
+  return { raws, confidence }
 }
 
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
