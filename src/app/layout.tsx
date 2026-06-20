@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Manrope, Cormorant_Garamond, Italiana, Fraunces, Playfair_Display } from 'next/font/google'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import ProjectNameLoader from '@/components/loaders/ProjectNameLoader'
+import CurtainReveal from '@/components/loaders/CurtainReveal'
 import './globals.css'
 
 // Body / UI — Manrope (refined geometric sans, weights 300–700)
@@ -102,7 +102,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ProjectNameLoader />
+        <CurtainReveal />
         <Navbar />
         {children}
         <Footer />
