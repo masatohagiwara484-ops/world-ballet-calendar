@@ -72,13 +72,8 @@ interface SourceConfig {
  * iCal/RSS: the URL must be the feed endpoint itself (.ics / .xml / /feed).
  * JSON-LD : the URL is the listing page that embeds <script type=ld+json>.
  */
-// Teatro Colón & Opera Australia: these are WordPress `/feed/` URLs, which by
-// default serve the latest *blog posts* (news), NOT performances — and the RSS
-// extractor maps each item's pubDate to a performance start_date. VERIFY with
-// `npm run inspect:feed -- <url>` BEFORE trusting; if the verdict is NEWS, blank
-// these and use the render path instead. Wired so the inspector can run on them.
-const TEATRO_COLON_RSS = 'https://teatrocolon.org.ar/feed/'
-const OPERA_AUSTRALIA_RSS = 'https://opera.org.au/home/feed/'
+// (Teatro Colón & Opera Australia RSS were removed: inspect:feed proved them to
+//  be news/empty, not performances. Both moved to the render path below.)
 
 /**
  * Source registry — only houses with a verified official feed (Tier A). The old
@@ -89,12 +84,11 @@ const OPERA_AUSTRALIA_RSS = 'https://opera.org.au/home/feed/'
  */
 const SOURCES: Record<string, SourceConfig> = {
   // JSON-LD embedded in the calendar page — the probe confirmed Event objects.
+  // This is the ONLY confirmed real season feed: the German .ics links turned out
+  // to be single-event files, and the Teatro Colón / Opera Australia WordPress
+  // /feed/ URLs were news/empty (verified via `inspect:feed`). Every other house
+  // therefore uses the render path below.
   'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld' },
-  // ⚠️ WordPress /feed/ URLs — verify with `npm run inspect:feed` before --live.
-  'teatro-colon': { companySlug: 'teatro-colon', url: TEATRO_COLON_RSS, kind: 'rss' },
-  'opera-australia': { companySlug: 'opera-australia', url: OPERA_AUSTRALIA_RSS, kind: 'rss' },
-  // Hamburg & Stuttgart's discovered .ics were SINGLE-event "add to calendar"
-  // files, not season feeds — both are handled via the render path below instead.
 }
 
 /**
@@ -118,6 +112,10 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // render their calendar pages and AI-extract — same as the no-feed houses.
   'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true },
   'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true },
+  // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
+  // so render the real calendar page and AI-extract instead.
+  'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true },
+  'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
