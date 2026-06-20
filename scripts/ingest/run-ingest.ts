@@ -205,6 +205,44 @@ async function extract(src: SourceConfig, content: string): Promise<{ raws: RawP
 
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
 
+/**
+ * Obvious non-performance junk that some house calendars expose (e.g. the Met's
+ * own "Load Test Prod" sentinel rows dated 2050). Dropped before anything is
+ * written — a single fabricated row destroys the trust the product is built on.
+ */
+const JUNK_TITLE = /\b(load[\s-]*test|test\s*prod(uction)?|lorem ipsum|placeholder|do not (use|book))\b/i
+
+/**
+ * Collapse rows that share an id into one production spanning the whole run
+ * (earliest start … latest end). JSON-LD/iCal calendars emit ONE event per
+ * performance date, so a single production arrives as dozens of same-id rows;
+ * without this the upsert hits "ON CONFLICT cannot affect row a second time"
+ * and the entire run fails. One row per production is also the right shape for
+ * a season calendar. Junk titles are filtered out here too.
+ */
+function collapseProductions<T extends { id: string; title: string; start_date: string; end_date: string }>(
+  rows: T[]
+): { kept: T[]; dropped: number; collapsed: number } {
+  const byId = new Map<string, T>()
+  let dropped = 0
+  for (const r of rows) {
+    if (JUNK_TITLE.test(r.title)) {
+      dropped += 1
+      continue
+    }
+    const existing = byId.get(r.id)
+    if (!existing) {
+      byId.set(r.id, { ...r })
+      continue
+    }
+    // Widen the existing production's span to cover this date.
+    if (r.start_date < existing.start_date) existing.start_date = r.start_date
+    if (r.end_date > existing.end_date) existing.end_date = r.end_date
+  }
+  const kept = [...byId.values()]
+  return { kept, dropped, collapsed: rows.length - dropped - kept.length }
+}
+
 /** Per-source outcome — collected into the end-of-run summary. */
 interface SourceResult {
   ok: boolean
@@ -249,14 +287,21 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     return { ok: false, line: `⚠️ ${src.companySlug}: extraction failed (${msg(err)})` }
   }
   const { valid, rejected } = normalizeMany(raws, companyIdMap())
-  console.log(`  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected (confidence ${confidence})`)
+  // Collapse per-date events into one row per production, and drop junk. This
+  // is what makes the upsert safe (no duplicate ids in a batch) and the calendar
+  // correct (one entry per production run, not one per night).
+  const { kept, dropped, collapsed } = collapseProductions(valid)
+  console.log(
+    `  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected` +
+      ` → ${kept.length} productions (collapsed ${collapsed} dates, dropped ${dropped} junk) (confidence ${confidence})`
+  )
 
-  // Provenance per valid row.
+  // Provenance per production row.
   const base = new Map<string, Pick<IngestPerformance, 'source_url' | 'content_hash' | 'confidence'>>()
-  for (const v of valid) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
+  for (const v of kept) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
 
   // Resolve entities + enrich performances.
-  const resolved = resolveEntities(companies, valid, base)
+  const resolved = resolveEntities(companies, kept, base)
 
   // Diff against the DB snapshot for this source (empty offline → all 'new').
   const existing = writer
