@@ -99,10 +99,10 @@ const SOURCES: Record<string, SourceConfig> = {
  * house's real what's-on URL to activate it (blank = skipped). Royal Ballet's
  * URL is known from the operator; the others need their season/what's-on URL.
  */
-const PARIS_OPERA_BALLET_LISTING = '' // paste the ballet what's-on URL
-const ABT_LISTING = '' // American Ballet Theatre — paste the season URL
-const NYCB_LISTING = '' // New York City Ballet — paste the season URL
-const SF_BALLET_LISTING = '' // San Francisco Ballet — paste the season URL
+const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/useful-information/opening-calendar'
+const ABT_LISTING = 'https://www.abt.org/performances/'
+const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
+const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
 const RENDER_SOURCES: Record<string, SourceConfig> = {
   'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true },
