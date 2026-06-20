@@ -4,11 +4,17 @@
  * Cost discipline (this is the ONLY place the pipeline spends model tokens):
  *   • called only for feed_kind='html' AND only when the page hash changed
  *     (the orchestrator + ingest_sources cache gate this upstream)
- *   • cheerio strips script/style/nav/footer/head and caps input length before
- *     the call, so we never ship a whole bloated page
- *   • one claude-haiku-4-5 messages.parse() call, Zod-validated — the cheapest
- *     viable model, structured-output mode, output re-validated by the existing
- *     scraper zod schema downstream (we never trust raw model output)
+ *   • cheerio strips script/style/nav/footer/head before the call, so we never
+ *     ship page chrome — only the listings-bearing text (with booking links).
+ *   • claude-haiku-4-5 messages.parse(), Zod-validated — the cheapest viable
+ *     model, structured-output mode, output re-validated by the existing scraper
+ *     zod schema downstream (we never trust raw model output)
+ *
+ * Coverage discipline (why a multi-page listing is NOT truncated):
+ *   • the page is split into bounded chunks and each chunk is extracted, so a
+ *     long "what's on" listing (dozens of productions across paginated content
+ *     the browser already loaded) is read end-to-end, not just the first screen.
+ *   • results are de-duplicated by (title + start_date) before return.
  *
  * Returns RawPerformance[] in the same shape an adapter's parse() produces.
  */
@@ -22,8 +28,11 @@ import type { RawPerformance } from '../scrapers/types'
  *  threshold by design, so LLM rows always pass through manual review. */
 export const LLM_CONFIDENCE = 0.85
 
-/** Hard cap on characters sent to the model (≈6k tokens) — bounds cost. */
-const MAX_CHARS = 24_000
+/** Characters per model call (~5k tokens of input). Chunking keeps each call
+ *  cheap while removing the old single-page truncation that dropped later rows. */
+const CHARS_PER_CHUNK = 20_000
+/** Hard cap on chunks per page — bounds worst-case cost (8 × ~$0.025 ≈ $0.20). */
+const MAX_CHUNKS = 8
 
 const RowSchema = z.object({
   title: z.string(),
@@ -35,14 +44,22 @@ const RowSchema = z.object({
   choreographer: z.string().optional(),
   venue: z.string().optional(),
   price_range: z.string().optional(),
+  // The booking/tickets/event URL for this performance, when the page links it.
+  // Surfaced to the model as "(link: …)" inline next to each listing.
+  ticket_url: z.string().optional(),
 })
 const ResultSchema = z.object({ performances: z.array(RowSchema) })
 
 const SYSTEM = [
-  'You extract ballet and opera performances from a theatre season page.',
-  'Return ONLY performances that are clearly listed with a date.',
-  'kind is "ballet" or "opera". Use the dates exactly as written on the page.',
-  'Do not invent performances, dates, composers, or prices. Omit fields you cannot find.',
+  'You extract ballet and opera performances from a theatre season / "what\'s on" listing page.',
+  'Return EVERY performance that is clearly listed with a date — do not stop early; include all of them, top to bottom.',
+  'kind is "ballet" or "opera". Use the dates EXACTLY as written on the page.',
+  'Each distinct run / engagement is a SEPARATE performance object. Never merge two different date ranges into one.',
+  'end_date must be the last day of the SAME continuous run — never a later, separate engagement (e.g. a show in 2026 and another in 2027 are TWO objects, not one spanning 2026→2027).',
+  'When a single date is shown, set start_date to it and leave end_date empty.',
+  'If a performance links to its booking / tickets / event page, set ticket_url to that absolute URL — it appears in the text as "(link: https://…)" right after the title.',
+  'Set venue to the theatre / hall name when it is shown.',
+  'Do not invent performances, dates, composers, venues, prices, or links. Omit any field you cannot find on the page.',
 ].join(' ')
 
 /** Lazily build the Anthropic client; null when unconfigured → no extraction. */
@@ -54,29 +71,81 @@ function getClient(): Anthropic | null {
   return client
 }
 
-/** Strip chrome and collapse to the listings-bearing text, capped. */
-export function trimHtml(html: string): string {
-  const $ = cheerio.load(html)
-  $('script, style, nav, footer, head, noscript, svg, iframe').remove()
-  const main = $('main').first()
-  const text = (main.length ? main : $('body')).text().replace(/\s+/g, ' ').trim()
-  return text.slice(0, MAX_CHARS)
+/** Resolve a possibly-relative href to an absolute URL, or null if impossible. */
+function toAbsolute(href: string | undefined, baseUrl?: string): string | null {
+  if (!href) return null
+  const h = href.trim()
+  if (!h || h.startsWith('#') || h.startsWith('mailto:') || h.startsWith('tel:') || h.startsWith('javascript:')) {
+    return null
+  }
+  try {
+    if (/^https?:\/\//i.test(h)) return h
+    if (!baseUrl) return null
+    return new URL(h, baseUrl).toString()
+  } catch {
+    return null
+  }
 }
 
+/** Hrefs that look like a specific event/booking page (not site chrome). */
+const BOOKING_HREF_RE =
+  /ticket|book|event|performance|production|show|whats-?on|calendar|programme|program|season|spectacle|vorstellung/i
+
 /**
- * Extract performances from a page of HTML via Haiku. Returns [] (no spend
- * attempted) when ANTHROPIC_API_KEY is unset, so offline/dry runs are safe.
+ * Strip chrome and collapse the listings to text — but PRESERVE booking links by
+ * inlining each event/ticket anchor's absolute URL as "(link: …)" next to its
+ * text. This is what lets the model emit a ticket_url per performance (the old
+ * .text()-only path threw every href away, so every row came back link-less).
  */
-export async function extractWithLlm(
-  html: string,
-  companySlug: string
+export function trimHtml(html: string, baseUrl?: string): string {
+  const $ = cheerio.load(html)
+  $('script, style, nav, footer, head, noscript, svg, iframe').remove()
+
+  $('a[href]').each((_, el) => {
+    const $el = $(el)
+    const abs = toAbsolute($el.attr('href'), baseUrl)
+    if (!abs) return
+    // Only annotate links that point at an event/booking page — keeps the text
+    // focused and avoids flooding it with menu/social/util links. Match on the
+    // PATH (not the host) so "facebook.com" isn't mistaken for a booking link.
+    let probe: string
+    try {
+      const u = new URL(abs)
+      probe = `${u.pathname}${u.search}`
+    } catch {
+      return
+    }
+    if (BOOKING_HREF_RE.test(probe)) $el.append(` (link: ${abs}) `)
+  })
+
+  const main = $('main').first()
+  return (main.length ? main : $('body')).text().replace(/\s+/g, ' ').trim()
+}
+
+/** Split text into bounded chunks on whitespace boundaries (never mid-word). */
+function chunk(text: string, size: number, maxChunks: number): string[] {
+  if (text.length <= size) return [text]
+  const chunks: string[] = []
+  let i = 0
+  while (i < text.length && chunks.length < maxChunks) {
+    let end = Math.min(i + size, text.length)
+    if (end < text.length) {
+      const ws = text.lastIndexOf(' ', end)
+      if (ws > i) end = ws
+    }
+    chunks.push(text.slice(i, end))
+    i = end
+  }
+  return chunks
+}
+
+/** One Haiku call over a single chunk of listing text. */
+async function extractChunk(
+  anthropic: Anthropic,
+  content: string,
+  companySlug: string,
+  baseUrl?: string
 ): Promise<RawPerformance[]> {
-  const anthropic = getClient()
-  if (!anthropic) return []
-
-  const content = trimHtml(html)
-  if (!content) return []
-
   const res = await anthropic.messages.parse({
     model: 'claude-haiku-4-5',
     max_tokens: 8000,
@@ -84,8 +153,57 @@ export async function extractWithLlm(
     messages: [{ role: 'user', content }],
     output_config: { format: zodOutputFormat(ResultSchema) },
   })
-
   const parsed = res.parsed_output
   if (!parsed) return []
-  return parsed.performances.map((p) => ({ ...p, company_slug: companySlug }))
+  return parsed.performances.map((p) => {
+    // Absolutize / sanitize the link so the normalizer's .url() check passes
+    // (a relative or junk href would otherwise reject the whole row).
+    const ticket_url = toAbsolute(p.ticket_url, baseUrl) ?? undefined
+    return { ...p, ticket_url, company_slug: companySlug }
+  })
+}
+
+/**
+ * Extract performances from a page of HTML via Haiku. Returns [] (no spend
+ * attempted) when ANTHROPIC_API_KEY is unset, so offline/dry runs are safe.
+ *
+ * The page is chunked so a long, fully-loaded listing is read end-to-end; rows
+ * are de-duplicated by (title + start_date) across chunks before return.
+ */
+export async function extractWithLlm(
+  html: string,
+  companySlug: string,
+  baseUrl?: string
+): Promise<RawPerformance[]> {
+  const anthropic = getClient()
+  if (!anthropic) return []
+
+  const content = trimHtml(html, baseUrl)
+  if (!content) return []
+
+  const chunks = chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
+  if (chunks.length > 1) {
+    console.log(`  · extracting ${content.length} chars across ${chunks.length} chunk(s)`)
+  }
+
+  const all: RawPerformance[] = []
+  for (const c of chunks) {
+    try {
+      all.push(...(await extractChunk(anthropic, c, companySlug, baseUrl)))
+    } catch (err) {
+      // One bad chunk must not lose the others — log and keep going.
+      console.warn(`  ! chunk extraction failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  // De-duplicate across chunk boundaries (a listing item can straddle a split).
+  const seen = new Set<string>()
+  const deduped: RawPerformance[] = []
+  for (const r of all) {
+    const key = `${r.title.trim().toLowerCase()}|${(r.start_date ?? '').trim()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    deduped.push(r)
+  }
+  return deduped
 }

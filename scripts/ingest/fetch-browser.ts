@@ -66,6 +66,59 @@ export interface RenderOptions {
   timeoutMs?: number
   /** Override the User-Agent. */
   ua?: string
+  /** Exhaust pagination (scroll + "load more"/"next") before reading the HTML.
+   *  Default true — this is what makes a listing's 2nd/3rd page visible to the
+   *  extractor instead of only the first screen. */
+  paginate?: boolean
+  /** Safety cap on pagination rounds (scroll-or-click iterations). */
+  maxPaginationRounds?: number
+}
+
+/** Visible text on a "load more"/"next page" control across common houses. */
+const LOAD_MORE_RE =
+  /load\s*more|show\s*more|view\s*more|see\s*more|more\s*(results|events|performances|dates)|next(\s*page)?|voir\s*plus|mehr\s*(laden|anzeigen)|afficher\s*plus/i
+
+/**
+ * Exhaust a paginated / infinite-scroll listing: repeatedly scroll to the bottom
+ * and click any "load more"/"next" control until the page stops growing (or the
+ * round cap is hit). This is purely the same interaction a visitor performs to
+ * see the rest of the season — no API/endpoint guessing, no challenge bypass.
+ */
+async function exhaustListing(page: any, maxRounds: number): Promise<void> {
+  let lastLen = 0
+  let stable = 0
+  for (let round = 0; round < maxRounds; round++) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {})
+    await page.waitForTimeout(700)
+
+    const clicked: boolean = await page
+      .evaluate((reSrc: string) => {
+        const re = new RegExp(reSrc, 'i')
+        const els = Array.from(
+          document.querySelectorAll('button, a, [role="button"]')
+        ) as HTMLElement[]
+        const btn = els.find(
+          (e) => re.test((e.textContent || '').trim()) && e.offsetParent !== null && !(e as HTMLButtonElement).disabled
+        )
+        if (btn) {
+          btn.click()
+          return true
+        }
+        return false
+      }, LOAD_MORE_RE.source)
+      .catch(() => false)
+
+    await page.waitForTimeout(clicked ? 1400 : 400)
+
+    const len: number = await page.evaluate(() => document.body.innerHTML.length).catch(() => 0)
+    if (len > lastLen) {
+      lastLen = len
+      stable = 0
+      continue
+    }
+    // No growth and nothing left to click → two quiet rounds means we're done.
+    if (!clicked && ++stable >= 2) break
+  }
 }
 
 /**
@@ -119,6 +172,12 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
 
     if (opts.waitForSelector) {
       await page.waitForSelector(opts.waitForSelector, { timeout: 10_000 }).catch(() => {})
+    }
+
+    // Pull in the rest of the season (page 2, 3, …) the way a visitor would,
+    // so the extractor sees the whole listing rather than only the first screen.
+    if (opts.paginate !== false) {
+      await exhaustListing(page, opts.maxPaginationRounds ?? 40)
     }
 
     const html: string = await page.content()

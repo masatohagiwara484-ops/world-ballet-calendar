@@ -16,6 +16,10 @@ import { parse as parseDate, isValid, format } from 'date-fns'
 import type { Performance } from '../../src/lib/types'
 import type { RawPerformance } from './types'
 
+/** Longest plausible single-production run (days). Beyond this, a row is almost
+ *  certainly two separate engagements merged in error and is rejected. */
+const MAX_RUN_DAYS = 200
+
 /** Date formats we accept from scraped pages, in priority order. */
 const DATE_FORMATS = [
   'yyyy-MM-dd',
@@ -103,6 +107,19 @@ export function normalizeOne(
   }
   // Default a missing end_date to the start date (single-day run).
   const end = toIsoDate(raw.end_date) ?? start
+
+  // Sanity guard: a single production almost never runs longer than a few weeks.
+  // A span beyond ~6 months is the signature of two SEPARATE engagements wrongly
+  // merged into one row (e.g. a 2026 show and a 2027 show collapsed to
+  // 2026→2027). Reject rather than publish a fabricated multi-year run — better a
+  // missing row the next clean crawl re-adds than a wrong one on the live site.
+  const spanDays = (Date.parse(end) - Date.parse(start)) / 86_400_000
+  if (spanDays > MAX_RUN_DAYS) {
+    return {
+      ok: false,
+      reason: `implausible run span (${Math.round(spanDays)}d > ${MAX_RUN_DAYS}d) — likely two merged engagements`,
+    }
+  }
 
   const kindRaw = (raw.kind ?? '').toLowerCase().trim()
   const kind = kindRaw === 'ballet' || kindRaw === 'opera' ? kindRaw : undefined

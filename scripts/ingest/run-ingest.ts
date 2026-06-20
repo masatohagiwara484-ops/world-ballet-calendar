@@ -209,7 +209,9 @@ async function extract(src: SourceConfig, content: string): Promise<{ raws: RawP
     raws = src.adapter.parse(content)
     confidence = 1
   } else {
-    raws = await extractWithLlm(content, src.companySlug)
+    // Pass the listing URL so the extractor can absolutize booking links into
+    // ticket_url (relative hrefs would otherwise be dropped by the normalizer).
+    raws = await extractWithLlm(content, src.companySlug, src.url)
     confidence = LLM_CONFIDENCE
   }
   // Feeds (iCal/JSON-LD) carry no discipline field, so stamp the source's
