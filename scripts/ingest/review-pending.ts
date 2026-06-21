@@ -136,8 +136,19 @@ async function main(): Promise<void> {
     const y = parseInt(d.slice(0, 4), 10)
     return Number.isFinite(y) && y >= 2025 && y <= 2035
   }
-  const isInsane = (r: PendingRow): boolean =>
-    !isSaneYear(r.start_date) || (r.end_date != null && !isSaneYear(r.end_date))
+  // A single production almost never runs longer than ~6 months; a longer span is
+  // the signature of two separate engagements merged in error (e.g. a 2026 show
+  // and a 2027 show collapsed into one row). Mirrors normalize.ts MAX_RUN_DAYS.
+  const MAX_SANE_SPAN_DAYS = 200
+  const isInsane = (r: PendingRow): boolean => {
+    if (!isSaneYear(r.start_date)) return true
+    if (r.end_date != null) {
+      if (!isSaneYear(r.end_date)) return true
+      const span = (Date.parse(r.end_date) - Date.parse(r.start_date)) / 86_400_000
+      if (span > MAX_SANE_SPAN_DAYS) return true
+    }
+    return false
+  }
 
   // publish — mirror the webhook: cancellations + bad-date rows are hidden, the rest go live.
   const cancelledIds = rows.filter((r) => r.change_kind === 'cancelled').map((r) => r.id)
