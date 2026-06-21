@@ -29,6 +29,7 @@ import { contentHash, pageHash } from './hash'
 import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
 import { extractFeed, type FeedKind } from './extract-feed'
+import { NON_PERFORMANCE_TITLE, ROYAL_OPERA_BALLET_TITLE } from './filters'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
 import { renderPage } from './fetch-browser'
 import {
@@ -136,7 +137,9 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // Royal Ballet & Royal Opera: same RBO site, different hotFilter.
   // URL-paginated (?page=1/2/3); maxPages:3 loads all pages in one session.
   'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet', maxPages: 3 },
-  'royal-opera': { companySlug: 'royal-opera', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=opera', kind: 'html', render: true, performanceKind: 'opera', maxPages: 3 },
+  // The RBO site serves one calendar for both companies; drop ballet/shared
+  // events from the opera filter so Royal Opera shows only genuine opera.
+  'royal-opera': { companySlug: 'royal-opera', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=opera', kind: 'html', render: true, performanceKind: 'opera', maxPages: 3, excludeTitle: ROYAL_OPERA_BALLET_TITLE },
   // Paris Opera — dedicated ballet and opera season pages.
   'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/season/operas', kind: 'html', render: true, performanceKind: 'opera' },
@@ -276,7 +279,11 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
   const byId = new Map<string, T>()
   let dropped = 0
   for (const r of rows) {
-    if (JUNK_TITLE.test(r.title) || (excludeTitle && excludeTitle.test(r.title))) {
+    if (
+      JUNK_TITLE.test(r.title) ||
+      NON_PERFORMANCE_TITLE.test(r.title) ||
+      (excludeTitle && excludeTitle.test(r.title))
+    ) {
       dropped += 1
       continue
     }
