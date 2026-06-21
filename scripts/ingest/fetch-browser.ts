@@ -91,9 +91,11 @@ export interface RenderOptions {
   pageParam?: string
 }
 
-/** Visible text on a "load more"/"next page" control across common houses. */
+/** Visible text on a "load more"/"next page" control across common houses.
+ *  Includes German (nächste Monat, weiter), Danish (næste), and Dutch (volgende)
+ *  so month-navigation buttons on European opera house sites are followed. */
 const LOAD_MORE_RE =
-  /load\s*more|show\s*more|view\s*more|see\s*more|load\s*\d+\s*more|more\s*(results|events|performances|dates)|next(\s*page)?|voir\s*plus|mehr\s*(laden|anzeigen)|afficher\s*plus/i
+  /load\s*more|show\s*more|view\s*more|see\s*more|load\s*\d+\s*more|more\s*(results|events|performances|dates)|next(\s*page|\s*month)?|voir\s*plus|mehr\s*(laden|anzeigen)|afficher\s*plus|n[äa]chste[rns]?\s*(monat|seite)?|weiter|volgende|næste/i
 
 /** Common cookie-consent "accept" controls (OneTrust, Cookiebot, generic). */
 const COOKIE_ACCEPT_SELECTORS = [
