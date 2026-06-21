@@ -345,6 +345,16 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     `  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected` +
       ` → ${kept.length} productions (collapsed ${collapsed} dates, dropped ${dropped} junk) (confidence ${confidence})`
   )
+  // Surface WHY rows were dropped — essential for diagnosing a source that
+  // returns rows but normalizes to zero (almost always a date-format issue).
+  if (rejected.length) {
+    const sample = rejected.slice(0, 8)
+    console.log(`  · rejection reasons (showing ${sample.length}/${rejected.length}):`)
+    for (const r of sample) {
+      const t = (r.raw.title ?? '?').slice(0, 44)
+      console.log(`      - "${t}" [start="${r.raw.start_date ?? ''}" end="${r.raw.end_date ?? ''}"] → ${r.reason}`)
+    }
+  }
 
   // Provenance per production row.
   const base = new Map<string, Pick<IngestPerformance, 'source_url' | 'content_hash' | 'confidence'>>()
@@ -372,13 +382,21 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   }
 
   // Write: entities first, then pending performances, then credits, then cancels.
+  // CRITICAL: write ONLY changed rows. An 'unchanged' row already exists in the
+  // DB exactly as-is; re-upserting it would reset its review_status back to
+  // 'pending' (toRow always stamps 'pending'), silently UN-PUBLISHING rows the
+  // owner already approved — the root cause of the live site going empty after a
+  // re-crawl. Skipping unchanged rows preserves their published state.
+  const changed = rows.filter((r) => r.change_kind !== 'unchanged')
   await upsertEntities(writer, resolved)
-  const writtenIds = await writePending(writer, rows)
+  const writtenIds = await writePending(writer, changed)
   await upsertCredits(writer, resolved.credits)
   await markCancelledPending(writer, cancelled.map((c) => c.id))
-  console.log(`  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled) to Supabase`)
+  console.log(
+    `  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled, ` +
+      `${rows.length - changed.length} unchanged preserved) to Supabase`
+  )
 
-  const changed = rows.filter((r) => r.change_kind !== 'unchanged')
   const chatId = process.env.TELEGRAM_CHAT_ID ?? null
 
   // AUTO-APPROVE (earned): a trusted source whose run is ALL new additions, at

@@ -54,7 +54,9 @@ const ResultSchema = z.object({ performances: z.array(RowSchema) })
 const SYSTEM = [
   'You extract ballet and opera performances from a theatre season / "what\'s on" listing page.',
   'Return EVERY performance that is clearly listed with a date — do not stop early; include all of them, top to bottom.',
-  'kind is "ballet" or "opera". Use the dates EXACTLY as written on the page.',
+  'kind is "ballet" or "opera".',
+  'CRITICAL — DATES: output start_date and end_date in strict ISO format YYYY-MM-DD with a 4-digit year (e.g. 2026-10-13). Convert any written date ("Sat 13 Oct 2026", "13.10.2026", "October 13") to this exact format yourself.',
+  'Infer the year from the season context (this listing covers the 2026 and 2027 seasons): a month from roughly September–December is 2026, January–August is 2027, unless the page states otherwise. NEVER output a year below 2026 or a 2-digit year.',
   'Each distinct run / engagement is a SEPARATE performance object. Never merge two different date ranges into one.',
   'end_date must be the last day of the SAME continuous run — never a later, separate engagement (e.g. a show in 2026 and another in 2027 are TWO objects, not one spanning 2026→2027).',
   'When a single date is shown, set start_date to it and leave end_date empty.',
