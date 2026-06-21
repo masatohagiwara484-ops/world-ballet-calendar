@@ -128,29 +128,55 @@ async function main(): Promise<void> {
     return
   }
 
-  // publish — mirror the webhook: cancellations are hidden, the rest go live.
+  // Data-quality guard: a sane performance date is in the near future window.
+  // Rows outside it (e.g. the year-0026 rows a since-fixed parser once wrote) are
+  // stale artefacts and must NEVER reach the live site — auto-reject them.
+  const isSaneYear = (d: string | null): boolean => {
+    if (!d) return false
+    const y = parseInt(d.slice(0, 4), 10)
+    return Number.isFinite(y) && y >= 2025 && y <= 2035
+  }
+  const isInsane = (r: PendingRow): boolean =>
+    !isSaneYear(r.start_date) || (r.end_date != null && !isSaneYear(r.end_date))
+
+  // publish — mirror the webhook: cancellations + bad-date rows are hidden, the rest go live.
   const cancelledIds = rows.filter((r) => r.change_kind === 'cancelled').map((r) => r.id)
-  if (cancelledIds.length) {
+  const insaneRows = rows.filter((r) => r.change_kind !== 'cancelled' && isInsane(r))
+  const rejectIds = [...new Set([...cancelledIds, ...insaneRows.map((r) => r.id)])]
+
+  if (insaneRows.length) {
+    console.log(`⚠️  Auto-rejecting ${insaneRows.length} row(s) with implausible dates (kept off the live site):`)
+    for (const r of insaneRows.slice(0, 10)) {
+      console.log(`      - ${r.company_slug}  "${r.title.slice(0, 40)}"  ${r.start_date}…${r.end_date}`)
+    }
+  }
+  if (rejectIds.length) {
     const { error: e } = await client
       .from('performances')
       .update({ review_status: 'rejected' })
-      .in('id', cancelledIds)
+      .in('id', rejectIds)
     if (e) {
-      console.error('✗ hiding cancellations failed:', e.message)
+      console.error('✗ hiding cancellations/bad-date rows failed:', e.message)
       process.exit(1)
     }
   }
+
+  // Publish everything pending EXCEPT what we just rejected.
+  const publishIds = ids.filter((id) => !rejectIds.includes(id))
   const { error: e2 } = await client
     .from('performances')
     .update({ review_status: 'published', last_verified: new Date().toISOString() })
-    .in('id', ids)
+    .in('id', publishIds)
     .eq('review_status', 'pending')
   if (e2) {
     console.error('✗ publish failed:', e2.message)
     process.exit(1)
   }
-  const published = ids.length - cancelledIds.length
-  console.log(`✅ Published ${published} row(s)${cancelledIds.length ? `, hid ${cancelledIds.length} cancellation(s)` : ''}.`)
+  console.log(
+    `✅ Published ${publishIds.length} row(s)` +
+      `${cancelledIds.length ? `, hid ${cancelledIds.length} cancellation(s)` : ''}` +
+      `${insaneRows.length ? `, rejected ${insaneRows.length} bad-date row(s)` : ''}.`
+  )
   console.log('   They appear on the live site at the next revalidate (≤1h) or after a redeploy.')
 }
 

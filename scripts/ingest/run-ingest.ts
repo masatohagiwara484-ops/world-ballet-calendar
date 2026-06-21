@@ -312,17 +312,31 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     return { ok: false, line: `⚠️ ${src.companySlug}: load failed (${msg(err)})` }
   }
 
-  // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend).
+  // Snapshot the existing rows for this source — used both by the cache gate
+  // below and by the differ later, so we fetch it once.
+  const existing = writer
+    ? await fetchExistingForSource(writer, src.url)
+    : new Map<string, ExistingRow>()
+
+  // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend)
+  // — but ONLY when we already have rows stored for this source. A matching hash
+  // with zero stored rows means a previous run fetched the page yet failed to
+  // extract (model API down / out of credit / a since-fixed bug); we must RETRY,
+  // not skip it forever. The hash is persisted only AFTER a successful extraction
+  // (below), so a failed/empty run never poisons the cache.
   let autoApprove = false
+  let pageHashValue: string | null = null
   if (writer) {
     const state = await getSourceState(writer, src.companySlug)
     autoApprove = state?.auto_approve ?? false
-    const hash = pageHash(content)
-    if (state?.last_hash && state.last_hash === hash) {
-      console.log('  · page unchanged since last run — skipping (0 cost)')
+    pageHashValue = pageHash(content)
+    if (state?.last_hash === pageHashValue && existing.size > 0) {
+      console.log(`  · page unchanged since last run, ${existing.size} rows stored — skipping (0 cost)`)
       return { ok: true, line: `· ${src.companySlug}: unchanged` }
     }
-    await saveSourceState(writer, src.companySlug, { last_hash: hash })
+    if (state?.last_hash === pageHashValue && existing.size === 0) {
+      console.log('  · page unchanged but 0 rows stored — RE-extracting (previous run failed)')
+    }
   }
 
   // Extract → normalize.
@@ -356,6 +370,14 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     }
   }
 
+  // Persist the page hash ONLY now that extraction yielded usable productions —
+  // so a failed/empty run (0 productions) is retried on the next pass instead of
+  // being wrongly cached as "unchanged". This is what lets a re-run skip the
+  // companies that already succeeded while re-attempting the ones that didn't.
+  if (writer && pageHashValue && kept.length > 0) {
+    await saveSourceState(writer, src.companySlug, { last_hash: pageHashValue })
+  }
+
   // Provenance per production row.
   const base = new Map<string, Pick<IngestPerformance, 'source_url' | 'content_hash' | 'confidence'>>()
   for (const v of kept) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
@@ -364,9 +386,6 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   const resolved = resolveEntities(companies, kept, base)
 
   // Diff against the DB snapshot for this source (empty offline → all 'new').
-  const existing = writer
-    ? await fetchExistingForSource(writer, src.url)
-    : new Map<string, ExistingRow>()
   const { rows, cancelled, counts } = diffRun(resolved.performances, existing)
 
   console.log(

@@ -223,6 +223,36 @@ async function exhaustListing(page: any, maxRounds: number, debug: boolean): Pro
 }
 
 /**
+ * Navigate with a tolerant strategy. Many house sites hold long-poll / analytics
+ * / chat sockets open, so Playwright's 'networkidle' never fires and the old
+ * 30s wait timed the whole house out (Paris Opera, ABT, Australian Ballet, Tokyo
+ * Ballet all failed this way). Instead we wait for the DOM to be ready (fast and
+ * reliable), then give client-side rendering a brief, best-effort window to fetch
+ * and paint the listing. Retried once before giving up.
+ */
+async function gotoResilient(page: any, url: string, opts: RenderOptions): Promise<any> {
+  const timeout = opts.timeoutMs ?? 60_000
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await page.goto(url, { waitUntil: 'domcontentloaded', timeout })
+      // Best-effort: let frameworks hydrate and fetch their listing data. Neither
+      // wait may fail the navigation — they are capped and swallowed.
+      await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {})
+      await page.waitForTimeout(2_000)
+      return res
+    } catch (err) {
+      lastErr = err
+      if (attempt < 2) {
+        console.log('  · navigation timed out, retrying once…')
+        await page.waitForTimeout(1_500)
+      }
+    }
+  }
+  throw lastErr
+}
+
+/**
  * Navigate each URL-paginated page (?page=1 … ?page=N) in the SAME browser
  * context (so the cookie-consent banner dismissed on page 1 stays gone),
  * capture each page's HTML, and return them concatenated with PAGE_BREAK
@@ -248,10 +278,7 @@ async function renderMultiPageUrl(
 
     const page = await context.newPage()
     try {
-      const res = await page.goto(pageUrl, {
-        waitUntil: 'networkidle',
-        timeout: opts.timeoutMs ?? 30_000,
-      })
+      const res = await gotoResilient(page, pageUrl, opts)
       const status = res?.status() ?? 0
       if (status === 403 || status === 429) {
         throw new Error(`blocked (HTTP ${status}) on page ${p} — not bypassing; treat this house as Tier C`)
@@ -353,10 +380,7 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
 
     // Single-page + scroll/click mode (existing flow).
     const page = await context.newPage()
-    const res = await page.goto(url, {
-      waitUntil: 'networkidle',
-      timeout: opts.timeoutMs ?? 30_000,
-    })
+    const res = await gotoResilient(page, url, opts)
 
     const status = res?.status() ?? 0
     if (status === 403 || status === 429) {
