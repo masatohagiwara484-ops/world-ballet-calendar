@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const roleStr = humanizeRoles(person.roles)
   const title = person.name
-  const description = `${person.name}${roleStr ? ` — ${roleStr}` : ''}: browse every production and performance in the World Ballet & Opera Calendar.`
+  const description = `${person.name}${roleStr ? ` — ${roleStr}` : ''}: browse every production and performance on première.`
   return {
     title,
     description,

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Plan Your Visit — World Ballet & Opera Calendar',
+  title: 'Plan Your Visit — première',
   description:
-    'Hotels near the great opera houses, curated tours and backstage experiences, and flights to the cultural capitals — coming soon to World Ballet & Opera Calendar.',
+    'Hotels near the great opera houses, curated tours and backstage experiences, and flights to the cultural capitals — coming soon to première.',
   openGraph: {
-    title: 'Plan Your Visit — World Ballet & Opera Calendar',
+    title: 'Plan Your Visit — première',
     description:
       'Hotels, tours, and flights curated for ballet and opera-goers — coming soon.',
   },
@@ -212,7 +212,7 @@ export default function PartnersPage() {
               A note on independence
             </p>
             <p className="text-ivory/60 text-xs leading-relaxed">
-              When this feature launches, World Ballet &amp; Opera Calendar may
+              When this feature launches, premi&egrave;re may
               earn a referral fee when you book accommodation, experiences, or
               travel through links on this site. This will come at no additional
               cost to you, and it will help us keep the calendar free,

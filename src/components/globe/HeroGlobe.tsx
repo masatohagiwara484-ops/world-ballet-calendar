@@ -70,7 +70,7 @@ export default function HeroGlobe() {
             data-hero-anim
             className="text-gold text-[11px] tracking-[0.42em] uppercase mb-6"
           >
-            World Ballet &amp; Opera Calendar
+            premi&egrave;re &middot; ballet &amp; opera
           </p>
           <h1
             data-hero-anim
