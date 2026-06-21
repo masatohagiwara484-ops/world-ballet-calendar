@@ -23,6 +23,7 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { z } from 'zod'
 import * as cheerio from 'cheerio'
 import type { RawPerformance } from '../scrapers/types'
+import { PAGE_BREAK } from './fetch-browser'
 
 /** Confidence stamped on every LLM-extracted row. Below the 0.9 auto-approve
  *  threshold by design, so LLM rows always pass through manual review. */
@@ -92,12 +93,10 @@ const BOOKING_HREF_RE =
   /ticket|book|event|performance|production|show|whats-?on|calendar|programme|program|season|spectacle|vorstellung/i
 
 /**
- * Strip chrome and collapse the listings to text — but PRESERVE booking links by
- * inlining each event/ticket anchor's absolute URL as "(link: …)" next to its
- * text. This is what lets the model emit a ticket_url per performance (the old
- * .text()-only path threw every href away, so every row came back link-less).
+ * Strip chrome from a single HTML document and return the listings text with
+ * booking links inlined as "(link: …)". Used by trimHtml for each page.
  */
-export function trimHtml(html: string, baseUrl?: string): string {
+function trimSinglePage(html: string, baseUrl?: string): string {
   const $ = cheerio.load(html)
   $('script, style, nav, footer, head, noscript, svg, iframe').remove()
 
@@ -120,6 +119,25 @@ export function trimHtml(html: string, baseUrl?: string): string {
 
   const main = $('main').first()
   return (main.length ? main : $('body')).text().replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Convert rendered HTML to a listings text string ready for the LLM. When the
+ * HTML contains PAGE_BREAK markers (multi-page URL-paginated listings), each
+ * page is processed independently so every page's <main> is extracted — without
+ * this split, cheerio's $('main').first() would see only the first page's
+ * content, leaving pages 2-N invisible to the model (the root cause of the
+ * Royal Ballet crawl returning only the first ~10 productions).
+ */
+export function trimHtml(html: string, baseUrl?: string): string {
+  if (html.includes(PAGE_BREAK)) {
+    return html
+      .split(PAGE_BREAK)
+      .map((part) => trimSinglePage(part, baseUrl))
+      .filter(Boolean)
+      .join('\n')
+  }
+  return trimSinglePage(html, baseUrl)
 }
 
 /** Split text into bounded chunks on whitespace boundaries (never mid-word). */

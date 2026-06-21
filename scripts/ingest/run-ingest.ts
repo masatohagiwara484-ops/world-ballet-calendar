@@ -68,6 +68,12 @@ interface SourceConfig {
   render?: boolean
   /** Best-effort selector to wait for after render (the listings container). */
   waitForSelector?: string
+  /** For URL-paginated listings (e.g. Royal Ballet's ?page=N): total page count.
+   *  Each page is loaded in the same browser session; combined HTML is split by
+   *  PAGE_BREAK so the extractor sees every page's <main> independently. */
+  maxPages?: number
+  /** URL query-param name for URL pagination (default 'page'). */
+  pageParam?: string
   /**
    * Source-scoped title exclusion. Some house calendars list events outside the
    * company's own art form (the Met's calendar carries ABT ballet + concerts).
@@ -127,7 +133,9 @@ const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
 const RENDER_SOURCES: Record<string, SourceConfig> = {
-  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Royal Ballet: URL-paginated listing (?page=1/2/3); each page holds ~10
+  // productions. maxPages:3 loads all three in one browser session.
+  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet', maxPages: 3 },
   'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
@@ -182,7 +190,12 @@ async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
   if (live) {
     // JS-rendered listings need a real browser; static pages/feeds use fetch.
     if (src.render) {
-      return renderPage(src.url, { ua: INGEST_UA, waitForSelector: src.waitForSelector })
+      return renderPage(src.url, {
+        ua: INGEST_UA,
+        waitForSelector: src.waitForSelector,
+        maxPages: src.maxPages,
+        pageParam: src.pageParam,
+      })
     }
     const res = await fetch(src.url, {
       headers: {

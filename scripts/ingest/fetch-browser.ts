@@ -24,6 +24,13 @@
  */
 import { existsSync } from 'node:fs'
 
+/**
+ * Separator injected between the HTML of consecutive URL-paginated pages before
+ * they are concatenated and returned. extract-llm.ts splits on this to process
+ * each page's <main> independently rather than only seeing the first one.
+ */
+export const PAGE_BREAK = '<!-- INGEST_PAGE_BREAK -->'
+
 /** A real browser UA so the render sees what the operator's own browser sees. */
 const DEFAULT_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -67,11 +74,21 @@ export interface RenderOptions {
   /** Override the User-Agent. */
   ua?: string
   /** Exhaust pagination (scroll + "load more"/"next") before reading the HTML.
-   *  Default true — this is what makes a listing's 2nd/3rd page visible to the
-   *  extractor instead of only the first screen. */
+   *  Default true for single-page mode. Ignored when maxPages > 1. */
   paginate?: boolean
-  /** Safety cap on pagination rounds (scroll-or-click iterations). */
+  /** Safety cap on scroll/click pagination rounds. */
   maxPaginationRounds?: number
+  /**
+   * For URL-paginated listings (e.g. ?page=1 … ?page=N): how many pages to
+   * load. Each page navigates in the same browser session (cookies/session
+   * shared, cookie-consent banner dismissed once on page 1). The HTML from
+   * every page is concatenated with PAGE_BREAK markers so the extractor sees
+   * the entire listing instead of only page 1.
+   * When set, the scroll/click pagination loop is skipped.
+   */
+  maxPages?: number
+  /** URL query-param name for URL pagination (default 'page'). */
+  pageParam?: string
 }
 
 /** Visible text on a "load more"/"next page" control across common houses. */
@@ -206,6 +223,88 @@ async function exhaustListing(page: any, maxRounds: number, debug: boolean): Pro
 }
 
 /**
+ * Navigate each URL-paginated page (?page=1 … ?page=N) in the SAME browser
+ * context (so the cookie-consent banner dismissed on page 1 stays gone),
+ * capture each page's HTML, and return them concatenated with PAGE_BREAK
+ * markers. extract-llm.ts splits on PAGE_BREAK to apply <main> extraction
+ * independently to each page — without this, cheerio only sees the first
+ * <main> in the concatenated blob and pages 2-N are invisible to the LLM.
+ */
+async function renderMultiPageUrl(
+  context: any,
+  baseUrl: string,
+  opts: RenderOptions,
+  debug: boolean,
+): Promise<string> {
+  const maxPages = opts.maxPages!
+  const pageParam = opts.pageParam ?? 'page'
+  const htmlParts: string[] = []
+  let cookiesDismissed = false
+
+  for (let p = 1; p <= maxPages; p++) {
+    const pageUrlObj = new URL(baseUrl)
+    pageUrlObj.searchParams.set(pageParam, String(p))
+    const pageUrl = pageUrlObj.toString()
+
+    const page = await context.newPage()
+    try {
+      const res = await page.goto(pageUrl, {
+        waitUntil: 'networkidle',
+        timeout: opts.timeoutMs ?? 30_000,
+      })
+      const status = res?.status() ?? 0
+      if (status === 403 || status === 429) {
+        throw new Error(`blocked (HTTP ${status}) on page ${p} — not bypassing; treat this house as Tier C`)
+      }
+
+      if (p === 1 && opts.waitForSelector) {
+        await page.waitForSelector(opts.waitForSelector, { timeout: 10_000 }).catch(() => {})
+      }
+
+      if (!cookiesDismissed) {
+        cookiesDismissed = await dismissCookies(page)
+        if (cookiesDismissed) {
+          console.log('  · dismissed cookie-consent banner')
+          await page.waitForTimeout(400)
+        }
+      }
+
+      const html: string = await page.content()
+      if (CHALLENGE_RE.test(html)) {
+        throw new Error(`bot-challenge interstitial detected on page ${p} — not bypassing; treat this house as Tier C`)
+      }
+
+      const { links } = await probeCounts(page)
+      console.log(`  · page ${p}/${maxPages}: ${html.length} chars, ${links} booking-links`)
+      htmlParts.push(html)
+
+      if (debug) {
+        try {
+          const { writeFile, mkdir } = await import('node:fs/promises')
+          const host = new URL(baseUrl).hostname.replace(/[^a-z0-9.]+/gi, '-')
+          const dir = new URL('./.debug/', import.meta.url)
+          await mkdir(dir, { recursive: true })
+          const file = new URL(`${host}-p${p}.html`, dir)
+          await writeFile(file, html, 'utf8')
+          if (p === maxPages) {
+            console.log(
+              `  · [debug] wrote ${maxPages} page dumps → scripts/ingest/.debug/${host}-p{1..${maxPages}}.html`,
+            )
+          }
+        } catch { /* dump failure must not abort the crawl */ }
+      }
+    } finally {
+      await page.close()
+    }
+
+    // Polite pause between pages.
+    if (p < maxPages) await new Promise<void>((r) => setTimeout(r, 800))
+  }
+
+  return htmlParts.join(`\n${PAGE_BREAK}\n`)
+}
+
+/**
  * Render a JS page and return its final HTML. Throws (caught upstream as a
  * per-house skip) when Playwright is absent, the page is blocked, or a challenge
  * interstitial is detected — we surface the reason rather than work around it.
@@ -234,7 +333,6 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
 
   const browser = await pw.chromium.launch({
     headless: true,
-    // Use the system Chrome when available — avoids the Playwright CDN download.
     ...(executablePath ? { executablePath } : {}),
   })
   try {
@@ -243,6 +341,17 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
       locale: 'en-US',
       viewport: { width: 1280, height: 1800 },
     })
+
+    const debug = !!process.env.INGEST_DEBUG
+
+    // URL-paginated mode: navigate each ?page=N URL in the same session.
+    // The result is PAGE_BREAK-separated HTML; extract-llm splits it so every
+    // page's <main> is extracted independently.
+    if ((opts.maxPages ?? 1) > 1) {
+      return await renderMultiPageUrl(context, url, opts, debug)
+    }
+
+    // Single-page + scroll/click mode (existing flow).
     const page = await context.newPage()
     const res = await page.goto(url, {
       waitUntil: 'networkidle',
@@ -258,18 +367,12 @@ export async function renderPage(url: string, opts: RenderOptions = {}): Promise
       await page.waitForSelector(opts.waitForSelector, { timeout: 10_000 }).catch(() => {})
     }
 
-    const debug = !!process.env.INGEST_DEBUG
-
-    // Pull in the rest of the season (page 2, 3, …) the way a visitor would,
-    // so the extractor sees the whole listing rather than only the first screen.
     if (opts.paginate !== false) {
       await exhaustListing(page, opts.maxPaginationRounds ?? 40, debug)
     }
 
     const html: string = await page.content()
 
-    // INGEST_DEBUG=1 → dump the final rendered HTML so the operator can inspect
-    // exactly what the browser captured (and share it for adapter authoring).
     if (debug) {
       try {
         const { writeFile, mkdir } = await import('node:fs/promises')
