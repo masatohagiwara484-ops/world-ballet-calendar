@@ -56,8 +56,10 @@ const SYSTEM = [
   'Return EVERY performance that is clearly listed with a date — do not stop early; include all of them, top to bottom.',
   'kind is "ballet" or "opera".',
   'CRITICAL — DATES: output start_date and end_date in strict ISO format YYYY-MM-DD with a 4-digit year (e.g. 2026-10-13). Convert any written date ("Sat 13 Oct 2026", "13.10.2026", "October 13") to this exact format yourself.',
-  'Infer the year from the season context (this listing covers the 2026 and 2027 seasons): a month from roughly September–December is 2026, January–August is 2027, unless the page states otherwise. NEVER output a year below 2026 or a 2-digit year.',
+  "Month names in any language are valid — translate them to the correct ISO date: German 'Juni'/'Juli', Danish 'juni'/'juli', Dutch 'juni'/'juli', French 'juin'/'juillet', Japanese '6月'/'7月', Italian 'giugno'/'luglio' all refer to the 6th and 7th months.",
+  'Infer the year from the season context (this listing spans roughly mid-2026 through 2027): a month from September–December is 2026, January–August is 2027, unless the page states otherwise. Note that the current season may also show June, July, or August 2026 dates — when a listing clearly belongs to the 2026 part of the season, those summer months are 2026, not 2027. NEVER output a year below 2026 or a 2-digit year.',
   'Each distinct run / engagement is a SEPARATE performance object. Never merge two different date ranges into one.',
+  'When a page lists individual nightly performance dates for a production (calendar-grid format), output each date as a separate performance object with both start_date and end_date set to that single date — the pipeline will merge them automatically.',
   'end_date must be the last day of the SAME continuous run — never a later, separate engagement (e.g. a show in 2026 and another in 2027 are TWO objects, not one spanning 2026→2027).',
   'When a single date is shown, set start_date to it and leave end_date empty.',
   'If a performance links to its booking / tickets / event page, set ticket_url to that absolute URL — it appears in the text as "(link: https://…)" right after the title.',
@@ -168,7 +170,10 @@ async function extractChunk(
 ): Promise<RawPerformance[]> {
   const res = await anthropic.messages.parse({
     model: 'claude-haiku-4-5',
-    max_tokens: 8000,
+    // 16k headroom so calendar-grid pages (many individual nightly dates emitted
+    // as separate rows) aren't truncated mid-output. Haiku 4.5 caps at 64k; at
+    // this size a non-streaming call is still well under the SDK HTTP timeout.
+    max_tokens: 16000,
     // Deterministic extraction. Without this, Haiku's default sampling made each
     // run return slightly different titles/prices for the same page, so the
     // differ saw phantom "price-changed"/"date-changed" rows and pushed already-

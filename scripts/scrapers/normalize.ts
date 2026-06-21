@@ -24,8 +24,14 @@ const MAX_RUN_DAYS = 200
 const DATE_FORMATS = [
   'yyyy-MM-dd',
   'yyyy/MM/dd',
+  'yyyy.MM.dd', // Asian dot-notation, year-first (e.g. "2026.06.21")
   'd MMMM yyyy',
   'dd MMMM yyyy',
+  // Day-with-period + full month name (Danish/German/Dutch: "21. juni 2026").
+  // Non-English month names are mapped to English before parsing (see toIsoDate),
+  // because date-fns in the 'en' locale only matches English month names.
+  'd. MMMM yyyy',
+  'dd. MMMM yyyy',
   'd MMM yyyy',
   'dd MMM yyyy',
   'MMMM d, yyyy',
@@ -68,6 +74,45 @@ function withFixedYear(d: Date): Date {
   return nd
 }
 
+/** Non-English month names → English. date-fns in the 'en' locale only parses
+ *  English month names, so Danish / Dutch / German listings (juni, maart, März,
+ *  dezember…) are rewritten to English before the format list runs. Keys are
+ *  lowercased; matching is case-insensitive and whole-word. */
+const MONTH_NAME_MAP: Record<string, string> = {
+  // Danish / Dutch (overlapping spellings collapse to the same English month)
+  januar: 'January',
+  januari: 'January',
+  februar: 'February',
+  februari: 'February',
+  marts: 'March',
+  maart: 'March',
+  maj: 'May',
+  mei: 'May',
+  juni: 'June',
+  juli: 'July',
+  oktober: 'October',
+  // German (only the spellings that differ from the entries above)
+  märz: 'March',
+  mai: 'May',
+  dezember: 'December',
+  // Shared spellings across Danish / Dutch / German and close to English
+  april: 'April',
+  august: 'August',
+  september: 'September',
+  november: 'November',
+  december: 'December',
+}
+
+const MONTH_NAME_RE = new RegExp(
+  `\\b(${Object.keys(MONTH_NAME_MAP).join('|')})\\b`,
+  'gi'
+)
+
+/** Rewrite any non-English month name in a date string to its English form. */
+function anglicizeMonths(raw: string): string {
+  return raw.replace(MONTH_NAME_RE, (m) => MONTH_NAME_MAP[m.toLowerCase()] ?? m)
+}
+
 /** Parse a free-form date string to ISO (YYYY-MM-DD), or null if unparseable. */
 export function toIsoDate(input: string | undefined): string | null {
   if (!input) return null
@@ -76,6 +121,22 @@ export function toIsoDate(input: string | undefined): string | null {
   // Drop a leading weekday name so "Sat, 21 Jun 2026" parses as "21 Jun 2026".
   raw = raw.replace(WEEKDAY_PREFIX_RE, '').trim()
   if (!raw) return null
+
+  // Japanese dates ("2026年6月21日") — convert to ISO directly; date-fns can't
+  // parse the CJK era/month/day markers.
+  const jpMatch = raw.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/)
+  if (jpMatch) {
+    const year = fixLowYear(parseInt(jpMatch[1], 10))
+    const month = jpMatch[2].padStart(2, '0')
+    const day = jpMatch[3].padStart(2, '0')
+    const candidate = `${String(year).padStart(4, '0')}-${month}-${day}`
+    const d = new Date(candidate)
+    return Number.isNaN(d.getTime()) ? null : candidate
+  }
+
+  // Map Danish / Dutch / German month names to English so the locale-bound
+  // date-fns format list (and the native fallback) can read them.
+  raw = anglicizeMonths(raw)
 
   // ISO-shaped (accept a 1–4 digit year so a stripped "0026" is recoverable).
   const isoMatch = raw.match(/^(\d{1,4})-(\d{2})-(\d{2})$/)
