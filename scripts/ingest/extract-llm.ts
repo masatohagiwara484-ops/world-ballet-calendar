@@ -169,6 +169,12 @@ async function extractChunk(
   const res = await anthropic.messages.parse({
     model: 'claude-haiku-4-5',
     max_tokens: 8000,
+    // Deterministic extraction. Without this, Haiku's default sampling made each
+    // run return slightly different titles/prices for the same page, so the
+    // differ saw phantom "price-changed"/"date-changed" rows and pushed already-
+    // published performances back to pending on every crawl (the churn the owner
+    // saw). temperature:0 makes repeat runs stable → genuinely unchanged rows.
+    temperature: 0,
     system: SYSTEM,
     messages: [{ role: 'user', content }],
     output_config: { format: zodOutputFormat(ResultSchema) },

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
-import { search } from '@/lib/search'
+import { searchAsync } from '@/lib/search'
 import type { SearchFilters, SearchSort, WorkKind } from '@/lib/types'
 import SearchBox from '@/components/search/SearchBox'
 import ResultCard from '@/components/search/ResultCard'
@@ -110,9 +110,13 @@ function PaginationSuspense(props: Parameters<typeof Pagination>[0]) {
   )
 }
 
-export default function SearchPage({ searchParams }: PageProps) {
+export default async function SearchPage({ searchParams }: PageProps) {
   const filters = parseFilters(searchParams)
-  const result = search(filters)
+  // Must use the LIVE (Supabase-backed) search: the static graph is built from
+  // src/data/performances.ts, which is intentionally empty now that real data
+  // lives in Supabase. Using the sync search() here was the bug that made the
+  // search page always show "no performances" while the calendar (live) worked.
+  const result = await searchAsync(filters)
 
   const q = filters.q
 
