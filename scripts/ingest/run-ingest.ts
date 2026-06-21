@@ -55,6 +55,12 @@ interface SourceConfig {
   url: string
   /** 'html' uses the adapter (if present) or the LLM; feeds parse deterministically. */
   kind: 'html' | FeedKind
+  /**
+   * Default performance kind ('ballet'|'opera') applied to any extracted row
+   * that doesn't supply its own. Feeds (iCal/JSON-LD) never set kind, so this
+   * is required for all non-LLM sources. LLM path infers it from page content.
+   */
+  performanceKind?: 'ballet' | 'opera'
   /** CSS-template adapter for an HTML source; absent → LLM extraction. */
   adapter?: ScraperAdapter
   /** Render with a headless browser before extracting — for JS-rendered listing
@@ -62,6 +68,19 @@ interface SourceConfig {
   render?: boolean
   /** Best-effort selector to wait for after render (the listings container). */
   waitForSelector?: string
+  /** For URL-paginated listings (e.g. Royal Ballet's ?page=N): total page count.
+   *  Each page is loaded in the same browser session; combined HTML is split by
+   *  PAGE_BREAK so the extractor sees every page's <main> independently. */
+  maxPages?: number
+  /** URL query-param name for URL pagination (default 'page'). */
+  pageParam?: string
+  /**
+   * Source-scoped title exclusion. Some house calendars list events outside the
+   * company's own art form (the Met's calendar carries ABT ballet + concerts).
+   * A matching title is dropped before write — better a missing row than a
+   * misattributed one. Distinct from JUNK_TITLE, which is the global junk filter.
+   */
+  excludeTitle?: RegExp
 }
 
 /**
@@ -88,7 +107,18 @@ const SOURCES: Record<string, SourceConfig> = {
   // to be single-event files, and the Teatro Colón / Opera Australia WordPress
   // /feed/ URLs were news/empty (verified via `inspect:feed`). Every other house
   // therefore uses the render path below.
-  'metropolitan-opera': { companySlug: 'metropolitan-opera', url: 'https://www.metopera.org/calendar', kind: 'jsonld' },
+  // Opera-only: the Met calendar also lists ABT ballet (summer season) and
+  // concerts/galas at the Opera House. Those are dropped so the Metropolitan
+  // Opera page shows only genuine operas. The markers below are specific to the
+  // non-opera events and are checked NOT to match real operas (e.g. "Silent
+  // Night" and "Lincoln in the Bardo" are operas and survive).
+  'metropolitan-opera': {
+    companySlug: 'metropolitan-opera',
+    url: 'https://www.metopera.org/calendar',
+    kind: 'jsonld',
+    performanceKind: 'opera',
+    excludeTitle: /\bABT\b|\bin concert\b|\bconcert\b|\bsymphony\b|\bjubilee\b|\bcelebration\b|\btoast\b|special guest artist|grand finals/i,
+  },
 }
 
 /**
@@ -97,25 +127,43 @@ const SOURCES: Record<string, SourceConfig> = {
  * house's real what's-on URL to activate it (blank = skipped). Royal Ballet's
  * URL is known from the operator; the others need their season/what's-on URL.
  */
-const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/useful-information/opening-calendar'
+const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/season/ballet'
 const ABT_LISTING = 'https://www.abt.org/performances/'
 const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
 const RENDER_SOURCES: Record<string, SourceConfig> = {
-  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true },
-  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true },
-  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true },
-  'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true },
-  'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true },
-  // Hamburg & Stuttgart expose only per-event .ics files (no season feed), so
-  // render their calendar pages and AI-extract — same as the no-feed houses.
-  'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true },
-  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true },
+  // Royal Ballet & Royal Opera: same RBO site, different hotFilter.
+  // URL-paginated (?page=1/2/3); maxPages:3 loads all pages in one session.
+  'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet', maxPages: 3 },
+  'royal-opera': { companySlug: 'royal-opera', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=opera', kind: 'html', render: true, performanceKind: 'opera', maxPages: 3 },
+  // Paris Opera — dedicated ballet and opera season pages.
+  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/season/operas', kind: 'html', render: true, performanceKind: 'opera' },
+  // US companies.
+  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  // German companies — expose only per-event .ics files (no season feed), so
+  // render their calendar pages and AI-extract.
+  'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true, performanceKind: 'ballet' },
+  'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'bayerische-staatsoper': { companySlug: 'bayerische-staatsoper', url: 'https://www.staatsoper.de/en/performances.html', kind: 'html', render: true, performanceKind: 'opera' },
+  // Austrian companies.
+  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/performance-plan/season/', kind: 'html', render: true, performanceKind: 'opera' },
+  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsballett.at/spielplan/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
+  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
+  'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
+  'dutch-national-ballet': { companySlug: 'dutch-national-ballet', url: 'https://www.operaballet.nl/en/ballet/season', kind: 'html', render: true, performanceKind: 'ballet' },
+  'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'australian-ballet': { companySlug: 'australian-ballet', url: 'https://australianballet.com.au/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
+  'tokyo-ballet': { companySlug: 'tokyo-ballet', url: 'https://www.thetokyoballet.com/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'new-national-theatre-tokyo': { companySlug: 'new-national-theatre-tokyo', url: 'https://www.nntt.jac.go.jp/english/opera/schedule/', kind: 'html', render: true, performanceKind: 'opera' },
   // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
   // so render the real calendar page and AI-extract instead.
-  'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true },
-  'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true },
+  'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },
+  'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true, performanceKind: 'opera' },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
@@ -158,7 +206,12 @@ async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
   if (live) {
     // JS-rendered listings need a real browser; static pages/feeds use fetch.
     if (src.render) {
-      return renderPage(src.url, { ua: INGEST_UA, waitForSelector: src.waitForSelector })
+      return renderPage(src.url, {
+        ua: INGEST_UA,
+        waitForSelector: src.waitForSelector,
+        maxPages: src.maxPages,
+        pageParam: src.pageParam,
+      })
     }
     const res = await fetch(src.url, {
       headers: {
@@ -176,16 +229,69 @@ async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
 
 /** Extract raw performances by source kind. Confidence: feed/adapter=1.0, LLM=0.85. */
 async function extract(src: SourceConfig, content: string): Promise<{ raws: RawPerformance[]; confidence: number }> {
+  let raws: RawPerformance[]
+  let confidence: number
   if (src.kind !== 'html') {
-    return { raws: extractFeed(src.kind, content, src.companySlug), confidence: 1 }
+    raws = extractFeed(src.kind, content, src.companySlug)
+    confidence = 1
+  } else if (src.adapter) {
+    raws = src.adapter.parse(content)
+    confidence = 1
+  } else {
+    // Pass the listing URL so the extractor can absolutize booking links into
+    // ticket_url (relative hrefs would otherwise be dropped by the normalizer).
+    raws = await extractWithLlm(content, src.companySlug, src.url)
+    confidence = LLM_CONFIDENCE
   }
-  if (src.adapter) {
-    return { raws: src.adapter.parse(content), confidence: 1 }
+  // Feeds (iCal/JSON-LD) carry no discipline field, so stamp the source's
+  // declared kind onto any row that didn't set its own. Without this every
+  // feed row is rejected by the normalizer ("invalid kind").
+  if (src.performanceKind) {
+    for (const r of raws) if (!r.kind) r.kind = src.performanceKind
   }
-  return { raws: await extractWithLlm(content, src.companySlug), confidence: LLM_CONFIDENCE }
+  return { raws, confidence }
 }
 
 const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
+
+/**
+ * Obvious non-performance junk that some house calendars expose (e.g. the Met's
+ * own "Load Test Prod" sentinel rows dated 2050). Dropped before anything is
+ * written — a single fabricated row destroys the trust the product is built on.
+ */
+const JUNK_TITLE = /\b(load[\s-]*test|test\s*prod(uction)?|lorem ipsum|placeholder|do not (use|book))\b/i
+
+/**
+ * Collapse rows that share an id into one production spanning the whole run
+ * (earliest start … latest end). JSON-LD/iCal calendars emit ONE event per
+ * performance date, so a single production arrives as dozens of same-id rows;
+ * without this the upsert hits "ON CONFLICT cannot affect row a second time"
+ * and the entire run fails. One row per production is also the right shape for
+ * a season calendar. Junk titles are filtered out here too.
+ */
+function collapseProductions<T extends { id: string; title: string; start_date: string; end_date: string }>(
+  rows: T[],
+  excludeTitle?: RegExp
+): { kept: T[]; dropped: number; collapsed: number } {
+  const byId = new Map<string, T>()
+  let dropped = 0
+  for (const r of rows) {
+    if (JUNK_TITLE.test(r.title) || (excludeTitle && excludeTitle.test(r.title))) {
+      dropped += 1
+      continue
+    }
+    const existing = byId.get(r.id)
+    if (!existing) {
+      byId.set(r.id, { ...r })
+      continue
+    }
+    // Widen the existing production's span to cover this date.
+    if (r.start_date < existing.start_date) existing.start_date = r.start_date
+    if (r.end_date > existing.end_date) existing.end_date = r.end_date
+  }
+  const kept = [...byId.values()]
+  return { kept, dropped, collapsed: rows.length - dropped - kept.length }
+}
 
 /** Per-source outcome — collected into the end-of-run summary. */
 interface SourceResult {
@@ -206,17 +312,31 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     return { ok: false, line: `⚠️ ${src.companySlug}: load failed (${msg(err)})` }
   }
 
-  // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend).
+  // Snapshot the existing rows for this source — used both by the cache gate
+  // below and by the differ later, so we fetch it once.
+  const existing = writer
+    ? await fetchExistingForSource(writer, src.url)
+    : new Map<string, ExistingRow>()
+
+  // Cache gate: an unchanged page hash means SKIP (no extraction, no LLM spend)
+  // — but ONLY when we already have rows stored for this source. A matching hash
+  // with zero stored rows means a previous run fetched the page yet failed to
+  // extract (model API down / out of credit / a since-fixed bug); we must RETRY,
+  // not skip it forever. The hash is persisted only AFTER a successful extraction
+  // (below), so a failed/empty run never poisons the cache.
   let autoApprove = false
+  let pageHashValue: string | null = null
   if (writer) {
     const state = await getSourceState(writer, src.companySlug)
     autoApprove = state?.auto_approve ?? false
-    const hash = pageHash(content)
-    if (state?.last_hash && state.last_hash === hash) {
-      console.log('  · page unchanged since last run — skipping (0 cost)')
+    pageHashValue = pageHash(content)
+    if (state?.last_hash === pageHashValue && existing.size > 0) {
+      console.log(`  · page unchanged since last run, ${existing.size} rows stored — skipping (0 cost)`)
       return { ok: true, line: `· ${src.companySlug}: unchanged` }
     }
-    await saveSourceState(writer, src.companySlug, { last_hash: hash })
+    if (state?.last_hash === pageHashValue && existing.size === 0) {
+      console.log('  · page unchanged but 0 rows stored — RE-extracting (previous run failed)')
+    }
   }
 
   // Extract → normalize.
@@ -231,19 +351,41 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     return { ok: false, line: `⚠️ ${src.companySlug}: extraction failed (${msg(err)})` }
   }
   const { valid, rejected } = normalizeMany(raws, companyIdMap())
-  console.log(`  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected (confidence ${confidence})`)
+  // Collapse per-date events into one row per production, and drop junk. This
+  // is what makes the upsert safe (no duplicate ids in a batch) and the calendar
+  // correct (one entry per production run, not one per night).
+  const { kept, dropped, collapsed } = collapseProductions(valid, src.excludeTitle)
+  console.log(
+    `  parsed ${raws.length} → ${valid.length} valid, ${rejected.length} rejected` +
+      ` → ${kept.length} productions (collapsed ${collapsed} dates, dropped ${dropped} junk) (confidence ${confidence})`
+  )
+  // Surface WHY rows were dropped — essential for diagnosing a source that
+  // returns rows but normalizes to zero (almost always a date-format issue).
+  if (rejected.length) {
+    const sample = rejected.slice(0, 8)
+    console.log(`  · rejection reasons (showing ${sample.length}/${rejected.length}):`)
+    for (const r of sample) {
+      const t = (r.raw.title ?? '?').slice(0, 44)
+      console.log(`      - "${t}" [start="${r.raw.start_date ?? ''}" end="${r.raw.end_date ?? ''}"] → ${r.reason}`)
+    }
+  }
 
-  // Provenance per valid row.
+  // Persist the page hash ONLY now that extraction yielded usable productions —
+  // so a failed/empty run (0 productions) is retried on the next pass instead of
+  // being wrongly cached as "unchanged". This is what lets a re-run skip the
+  // companies that already succeeded while re-attempting the ones that didn't.
+  if (writer && pageHashValue && kept.length > 0) {
+    await saveSourceState(writer, src.companySlug, { last_hash: pageHashValue })
+  }
+
+  // Provenance per production row.
   const base = new Map<string, Pick<IngestPerformance, 'source_url' | 'content_hash' | 'confidence'>>()
-  for (const v of valid) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
+  for (const v of kept) base.set(v.id, { source_url: src.url, content_hash: contentHash(v), confidence })
 
   // Resolve entities + enrich performances.
-  const resolved = resolveEntities(companies, valid, base)
+  const resolved = resolveEntities(companies, kept, base)
 
   // Diff against the DB snapshot for this source (empty offline → all 'new').
-  const existing = writer
-    ? await fetchExistingForSource(writer, src.url)
-    : new Map<string, ExistingRow>()
   const { rows, cancelled, counts } = diffRun(resolved.performances, existing)
 
   console.log(
@@ -259,13 +401,21 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   }
 
   // Write: entities first, then pending performances, then credits, then cancels.
+  // CRITICAL: write ONLY changed rows. An 'unchanged' row already exists in the
+  // DB exactly as-is; re-upserting it would reset its review_status back to
+  // 'pending' (toRow always stamps 'pending'), silently UN-PUBLISHING rows the
+  // owner already approved — the root cause of the live site going empty after a
+  // re-crawl. Skipping unchanged rows preserves their published state.
+  const changed = rows.filter((r) => r.change_kind !== 'unchanged')
   await upsertEntities(writer, resolved)
-  const writtenIds = await writePending(writer, rows)
+  const writtenIds = await writePending(writer, changed)
   await upsertCredits(writer, resolved.credits)
   await markCancelledPending(writer, cancelled.map((c) => c.id))
-  console.log(`  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled) to Supabase`)
+  console.log(
+    `  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled, ` +
+      `${rows.length - changed.length} unchanged preserved) to Supabase`
+  )
 
-  const changed = rows.filter((r) => r.change_kind !== 'unchanged')
   const chatId = process.env.TELEGRAM_CHAT_ID ?? null
 
   // AUTO-APPROVE (earned): a trusted source whose run is ALL new additions, at
@@ -371,7 +521,14 @@ function selftest(): void {
 
 const badge = (k?: string) =>
   k === 'new' ? '+ NEW   ' : k === 'date-changed' ? '~ DATE  ' : k === 'price-changed' ? '~ PRICE ' : k === 'cancelled' ? '✗ CANCEL' : '· same  '
-const msg = (e: unknown) => (e instanceof Error ? e.message : String(e))
+const msg = (e: unknown): string => {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'object' && e !== null) {
+    const o = e as Record<string, unknown>
+    return (o.message as string) ?? (o.code as string) ?? JSON.stringify(e)
+  }
+  return String(e)
+}
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))

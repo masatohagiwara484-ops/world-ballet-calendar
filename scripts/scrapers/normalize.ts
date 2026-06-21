@@ -16,35 +16,87 @@ import { parse as parseDate, isValid, format } from 'date-fns'
 import type { Performance } from '../../src/lib/types'
 import type { RawPerformance } from './types'
 
+/** Longest plausible single-production run (days). Beyond this, a row is almost
+ *  certainly two separate engagements merged in error and is rejected. */
+const MAX_RUN_DAYS = 200
+
 /** Date formats we accept from scraped pages, in priority order. */
 const DATE_FORMATS = [
   'yyyy-MM-dd',
+  'yyyy/MM/dd',
   'd MMMM yyyy',
   'dd MMMM yyyy',
   'd MMM yyyy',
   'dd MMM yyyy',
   'MMMM d, yyyy',
+  'MMMM d yyyy',
   'MMM d, yyyy',
+  'MMM d yyyy',
   'dd/MM/yyyy',
   'MM/dd/yyyy',
+  'd/M/yyyy',
+  'M/d/yyyy',
   'dd.MM.yyyy',
+  'd.M.yyyy',
+  'dd-MM-yyyy',
+  // Two-digit-year variants (date-fns maps 'yy' to the current century).
+  'dd.MM.yy',
+  'd.M.yy',
+  'dd/MM/yy',
+  'MM/dd/yy',
 ]
+
+/** Leading weekday tokens (English / German / French, abbreviated or full) that
+ *  some calendars prefix to a date ("Sat, 21 Jun 2026", "Samstag 21.06.2026",
+ *  "Sa. 21.06."). Stripped before parsing so the date itself can be read. */
+const WEEKDAY_PREFIX_RE =
+  /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lun|mar|mer|jeu|ven|sam|dim)\.?,?\s+/i
+
+/** Correct a 2-digit / zero-padded low year to the 2000s ("26"/"0026" → 2026).
+ *  The crawl only ever ingests current/future seasons, so a sub-100 year is
+ *  always a stripped century, never a literal year 26 AD. */
+function fixLowYear(year: number): number {
+  return year < 100 ? 2000 + year : year
+}
+
+/** Apply the low-year correction to a parsed Date in place-safe fashion. */
+function withFixedYear(d: Date): Date {
+  const y = d.getFullYear()
+  if (y >= 100) return d
+  const nd = new Date(d)
+  nd.setFullYear(fixLowYear(y))
+  return nd
+}
 
 /** Parse a free-form date string to ISO (YYYY-MM-DD), or null if unparseable. */
 export function toIsoDate(input: string | undefined): string | null {
   if (!input) return null
-  const raw = input.trim()
+  let raw = input.trim()
+  if (!raw) return null
+  // Drop a leading weekday name so "Sat, 21 Jun 2026" parses as "21 Jun 2026".
+  raw = raw.replace(WEEKDAY_PREFIX_RE, '').trim()
   if (!raw) return null
 
-  // Already ISO?
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    const d = new Date(raw)
-    return Number.isNaN(d.getTime()) ? null : raw
+  // ISO-shaped (accept a 1–4 digit year so a stripped "0026" is recoverable).
+  const isoMatch = raw.match(/^(\d{1,4})-(\d{2})-(\d{2})$/)
+  if (isoMatch) {
+    const year = fixLowYear(parseInt(isoMatch[1], 10))
+    const candidate = `${String(year).padStart(4, '0')}-${isoMatch[2]}-${isoMatch[3]}`
+    const d = new Date(candidate)
+    return Number.isNaN(d.getTime()) ? null : candidate
   }
 
   for (const fmt of DATE_FORMATS) {
     const parsed = parseDate(raw, fmt, new Date())
-    if (isValid(parsed)) return format(parsed, 'yyyy-MM-dd')
+    if (isValid(parsed)) return format(withFixedYear(parsed), 'yyyy-MM-dd')
+  }
+
+  // Last resort: the JS engine's own parser handles many residual shapes
+  // ("June 21, 2026", "21 Jun 2026 19:30"). Only trusted after the explicit
+  // formats above, so well-known ambiguous cases are already resolved.
+  const native = new Date(raw)
+  if (!Number.isNaN(native.getTime())) {
+    return format(withFixedYear(native), 'yyyy-MM-dd')
   }
   return null
 }
@@ -103,6 +155,19 @@ export function normalizeOne(
   }
   // Default a missing end_date to the start date (single-day run).
   const end = toIsoDate(raw.end_date) ?? start
+
+  // Sanity guard: a single production almost never runs longer than a few weeks.
+  // A span beyond ~6 months is the signature of two SEPARATE engagements wrongly
+  // merged into one row (e.g. a 2026 show and a 2027 show collapsed to
+  // 2026→2027). Reject rather than publish a fabricated multi-year run — better a
+  // missing row the next clean crawl re-adds than a wrong one on the live site.
+  const spanDays = (Date.parse(end) - Date.parse(start)) / 86_400_000
+  if (spanDays > MAX_RUN_DAYS) {
+    return {
+      ok: false,
+      reason: `implausible run span (${Math.round(spanDays)}d > ${MAX_RUN_DAYS}d) — likely two merged engagements`,
+    }
+  }
 
   const kindRaw = (raw.kind ?? '').toLowerCase().trim()
   const kind = kindRaw === 'ballet' || kindRaw === 'opera' ? kindRaw : undefined
