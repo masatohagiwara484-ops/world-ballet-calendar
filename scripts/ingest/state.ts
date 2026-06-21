@@ -80,6 +80,16 @@ export async function fetchExistingForSource(
   return map
 }
 
+/** Extract a readable message from any error value (Error, Supabase error object, or unknown). */
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'object' && e !== null) {
+    const o = e as Record<string, unknown>
+    return (o.message as string) ?? (o.code as string) ?? JSON.stringify(e)
+  }
+  return String(e)
+}
+
 /** Upsert the resolved entity graph (people → works → venues → productions → credits). */
 export async function upsertEntities(
   client: SupabaseClient,
@@ -87,22 +97,27 @@ export async function upsertEntities(
 ): Promise<void> {
   // Order matters: works reference people (composer_id), productions reference
   // works/people, credits reference performances+people.
-  if (e.people.length) {
-    const { error } = await client.from('people').upsert(e.people, { onConflict: 'id' })
-    if (error) throw error
+  // Entity graph tables exist only when migration 003 has been run. If they are
+  // absent (42P01) we log a warning and continue — the performance rows are still
+  // written and displayed; the graph is an enhancement, not a hard requirement.
+  const safe = async (table: string, rows: unknown[], conflict: string): Promise<boolean> => {
+    if (!rows.length) return true
+    const { error } = await client.from(table).upsert(rows as never[], { onConflict: conflict })
+    if (error) {
+      const msg = errMsg(error)
+      if ((error as unknown as Record<string, unknown>).code === '42P01') {
+        console.warn(`  ! ${table} table missing (run migration 003 in Supabase SQL editor to enable entity graph)`)
+      } else {
+        console.warn(`  ! upsert ${table} failed: ${msg}`)
+      }
+      return false
+    }
+    return true
   }
-  if (e.venues.length) {
-    const { error } = await client.from('venues').upsert(e.venues, { onConflict: 'id' })
-    if (error) throw error
-  }
-  if (e.works.length) {
-    const { error } = await client.from('works').upsert(e.works, { onConflict: 'id' })
-    if (error) throw error
-  }
-  if (e.productions.length) {
-    const { error } = await client.from('productions').upsert(e.productions, { onConflict: 'id' })
-    if (error) throw error
-  }
+  await safe('people', e.people, 'id')
+  await safe('venues', e.venues, 'id')
+  await safe('works', e.works, 'id')
+  await safe('productions', e.productions, 'id')
 }
 
 /** Upsert performance credits after the performances themselves exist. */
@@ -114,7 +129,10 @@ export async function upsertCredits(
   const { error } = await client
     .from('performance_credits')
     .upsert(credits, { onConflict: 'performance_id,person_id,role' })
-  if (error) throw error
+  if (error) {
+    // performance_credits requires migration 003 — non-fatal, same as entity graph.
+    console.warn(`  ! upsert performance_credits failed: ${errMsg(error)}`)
+  }
 }
 
 /** The Performance columns we write — frozen fields + 003/004 provenance/diff. */
@@ -204,7 +222,10 @@ export async function recordBatch(
     },
     { onConflict: 'id' }
   )
-  if (error) throw error
+  if (error) {
+    // ingest_batches requires migration 004 — non-fatal.
+    console.warn(`  ! recordBatch failed: ${errMsg(error)}`)
+  }
 }
 
 /**

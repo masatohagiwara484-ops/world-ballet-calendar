@@ -468,7 +468,14 @@ function selftest(): void {
 
 const badge = (k?: string) =>
   k === 'new' ? '+ NEW   ' : k === 'date-changed' ? '~ DATE  ' : k === 'price-changed' ? '~ PRICE ' : k === 'cancelled' ? '✗ CANCEL' : '· same  '
-const msg = (e: unknown) => (e instanceof Error ? e.message : String(e))
+const msg = (e: unknown): string => {
+  if (e instanceof Error) return e.message
+  if (typeof e === 'object' && e !== null) {
+    const o = e as Record<string, unknown>
+    return (o.message as string) ?? (o.code as string) ?? JSON.stringify(e)
+  }
+  return String(e)
+}
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
