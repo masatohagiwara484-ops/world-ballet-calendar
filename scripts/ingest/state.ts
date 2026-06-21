@@ -172,18 +172,47 @@ function toRow(p: IngestPerformance): Record<string, unknown> {
   }
 }
 
-/** Write the run's performances as pending review. Returns the written ids. */
+/** Write the run's performances as pending review. Returns the written ids.
+ *
+ * The public site reads ONLY the performances table — the entity-graph tables
+ * (works/productions/venues) are a future-migration enhancement it does not
+ * query. So the listing must NEVER be blocked by a graph hiccup. If the upsert
+ * trips a foreign-key constraint (e.g. a works.slug collision between scraped
+ * and seeded data left a work row un-written), we drop the optional graph FK
+ * links and write the listing anyway. Display is unaffected; only the
+ * not-yet-used graph linkage is degraded. */
 export async function writePending(
   client: SupabaseClient,
   rows: IngestPerformance[]
 ): Promise<string[]> {
   if (!rows.length) return []
   const payload = rows.map(toRow)
-  const { error } = await client
+  let { error } = await client
     .from('performances')
     .upsert(payload, { onConflict: 'id' })
-  if (error) throw error
+
+  if (error && isForeignKeyError(error)) {
+    console.warn(
+      '  ! performances→entity-graph FK failed; writing listing WITHOUT graph links (work/production/venue)'
+    )
+    const stripped = payload.map((r) => ({
+      ...r,
+      work_id: null,
+      production_id: null,
+      venue_id: null,
+    }))
+    ;({ error } = await client.from('performances').upsert(stripped, { onConflict: 'id' }))
+  }
+
+  if (error) throw new Error(errMsg(error))
   return rows.map((r) => r.id)
+}
+
+/** True for a Postgres foreign-key violation (code 23503). */
+function isForeignKeyError(error: unknown): boolean {
+  const o = error as Record<string, unknown> | null
+  if (!o) return false
+  return o.code === '23503' || /foreign key/i.test(String(o.message ?? ''))
 }
 
 /** Publish rows directly (auto-approve path) — skips the review queue. */
@@ -242,5 +271,5 @@ export async function markCancelledPending(
     .update({ review_status: 'pending', change_kind: 'cancelled' })
     .in('id', ids)
     .eq('review_status', 'published')
-  if (error) throw error
+  if (error) console.warn(`  ! markCancelledPending failed: ${errMsg(error)}`)
 }
