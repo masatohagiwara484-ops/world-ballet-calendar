@@ -127,23 +127,39 @@ const SOURCES: Record<string, SourceConfig> = {
  * house's real what's-on URL to activate it (blank = skipped). Royal Ballet's
  * URL is known from the operator; the others need their season/what's-on URL.
  */
-const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/useful-information/opening-calendar'
+const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/season/ballet'
 const ABT_LISTING = 'https://www.abt.org/performances/'
 const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
 const RENDER_SOURCES: Record<string, SourceConfig> = {
-  // Royal Ballet: URL-paginated listing (?page=1/2/3); each page holds ~10
-  // productions. maxPages:3 loads all three in one browser session.
+  // Royal Ballet & Royal Opera: same RBO site, different hotFilter.
+  // URL-paginated (?page=1/2/3); maxPages:3 loads all pages in one session.
   'royal-ballet': { companySlug: 'royal-ballet', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=ballet-and-dance', kind: 'html', render: true, performanceKind: 'ballet', maxPages: 3 },
+  'royal-opera': { companySlug: 'royal-opera', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=opera', kind: 'html', render: true, performanceKind: 'opera', maxPages: 3 },
+  // Paris Opera — dedicated ballet and opera season pages.
   'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/season/operas', kind: 'html', render: true, performanceKind: 'opera' },
+  // US companies.
   'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
-  // Hamburg & Stuttgart expose only per-event .ics files (no season feed), so
-  // render their calendar pages and AI-extract — same as the no-feed houses.
+  // German companies — expose only per-event .ics files (no season feed), so
+  // render their calendar pages and AI-extract.
   'hamburg-ballett': { companySlug: 'hamburg-ballett', url: 'https://hamburgballett.die-hamburgische-staatsoper.de/en/calendar/ballet', kind: 'html', render: true, performanceKind: 'ballet' },
   'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'bayerische-staatsoper': { companySlug: 'bayerische-staatsoper', url: 'https://www.staatsoper.de/en/performances.html', kind: 'html', render: true, performanceKind: 'opera' },
+  // Austrian companies.
+  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/performance-plan/season/', kind: 'html', render: true, performanceKind: 'opera' },
+  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsballett.at/spielplan/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
+  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
+  'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
+  'dutch-national-ballet': { companySlug: 'dutch-national-ballet', url: 'https://www.operaballet.nl/en/ballet/season', kind: 'html', render: true, performanceKind: 'ballet' },
+  'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'australian-ballet': { companySlug: 'australian-ballet', url: 'https://australianballet.com.au/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
+  'tokyo-ballet': { companySlug: 'tokyo-ballet', url: 'https://www.thetokyoballet.com/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'new-national-theatre-tokyo': { companySlug: 'new-national-theatre-tokyo', url: 'https://www.nntt.jac.go.jp/english/opera/schedule/', kind: 'html', render: true, performanceKind: 'opera' },
   // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
   // so render the real calendar page and AI-extract instead.
   'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },
