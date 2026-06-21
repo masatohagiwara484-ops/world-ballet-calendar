@@ -57,16 +57,16 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   if (work) {
     title = `${work.replace(/-/g, ' ')} — every performance worldwide`
-    description = `Discover every performance of ${work.replace(/-/g, ' ')} on the World Ballet & Opera Calendar.`
+    description = `Discover every performance of ${work.replace(/-/g, ' ')} on première.`
   } else if (q) {
-    title = `"${q}" — World Ballet & Opera Calendar`
+    title = `"${q}" — première`
     description = `Search results for "${q}" — find ballet and opera performances worldwide.`
   } else if (filters.kind) {
     const kindName = filters.kind.charAt(0).toUpperCase() + filters.kind.slice(1)
-    title = `${kindName} performances worldwide — World Ballet & Opera Calendar`
-    description = `Browse ${kindName} performances around the world on the World Ballet & Opera Calendar.`
+    title = `${kindName} performances worldwide — première`
+    description = `Browse ${kindName} performances around the world on première.`
   } else {
-    title = "Search the world's ballet & opera — World Ballet & Opera Calendar"
+    title = "Search the world's ballet & opera — première"
     description = 'Find any ballet or opera performance in the world. Filter by company, city, artist, date, and more.'
   }
 

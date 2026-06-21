@@ -13,10 +13,19 @@ export default function Footer() {
       <div className="glass-panel specular mx-auto max-w-7xl px-6 md:px-12 py-14">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10">
           <div className="max-w-xl">
-            <p className="font-playfair font-bold text-[2.5rem] leading-tight tracking-[0.02em] text-gradient-gold">
-              World Ballet &amp; Opera Calendar
-            </p>
-            <p className="font-playfair font-bold mt-5 text-ivory/70 text-[1.75rem] leading-snug">
+            <div className="flex items-center gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/premiere-mark-gold.png"
+                alt=""
+                aria-hidden
+                className="h-14 w-auto"
+              />
+              <p className="font-serif text-[3.25rem] leading-none lowercase tracking-[0.01em] text-gradient-gold">
+                premi&egrave;re
+              </p>
+            </div>
+            <p className="font-playfair font-bold mt-6 text-ivory/70 text-[1.75rem] leading-snug">
               The world&rsquo;s great ballet and opera, gathered into one
               living season — discover by globe, plan by calendar, follow the
               companies you love.
@@ -55,7 +64,7 @@ export default function Footer() {
               fontSize: '12px',
             }}
           >
-            World Ballet &amp; Opera Calendar &copy; 2026
+            premi&egrave;re &copy; 2026
           </p>
           <p
             style={{

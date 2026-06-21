@@ -58,12 +58,27 @@ export default function Navbar() {
         )}
       >
         <div className="px-5 sm:px-7 py-3.5 flex items-center justify-between">
-          {/* Brand wordmark in Cormorant / serif */}
+          {/* Brand lockup — première monogram + wordmark */}
           <Link
             href="/"
-            className="font-serif text-base sm:text-lg tracking-[0.18em] uppercase text-ivory hover:text-gold-deep transition-colors duration-300"
+            aria-label="première — home"
+            className="group flex items-center gap-2.5"
           >
-            Ballet &amp; Opera
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/premiere-mark-ink.png"
+              alt=""
+              aria-hidden
+              className="h-7 sm:h-8 w-auto transition-opacity duration-300 group-hover:opacity-80"
+            />
+            <span className="flex flex-col leading-none">
+              <span className="font-serif text-lg sm:text-xl lowercase tracking-[0.04em] text-ivory transition-colors duration-300 group-hover:text-gold-deep">
+                premi&egrave;re
+              </span>
+              <span className="hidden sm:block text-[8px] tracking-[0.34em] uppercase text-ivory/45 mt-0.5">
+                Ballet &amp; Opera
+              </span>
+            </span>
           </Link>
 
           <div className="hidden md:flex items-center gap-9">

@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Curtain overture — lock scroll while the curtain is up; hide instantly for
+   returning visitors (class set by an inline script before first paint). */
+html.wboc-lock,
+html.wboc-lock body {
+  overflow: hidden !important;
+  height: 100%;
+}
+html.wboc-curtain-done #curtain-overlay {
+  display: none !important;
+}
+
 /* =========================================================================
    White Gradient Luxury — base system
    Warm whites + champagne gold + jewel accents, in a soft "frosted glass on

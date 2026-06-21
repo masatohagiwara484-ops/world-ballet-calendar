@@ -52,15 +52,15 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s — World Ballet & Opera Calendar',
-    default: 'World Ballet & Opera Calendar',
+    template: '%s — première',
+    default: 'première — every stage in the world',
   },
-  description: 'Discover ballet and opera performances around the world. Find upcoming shows from the Royal Ballet, Paris Opéra Ballet, Bolshoi, Metropolitan Opera, and more.',
-  keywords: ['ballet', 'opera', 'performances', 'calendar', 'world ballet'],
+  description: 'première — discover ballet and opera performances around the world. Find upcoming shows from the Royal Ballet, Paris Opéra Ballet, Bolshoi, Metropolitan Opera, and more.',
+  keywords: ['ballet', 'opera', 'performances', 'calendar', 'première'],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'World Ballet & Opera Calendar',
+    siteName: 'première',
   },
   twitter: {
     card: 'summary_large_image',
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
 }
 
 const SITE_URL = 'https://worldballetoperacalender.vercel.app'
-const SITE_NAME = 'World Ballet & Opera Calendar'
+const SITE_NAME = 'première'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -98,6 +98,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${italiana.variable} ${fraunces.variable} ${playfair.variable}`}>
       <body className="bg-stage text-ivory font-sans antialiased">
+        {/* Prime the curtain state before first paint so the curtain (not the
+            page) is what appears on load, and returning visitors never see it. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var s=localStorage.getItem('wboc_curtain_seen');var r=window.matchMedia('(prefers-reduced-motion: reduce)').matches;var d=document.documentElement;if(s||r){d.classList.add('wboc-curtain-done')}else{d.classList.add('wboc-lock')}}catch(e){}})();",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

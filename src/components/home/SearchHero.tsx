@@ -41,7 +41,7 @@ export default function SearchHero() {
           className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-7 animate-fade-in-up"
           style={{ animationDelay: '0ms' }}
         >
-          World Ballet &amp; Opera Calendar
+          premi&egrave;re &middot; ballet &amp; opera
         </p>
 
         {/* Headline — 1.8× scale + shimmering sparkle (framer-motion) */}
