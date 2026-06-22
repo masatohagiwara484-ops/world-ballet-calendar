@@ -6,6 +6,7 @@ import { buildGraph, buildGraphAsync } from '@/lib/graph'
 import { searchAsync } from '@/lib/search'
 import { gradientFor, monogram } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
+import FollowButton from '@/components/audience/FollowButton'
 import type { SearchResultItem } from '@/lib/types'
 
 export const revalidate = 3600
@@ -177,13 +178,16 @@ export default async function WorkPage({ params }: Props) {
       {/* Performance list */}
       <section className="py-20 md:py-28 px-6 md:px-10">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-10">
-            <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-2">
-              Where to see it
-            </p>
-            <h2 className="font-serif text-3xl md:text-4xl text-ivory">
-              Worldwide productions
-            </h2>
+          <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            <div>
+              <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-2">
+                Where to see it
+              </p>
+              <h2 className="font-serif text-3xl md:text-4xl text-ivory">
+                Worldwide productions
+              </h2>
+            </div>
+            <FollowButton entityType="work" entitySlug={params.slug} entityLabel={work.title} />
           </div>
 
           {total === 0 ? (

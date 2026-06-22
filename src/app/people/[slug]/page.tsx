@@ -6,6 +6,7 @@ import { buildGraph, buildGraphAsync } from '@/lib/graph'
 import { searchAsync } from '@/lib/search'
 import { gradientFor, monogram } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
+import FollowButton from '@/components/audience/FollowButton'
 import type { PersonRole, SearchResultItem } from '@/lib/types'
 
 export const revalidate = 3600
@@ -175,6 +176,17 @@ export default async function PersonPage({ params }: Props) {
       {/* Performance list grouped by role */}
       <section className="py-20 md:py-28 px-6 md:px-10">
         <div className="max-w-5xl mx-auto">
+          <div className="mb-12 pb-10 border-b border-black/[0.08] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+            <div>
+              <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-1.5">
+                Never miss a performance
+              </p>
+              <p className="text-ivory/60 text-sm">
+                Follow {person.name} and we’ll email you when new dates are announced.
+              </p>
+            </div>
+            <FollowButton entityType="person" entitySlug={params.slug} entityLabel={person.name} />
+          </div>
           {total === 0 ? (
             <>
               <div className="mb-10">

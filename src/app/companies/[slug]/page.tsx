@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
 import { gradientFor, monogram, typeLabel } from '@/components/shared/design'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
+import FollowButton from '@/components/audience/FollowButton'
 import type { Company, PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -219,6 +220,10 @@ export default async function CompanyPage({ params }: Props) {
                 Search all &rarr;
               </Link>
             </div>
+          </div>
+
+          <div className="mb-10 pb-8 border-b border-black/[0.08]">
+            <FollowButton entityType="company" entitySlug={company.slug} entityLabel={company.name} />
           </div>
 
           {performances.length > 0 ? (

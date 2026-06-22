@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/search', label: 'Search' },
   { href: '/calendar', label: 'Calendar' },
   { href: '/companies', label: 'Companies' },
+  { href: '/cities', label: 'Cities' },
   { href: '/partners', label: 'Partners' },
 ]
 

@@ -4,6 +4,7 @@ import { getCompanies, getPerformances } from '@/lib/data'
 import SearchHero from '@/components/home/SearchHero'
 import CompanyCard from '@/components/shared/CompanyCard'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
+import NewsletterCapture from '@/components/audience/NewsletterCapture'
 
 export const revalidate = 3600
 
@@ -133,7 +134,7 @@ export default async function HomePage() {
               {
                 step: '03',
                 title: 'Follow & never miss',
-                body: 'Get on-sale alerts for your favourite companies and works the moment tickets go live. Coming soon.',
+                body: 'Follow any work, artist, company or city and we’ll email you the moment new dates are announced.',
               },
             ].map((item) => (
               <div key={item.step} className="glass-card specular p-10">
@@ -150,6 +151,18 @@ export default async function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* The Première Edit — top-of-funnel email capture */}
+      <section
+        aria-label="Subscribe to The Première Edit"
+        className="relative py-20 md:py-28 px-6 md:px-10 bg-stage-elevated"
+        style={{
+          backgroundImage:
+            'radial-gradient(ellipse at 50% 100%, rgba(212,175,55,0.08) 0%, transparent 60%)',
+        }}
+      >
+        <NewsletterCapture />
       </section>
     </>
   )
