@@ -83,7 +83,10 @@ export async function addFollow(input: FollowInput): Promise<FollowResult> {
   const sub = await client
     .from('subscribers')
     .upsert({ email, locale, source }, { onConflict: 'email', ignoreDuplicates: true })
-  if (sub.error) return { ok: false, reason: 'error' }
+  if (sub.error) {
+    console.error('[audience] subscribers upsert failed:', sub.error.message, sub.error.code)
+    return { ok: false, reason: 'error' }
+  }
 
   // Record the follow. A duplicate (same email+entity) is success, not failure.
   const fol = await client
@@ -92,6 +95,7 @@ export async function addFollow(input: FollowInput): Promise<FollowResult> {
   if (fol.error) {
     // 23505 = unique_violation → they already follow this; treat as success.
     if ((fol.error as { code?: string }).code === '23505') return { ok: true, already: true }
+    console.error('[audience] follows insert failed:', fol.error.message, (fol.error as { code?: string }).code)
     return { ok: false, reason: 'error' }
   }
   return { ok: true, already: false }

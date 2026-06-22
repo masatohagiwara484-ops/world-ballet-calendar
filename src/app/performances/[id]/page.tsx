@@ -6,6 +6,7 @@ import { getPerformances } from '@/lib/data'
 import { formatRange } from '@/components/shared/format'
 import { gradientFor, monogram, KIND_LABEL, bookingUrl, creditLine } from '@/components/shared/design'
 import { PlanYourTrip } from '@/components/shared/PlanYourTrip'
+import AddToCalendar from '@/components/shared/AddToCalendar'
 import type { PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -112,8 +113,8 @@ export default async function PerformancePage({ params }: Props) {
           {p.price_range && (
             <p className="mt-3 text-gold text-sm font-medium">{p.price_range}</p>
           )}
-          {ticket && (
-            <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {ticket && (
               <a
                 href={ticket}
                 target="_blank"
@@ -123,8 +124,22 @@ export default async function PerformancePage({ params }: Props) {
                 Book tickets
                 <ExternalLink size={14} />
               </a>
-            </div>
-          )}
+            )}
+            <AddToCalendar
+              event={{
+                id: p.id,
+                title: p.title,
+                company: p.company.name,
+                startDate: p.start_date,
+                endDate: p.end_date,
+                venue,
+                city: p.company.city,
+                country: p.company.country,
+                url: ticket ?? undefined,
+                description: p.description ?? undefined,
+              }}
+            />
+          </div>
         </div>
       </section>
 

@@ -45,6 +45,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     locale: asStr(body.locale),
   })
 
+  // One concise log line per capture so the funnel is observable in Vercel logs
+  // (no PII beyond the entity followed — the email itself is never logged).
+  console.log(
+    `[follow] ${entityType}:${entitySlug} → ${result.ok ? (result.already ? 'already' : 'new') : `fail:${result.reason}`}`
+  )
+
   if (result.ok) return NextResponse.json(result, { status: 200 })
 
   // Map a failure reason to the right status. 'unconfigured'/'error' are our
