@@ -149,7 +149,7 @@ export default async function CityPage({ params }: Props) {
                   </p>
                   <div className="glass-panel specular px-5 sm:px-8 py-2">
                     {byYear.get(year)!.map((item) => (
-                      <EntityPerformanceRow key={item.id} item={item} />
+                      <EntityPerformanceRow key={item.id} item={item} showTitle />
                     ))}
                   </div>
                 </div>

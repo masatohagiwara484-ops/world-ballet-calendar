@@ -23,9 +23,17 @@ interface Props {
   item: SearchResultItem
   /** Suppress role groups that are redundant on a person page (caller decides). */
   highlightRole?: CreditGroup['role']
+  /**
+   * Lead with the performance/work TITLE instead of the company name. Used where
+   * the company is not the page's subject (e.g. a city page lists many different
+   * works) — there the production name is what the reader needs to see. The
+   * title links to the performance detail page so tickets are one click away.
+   * Defaults to false so work/person pages keep leading with the company.
+   */
+  showTitle?: boolean
 }
 
-export default function EntityPerformanceRow({ item, highlightRole }: Props) {
+export default function EntityPerformanceRow({ item, highlightRole, showTitle }: Props) {
   const ticket = bookingUrl(item)
   const venue = item.venue ?? item.company.venue
   const creditGroups = item.credits.filter((g) => g.people.length > 0)
@@ -42,23 +50,48 @@ export default function EntityPerformanceRow({ item, highlightRole }: Props) {
         </p>
       </div>
 
-      {/* Centre: company + venue + credits */}
+      {/* Centre: title/company + venue + credits */}
       <div className="flex-1 min-w-0">
-        <p className="font-serif text-base sm:text-lg text-ivory leading-snug mb-0.5">
-          <Link
-            href={`/companies/${item.company.slug}`}
-            className="hover:text-gold transition-colors"
-          >
-            {item.company.name}
-          </Link>
-        </p>
-        <p className="text-ivory/55 text-sm mb-2">
-          {item.company.city}
-          {item.company.country !== item.company.city && (
-            <span className="text-ivory/35"> · {item.company.country}</span>
-          )}
-          {venue && <span className="text-ivory/35"> · {venue}</span>}
-        </p>
+        {showTitle ? (
+          <>
+            {/* Lead with the production name, linked to its detail page. */}
+            <p className="font-serif text-base sm:text-lg text-ivory leading-snug mb-0.5">
+              <Link
+                href={`/performances/${item.id}`}
+                className="hover:text-gold transition-colors"
+              >
+                {item.title}
+              </Link>
+            </p>
+            <p className="text-ivory/55 text-sm mb-2">
+              <Link
+                href={`/companies/${item.company.slug}`}
+                className="hover:text-gold transition-colors"
+              >
+                {item.company.name}
+              </Link>
+              {venue && <span className="text-ivory/35"> · {venue}</span>}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="font-serif text-base sm:text-lg text-ivory leading-snug mb-0.5">
+              <Link
+                href={`/companies/${item.company.slug}`}
+                className="hover:text-gold transition-colors"
+              >
+                {item.company.name}
+              </Link>
+            </p>
+            <p className="text-ivory/55 text-sm mb-2">
+              {item.company.city}
+              {item.company.country !== item.company.city && (
+                <span className="text-ivory/35"> · {item.company.country}</span>
+              )}
+              {venue && <span className="text-ivory/35"> · {venue}</span>}
+            </p>
+          </>
+        )}
 
         {/* Show credits only when they add info (e.g. on a work page, show who performed what) */}
         {creditGroups.length > 0 && (
