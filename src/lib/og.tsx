@@ -6,23 +6,53 @@
  * on the fly per page (1200×630) in the house style — deep ink, champagne gold,
  * the première wordmark — so every shared link is, in effect, a branded ad.
  *
- * Implementation notes:
- *   • Uses next/og (Satori). Satori needs explicit flex layout on any element
- *     with multiple children, so every container below sets display:flex.
- *   • Renders with next/og's bundled default font (no external font fetch), so
- *     generation never depends on egress. A serif (Playfair) can be layered in
- *     later by bundling a .ttf and passing it via the `fonts` option.
+ * Typography: titles/wordmark/subtitle use the brand serif (Playfair Display,
+ * bundled as static TTFs and loaded via next/og's `fonts` option). The small
+ * uppercase eyebrow / footer stay in next/og's bundled sans for legibility at
+ * letter-spacing — mirroring the site (Playfair headings + sans labels).
+ *
+ * SWAPPING THE FONT (expected to change): replace the files in ./fonts and, if
+ * the family changes, update SERIF_FAMILY + the two file names in loadFonts().
+ * Nothing else needs to change.
  */
 import { ImageResponse } from 'next/og'
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 
 export const OG_SIZE = { width: 1200, height: 630 }
 export const OG_CONTENT_TYPE = 'image/png'
+
+/** Brand serif family name referenced by the card's serif elements. */
+const SERIF_FAMILY = 'Playfair Display'
 
 const INK = '#0B0B0D'
 const GOLD = '#D4AF37'
 const GOLD_SOFT = '#C9A84C'
 const CREAM = '#F5F0E6'
 const CREAM_DIM = 'rgba(245,240,230,0.62)'
+
+const FONT_DIR = join(dirname(fileURLToPath(import.meta.url)), 'fonts')
+
+type FontDef = { name: string; data: Buffer; weight: 400 | 700; style: 'normal' }
+let fontsPromise: Promise<FontDef[]> | null = null
+
+/** Load + cache the bundled serif TTFs (read once per lambda). readFile works
+ *  on the Node runtime at build AND at runtime; next.config's
+ *  outputFileTracingIncludes guarantees the .ttf files ship to the Vercel
+ *  serverless bundle. */
+function loadFonts(): Promise<FontDef[]> {
+  if (!fontsPromise) {
+    fontsPromise = Promise.all([
+      readFile(join(FONT_DIR, 'Playfair-400.ttf')),
+      readFile(join(FONT_DIR, 'Playfair-700.ttf')),
+    ]).then(([r, b]) => [
+      { name: SERIF_FAMILY, data: r, weight: 400, style: 'normal' },
+      { name: SERIF_FAMILY, data: b, weight: 700, style: 'normal' },
+    ])
+  }
+  return fontsPromise
+}
 
 export interface OgCardOptions {
   /** Small uppercase line above the title ("BALLET · THE ROYAL BALLET"). */
@@ -44,10 +74,11 @@ export function accentFor(key: string): string {
 }
 
 /** Render a branded OG card to an ImageResponse. */
-export function renderOgCard(opts: OgCardOptions): ImageResponse {
+export async function renderOgCard(opts: OgCardOptions): Promise<ImageResponse> {
   const accent = opts.accent ?? '#1B2A4A'
   // Clamp the title so very long names stay on the card.
   const title = opts.title.length > 64 ? `${opts.title.slice(0, 63)}…` : opts.title
+  const fonts = await loadFonts()
 
   return new ImageResponse(
     (
@@ -91,7 +122,15 @@ export function renderOgCard(opts: OgCardOptions): ImageResponse {
 
         {/* Wordmark */}
         <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-          <div style={{ color: GOLD, fontSize: 30, letterSpacing: 12, fontWeight: 600 }}>
+          <div
+            style={{
+              color: GOLD,
+              fontFamily: SERIF_FAMILY,
+              fontWeight: 700,
+              fontSize: 36,
+              letterSpacing: 4,
+            }}
+          >
             première
           </div>
           {/* Gold diamond drawn as a rotated square (no special glyph → no font fetch). */}
@@ -126,8 +165,9 @@ export function renderOgCard(opts: OgCardOptions): ImageResponse {
           <div
             style={{
               color: CREAM,
-              fontSize: title.length > 30 ? 76 : 96,
+              fontFamily: SERIF_FAMILY,
               fontWeight: 700,
+              fontSize: title.length > 30 ? 78 : 100,
               lineHeight: 1.05,
               display: 'flex',
             }}
@@ -135,7 +175,16 @@ export function renderOgCard(opts: OgCardOptions): ImageResponse {
             {title}
           </div>
           {opts.subtitle ? (
-            <div style={{ color: CREAM_DIM, fontSize: 34, marginTop: 26, display: 'flex' }}>
+            <div
+              style={{
+                color: CREAM_DIM,
+                fontFamily: SERIF_FAMILY,
+                fontWeight: 400,
+                fontSize: 36,
+                marginTop: 26,
+                display: 'flex',
+              }}
+            >
               {opts.subtitle}
             </div>
           ) : null}
@@ -150,6 +199,6 @@ export function renderOgCard(opts: OgCardOptions): ImageResponse {
         </div>
       </div>
     ),
-    { ...OG_SIZE }
+    { ...OG_SIZE, fonts }
   )
 }

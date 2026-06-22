@@ -4,6 +4,11 @@ const nextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
+  // Guarantee the OG card's serif TTFs are bundled into the serverless functions
+  // that render opengraph-image routes (og.tsx reads them with fs at runtime).
+  outputFileTracingIncludes: {
+    '/**/opengraph-image': ['./src/lib/fonts/**'],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
