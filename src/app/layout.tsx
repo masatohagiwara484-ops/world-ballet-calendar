@@ -51,6 +51,12 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
+  // Required so file-based opengraph-image URLs resolve to absolute URLs that
+  // social scrapers (X, LINE, iMessage, Slack…) can fetch. Without this, OG
+  // image links are relative and previews silently fail.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'
+  ),
   title: {
     template: '%s — première',
     default: 'première — every stage in the world',
