@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { getPerformances } from '@/lib/data'
 import { formatRange } from '@/components/shared/format'
-import { gradientFor, monogram, KIND_LABEL, bookingUrl, creditLine } from '@/components/shared/design'
+import { gradientFor, monogram, KIND_LABEL, bookingUrl, ticketTarget, creditLine } from '@/components/shared/design'
 import { PlanYourTrip } from '@/components/shared/PlanYourTrip'
 import AddToCalendar from '@/components/shared/AddToCalendar'
 import type { PerformanceWithCompany } from '@/lib/types'
@@ -38,6 +38,9 @@ export default async function PerformancePage({ params }: Props) {
   if (!p) notFound()
 
   const ticket = bookingUrl(p)
+  // Two-tier CTA: a direct booking link when we have one, otherwise the
+  // company's official site as a box-office fallback (review #1 — never a dead end).
+  const tt = ticketTarget(p, p.company)
   const venue = p.venue ?? p.company.venue
 
   const jsonLd: Record<string, unknown> = {
@@ -114,14 +117,14 @@ export default async function PerformancePage({ params }: Props) {
             <p className="mt-3 text-gold text-sm font-medium">{p.price_range}</p>
           )}
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            {ticket && (
+            {tt && (
               <a
-                href={ticket}
+                href={tt.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold text-[#111] font-semibold text-xs tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold-strong transition-all"
               >
-                Book tickets
+                {tt.isBoxOffice ? 'Visit box office' : 'Book tickets'}
                 <ExternalLink size={14} />
               </a>
             )}
@@ -181,14 +184,14 @@ export default async function PerformancePage({ params }: Props) {
                 <p className="text-gold-deep text-sm mb-5">{p.price_range}</p>
               )}
               {!p.price_range && <div className="mb-5" />}
-              {ticket ? (
+              {tt ? (
                 <a
-                  href={ticket}
+                  href={tt.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-full bg-gold text-stage font-semibold text-xs tracking-[0.2em] uppercase hover:shadow-glow-gold hover:bg-gold-bright transition-all"
                 >
-                  Book tickets
+                  {tt.isBoxOffice ? 'Visit box office' : 'Book tickets'}
                   <ExternalLink size={14} />
                 </a>
               ) : (
@@ -196,12 +199,15 @@ export default async function PerformancePage({ params }: Props) {
                   Booking opens closer to the performance dates.
                 </p>
               )}
-              <Link
-                href={`/companies/${p.company.slug}`}
-                className="block text-center mt-5 text-ivory/55 text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep transition-colors"
-              >
-                View company &rarr;
-              </Link>
+              {/* Show the company link only when it isn't already the CTA target. */}
+              {!(tt && tt.isBoxOffice) && (
+                <Link
+                  href={`/companies/${p.company.slug}`}
+                  className="block text-center mt-5 text-ivory/55 text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep transition-colors"
+                >
+                  View company &rarr;
+                </Link>
+              )}
             </div>
 
             <PlanYourTrip

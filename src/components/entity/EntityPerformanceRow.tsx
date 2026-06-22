@@ -6,7 +6,7 @@
 import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
 import { formatRange } from '@/components/shared/format'
-import { bookingUrl } from '@/components/shared/design'
+import { ticketTarget } from '@/components/shared/design'
 import type { SearchResultItem, CreditGroup } from '@/lib/types'
 
 const ROLE_LABELS: Record<CreditGroup['role'], string> = {
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function EntityPerformanceRow({ item, highlightRole, showTitle }: Props) {
-  const ticket = bookingUrl(item)
+  const tt = ticketTarget(item, item.company)
   const venue = item.venue ?? item.company.venue
   const creditGroups = item.credits.filter((g) => g.people.length > 0)
 
@@ -132,14 +132,14 @@ export default function EntityPerformanceRow({ item, highlightRole, showTitle }:
             {item.price_range}
           </span>
         )}
-        {ticket && (
+        {tt && (
           <a
-            href={ticket}
+            href={tt.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-gold/8 border border-gold/25 text-gold-deep text-[10px] tracking-[0.18em] uppercase hover:bg-gold/15 hover:border-gold/50 transition-all"
           >
-            Tickets
+            {tt.isBoxOffice ? 'Box office' : 'Tickets'}
             <ExternalLink size={10} />
           </a>
         )}
