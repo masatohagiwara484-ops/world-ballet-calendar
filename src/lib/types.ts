@@ -59,6 +59,16 @@ export interface Performance {
   image_url?: string
   price_range?: string
   is_featured: boolean
+  /**
+   * Provenance — the trust layer. `last_verified` is the timestamp a human (or
+   * the Telegram approval) last confirmed these dates against the company's
+   * official source; `source_url` is that source. Present on published Supabase
+   * rows; absent on the (currently empty) static floor. The "Verified dates"
+   * badge renders only when `last_verified` is set, turning our trust discipline
+   * into a visible brand signal.
+   */
+  last_verified?: string
+  source_url?: string
 }
 
 /** A performance joined with its company — what most UI surfaces consume. */

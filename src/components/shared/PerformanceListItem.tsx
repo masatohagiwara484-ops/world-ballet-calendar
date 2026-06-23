@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { formatRange } from './format'
 import { creditLine, KIND_LABEL } from './design'
+import VerifiedDates from './VerifiedDates'
 import type { PerformanceWithCompany } from '@/lib/types'
 
 interface Props {
@@ -25,6 +26,13 @@ export default function PerformanceListItem({ performance: p, hideCompany }: Pro
         <p className="mt-1 text-ivory/50 text-[10px] tracking-[0.28em] uppercase">
           {KIND_LABEL[p.kind]}
         </p>
+        {p.last_verified && (
+          <VerifiedDates
+            lastVerified={p.last_verified}
+            variant="compact"
+            className="mt-2"
+          />
+        )}
       </div>
 
       <div className="min-w-0">
