@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
 import { formatRange } from '@/components/shared/format'
-import { gradientFor, monogram, KIND_LABEL, bookingUrl } from '@/components/shared/design'
+import { gradientFor, monogram, KIND_LABEL, ticketTarget } from '@/components/shared/design'
 import type { SearchResultItem, CreditGroup } from '@/lib/types'
 
 interface Props {
@@ -29,7 +29,7 @@ function kindLabel(kind: string): string {
 }
 
 export default function ResultCard({ item }: Props) {
-  const ticket = bookingUrl(item)
+  const tt = ticketTarget(item, item.company)
   const gradient = gradientFor(item.company.slug)
   const initials = monogram(item.company.name)
 
@@ -118,14 +118,14 @@ export default function ResultCard({ item }: Props) {
           <span className="text-ivory/50 text-xs">
             {item.price_range ?? (item.price.min != null ? `From ${item.price.currency ?? '€'}${item.price.min}` : '')}
           </span>
-          {ticket && (
+          {tt && (
             <a
-              href={ticket}
+              href={tt.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold/10 border border-gold/30 text-gold-deep text-[11px] tracking-[0.18em] uppercase hover:bg-gold/20 transition-colors"
             >
-              Tickets
+              {tt.isBoxOffice ? 'Box office' : 'Tickets'}
               <ExternalLink size={11} />
             </a>
           )}

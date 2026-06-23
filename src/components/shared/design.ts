@@ -63,3 +63,29 @@ export function creditLine(p: Pick<Performance, 'composer' | 'choreographer'>): 
 export function bookingUrl(p: Pick<Performance, 'affiliate_url' | 'ticket_url'>): string | null {
   return p.affiliate_url ?? p.ticket_url ?? null
 }
+
+/** A ticket destination plus whether it's a direct booking link or the company's
+ *  official site used as a box-office fallback (so the CTA can label itself). */
+export interface TicketTarget {
+  url: string
+  /** true → company official site (label "Visit box office"); false → direct
+   *  booking/ticket link (label "Book tickets"). */
+  isBoxOffice: boolean
+}
+
+/**
+ * Resolve where a "buy tickets" CTA should point. Prefers a direct booking link;
+ * when none was captured for this performance, falls back to the company's
+ * official website as a box-office link, so there is ALWAYS a path to purchase
+ * rather than a dead end (the gap behind review #1). Returns null only when even
+ * the company website is unknown.
+ */
+export function ticketTarget(
+  p: Pick<Performance, 'affiliate_url' | 'ticket_url'>,
+  company?: { website?: string | null }
+): TicketTarget | null {
+  const direct = p.affiliate_url ?? p.ticket_url
+  if (direct) return { url: direct, isBoxOffice: false }
+  if (company?.website) return { url: company.website, isBoxOffice: true }
+  return null
+}

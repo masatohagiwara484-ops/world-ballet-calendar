@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { getCities, getCityBySlug } from '@/lib/cities'
 import { searchAsync } from '@/lib/search'
 import { gradientFor, monogram } from '@/components/shared/design'
+import CityScene, { hasCityScene } from '@/components/cities/CityScene'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
 import FollowButton from '@/components/audience/FollowButton'
 import type { SearchResultItem } from '@/lib/types'
@@ -50,6 +51,7 @@ export default async function CityPage({ params }: Props) {
   }
   const years = [...byYear.keys()].sort()
   const gradient = gradientFor(city.slug)
+  const scene = hasCityScene(city.slug)
 
   return (
     <main className="min-h-screen">
@@ -58,18 +60,37 @@ export default async function CityPage({ params }: Props) {
         className="relative pt-36 pb-24 px-6 md:px-10 overflow-hidden"
         style={{ background: gradient }}
       >
+        {scene && (
+          <>
+            <CityScene
+              slug={city.slug}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+            {/* Scrim keeps the gold heading and white meta legible over the scene. */}
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(8,8,12,0.55) 0%, rgba(8,8,12,0.35) 42%, rgba(8,8,12,0.78) 100%)',
+              }}
+            />
+          </>
+        )}
         <div
           aria-hidden
           className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-20 blur-3xl"
           style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
         />
-        <span
-          aria-hidden
-          className="absolute -bottom-16 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
-          style={{ fontSize: 'clamp(14rem, 40vw, 38rem)' }}
-        >
-          {monogram(city.name)}
-        </span>
+        {!scene && (
+          <span
+            aria-hidden
+            className="absolute -bottom-16 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
+            style={{ fontSize: 'clamp(14rem, 40vw, 38rem)' }}
+          >
+            {monogram(city.name)}
+          </span>
+        )}
 
         <div className="relative max-w-5xl mx-auto">
           <Link
