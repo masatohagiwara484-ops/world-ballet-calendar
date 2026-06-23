@@ -24,7 +24,9 @@ export interface TripContext {
 }
 
 const BOOKING_AID = process.env.NEXT_PUBLIC_BOOKING_AID
-const GYG_PID = process.env.NEXT_PUBLIC_GYG_PARTNER_ID
+// GetYourGuide partner ID — NEXT_PUBLIC so it's client-visible (not a secret).
+// Falls back to the production partner ID when the env var is absent.
+const GYG_PID = process.env.NEXT_PUBLIC_GYG_PARTNER_ID ?? 'UCDLK80'
 const TIQETS_PID = process.env.NEXT_PUBLIC_TIQETS_PARTNER
 
 /** True when at least one affiliate program is wired (drives disclosure copy). */
