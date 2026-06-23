@@ -258,6 +258,18 @@ body::after {
   to { opacity: 1; }
 }
 
+/* Modal entrance — gentle rise + settle (used by NewsletterPopup) */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

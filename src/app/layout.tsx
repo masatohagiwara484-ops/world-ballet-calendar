@@ -3,6 +3,7 @@ import { Manrope, Cormorant_Garamond, Italiana, Fraunces, Playfair_Display } fro
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import CurtainReveal from '@/components/loaders/CurtainReveal'
+import NewsletterPopup from '@/components/audience/NewsletterPopup'
 import './globals.css'
 
 // Body / UI — Manrope (refined geometric sans, weights 300–700)
@@ -120,6 +121,7 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Footer />
+        <NewsletterPopup />
       </body>
     </html>
   )
