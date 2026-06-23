@@ -7,6 +7,7 @@ import { formatRange } from '@/components/shared/format'
 import { gradientFor, monogram, KIND_LABEL, bookingUrl, ticketTarget, creditLine } from '@/components/shared/design'
 import { PlanYourTrip } from '@/components/shared/PlanYourTrip'
 import AddToCalendar from '@/components/shared/AddToCalendar'
+import VerifiedDates from '@/components/shared/VerifiedDates'
 import type { PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -115,6 +116,11 @@ export default async function PerformancePage({ params }: Props) {
           )}
           {p.price_range && (
             <p className="mt-3 text-gold text-sm font-medium">{p.price_range}</p>
+          )}
+          {p.last_verified && (
+            <div className="mt-6">
+              <VerifiedDates lastVerified={p.last_verified} sourceUrl={p.source_url} />
+            </div>
           )}
           <div className="mt-8 flex flex-wrap items-center gap-3">
             {tt && (
