@@ -117,7 +117,7 @@ export default async function PerformancePage({ params }: Props) {
           {p.price_range && (
             <p className="mt-3 text-gold text-sm font-medium">{p.price_range}</p>
           )}
-          {p.last_verified && (
+          {(p.last_verified || p.source_url) && (
             <div className="mt-6">
               <VerifiedDates lastVerified={p.last_verified} sourceUrl={p.source_url} />
             </div>

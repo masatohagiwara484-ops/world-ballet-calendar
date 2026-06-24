@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { getCompanies, getPerformances } from '@/lib/data'
 import { getCities } from '@/lib/cities'
 import { buildGraphAsync } from '@/lib/graph'
+import { journal } from '@/data/journal'
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -15,8 +16,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/calendar`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/cities`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/map`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${baseUrl}/journal`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/partners`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ]
+
+  // Editorial long-tail (#9) — evergreen, so safe in the static block.
+  const journalPages: MetadataRoute.Sitemap = journal.map((a) => ({
+    url: `${baseUrl}/journal/${a.slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }))
 
   try {
     const [companies, performances, cities, graph] = await Promise.all([
@@ -66,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
       ...staticRoutes,
+      ...journalPages,
       ...companyPages,
       ...cityPages,
       ...workPages,
@@ -73,6 +85,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...performancePages,
     ]
   } catch {
-    return staticRoutes
+    return [...staticRoutes, ...journalPages]
   }
 }
