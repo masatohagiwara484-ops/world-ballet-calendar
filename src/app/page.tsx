@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getCompanies, getPerformances } from '@/lib/data'
 import SearchHero from '@/components/home/SearchHero'
+import CuratedRail from '@/components/home/CuratedRail'
 import CompanyCard from '@/components/shared/CompanyCard'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import NewsletterCapture from '@/components/audience/NewsletterCapture'
@@ -36,6 +37,10 @@ export default async function HomePage() {
   return (
     <>
       <SearchHero />
+
+      {/* Unmissable this season — the curated editorial rail (the moat).
+          Hidden entirely when no runs are flagged is_featured. */}
+      <CuratedRail performances={featured.slice(0, 12)} />
 
       {/* This Week on Stage */}
       <section
