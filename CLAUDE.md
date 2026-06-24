@@ -102,3 +102,82 @@ git push origin main  # Vercel 自動デプロイ
 ## Live URLs
 - Production: https://worldballetoperacalender.vercel.app
 - GitHub: https://github.com/masatohagiwara484-ops/world-ballet-calendar
+
+---
+
+## Strategic Direction v2 — Travel-Integrated Brand (added 2026-06; supersedes nothing above)
+
+> このセクションは初期 CLAUDE.md には無かった**新方針の追記**です。上記の既存内容は
+> そのまま有効。ここでは「旅行を組み込んだ事業計画」と「ブランドの方向性」を定義します。
+> 最新かつ単一の実行計画は `docs/ROADMAP.md`、日次の記録は `reports/day-XX-report.md`。
+
+### The one-line thesis / 事業の一行定義
+**We are not an Operabase competitor. We are the place where a balletomane
+discovers a performance *and books the trip around it*.** カレンダーではなく、
+**「発見 → 旅程 → 予約」までを最も美しく信頼できる形で繋ぐ旅行プロダクト**。
+
+- **Do NOT** try to out-scale Operabase on raw coverage (1M+ shows, licensed
+  feeds, 403 walls — unwinnable head-on). 量では勝負しない。
+- **DO** win on a curated set of the world's ~30–80 greatest houses with
+  **perfect accuracy + design + trust + travel**. 厳選＋深さで勝つ。
+
+### The four moats / 4つの堀
+1. **Curation（キュレーション）** — hand-picked "unmissable this season" editorial
+   judgement no database replicates. (→ home rail `CuratedRail`, future `/journal`.)
+2. **Trust（信頼）** — "we never show a wrong date." Provenance is *visible*
+   (`last_verified` / `source_url` → `VerifiedDates` badge). 間違った日付を出さない。
+3. **Travel（旅行）** — we know *where* and *when*, so we alone can assemble the
+   **"performance trip" bundle** (ticket + hotel-near-venue + flight). Venue
+   lat/lng already power the map + "plan the trip" panel.
+4. **Design（デザイン）** — Apple/Ferrari/Rolex-grade white-gradient luxury;
+   the experience itself is the differentiator vs. Operabase's dated UX.
+
+### Business model / 収益モデル（優先順）
+1. **Travel affiliate (primary)** — Booking.com/Expedia (hotels by venue lat/lng),
+   Tiqets/GetYourGuide (tours), See Tickets / national ticketing, flights
+   (WayAway/Aviasales). **Killer unit = the performance-trip bundle.** 最高単価・独自。
+2. **Editorial + SEO funnel** — beautiful long-tail guides ("a ballet weekend in
+   Paris", "10 unmissable productions", "first night at the ballet") → affiliate.
+   低コストで複利。
+3. **Premium tier (later)** — follow dancers/choreographers + personal iCal +
+   announcement/price alerts + multi-city trip planner; ad-free + early data.
+   カレンダーを継続課金プロダクトへ。
+4. **Data-model flip / B2B (later)** — become the channel mid-tier houses *push
+   into*; license a "what's on + book" widget to luxury hotels & tourism boards.
+
+### Brand direction / ブランドの方向性
+- **Voice:** editorial, confident, restrained — a curator, not an aggregator.
+  「世界最高の舞台を、完璧な正確さで、美しく予約可能に。」
+- **Copy guardrail:** do **not** over-promise scale (avoid "every stage on Earth"
+  while the DB is curated/small — it reads as a broken promise and hurts trust).
+- **Visual:** white-gradient luxury, Playfair + Inter, gold `#D4AF37`, GSAP 0.8s+,
+  purposeful depth. Every surface should feel like a printed season brochure.
+- **Trust as brand:** the verified-dates badge is a *feature of the brand*, not a
+  hidden field — surface it everywhere dates appear.
+
+### Marketing strategy / マーケティング戦略
+- **Owned audience first:** "The Première Edit" monthly curation (inline
+  `NewsletterCapture` + intent-triggered `NewsletterPopup`). Capture deep-page
+  traffic before it leaves; one backend path (`/api/follow`).
+- **Visual distribution (#10):** auto-generated beautiful "this week's
+  performances" social cards — our unique shareable edge (ballet/opera is
+  intensely visual; the aggregator can't match it).
+- **SEO compounding (#9):** editorial long-tail (travel guides / work explainers /
+  company stories) targeting KWs Operabase ignores.
+- **Partnership funnel (later):** houses hungry for international audience hand us
+  clean feeds → coverage grows via partnership, not scraping war.
+
+### Guardrails / ガードレール（やらないこと）
+- No fabricated data — ever. Empty state > wrong date. (See trust policy in
+  `src/data/performances.ts`.)
+- No `/partners` "Coming Soon" shells live in public nav until a real affiliate
+  is active (dead pages hurt SEO + trust).
+- i18n / accounts / PWA / B2B casting = **post-traction**, intentionally deferred.
+
+### Where the plan lives / 計画の所在（散在防止）
+- **`docs/ROADMAP.md`** — the single, current execution plan (task backlog
+  #1–#13, status, priorities). 最新計画はここだけ読めば分かる。
+- **`reports/day-XX-report.md`** — daily record + outcomes (bilingual, immutable
+  rule). 毎回の作業はここに記録する。
+- Older `docs/*.md` (STRATEGY, PHASE1_LAUNCH_PLAN, etc.) remain as background but
+  are **superseded by ROADMAP.md** where they conflict.
