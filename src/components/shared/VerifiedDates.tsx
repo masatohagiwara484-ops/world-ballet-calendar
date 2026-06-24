@@ -1,17 +1,22 @@
 /**
  * VerifiedDates — the visible trust signal.
  *
- * Operabase shows dates with no provenance. We confirm every published run
- * against the company's official source and stamp `last_verified` + `source_url`
- * (see the trust policy in src/data/performances.ts). This badge surfaces that
- * discipline so it reads as a brand advantage rather than a hidden database
- * field. It renders ONLY when `lastVerified` is present, so unverified / empty
- * rows never claim a confirmation they don't have.
+ * Operabase shows dates with no provenance. We confirm published runs against
+ * the company's official source and store `last_verified` + `source_url` (see the
+ * trust policy in src/data/performances.ts). This badge surfaces that discipline
+ * so it reads as a brand advantage rather than a hidden database field.
+ *
+ * Honest by construction — it shows the strongest claim the data supports:
+ *   - `last_verified` present → "Dates confirmed with the company · <date>"
+ *     (the full trust claim; links to the source when we have one).
+ *   - only `source_url` present → "Official source" link, with NO confirmation
+ *     claim (we have provenance but no verification timestamp).
+ *   - neither → renders nothing.
  *
  * Two sizes: `full` (a panel line on the performance page) and `compact`
  * (an inline pill for dense list rows).
  */
-import { BadgeCheck } from 'lucide-react'
+import { BadgeCheck, Link2 } from 'lucide-react'
 import { formatDay } from './format'
 
 interface Props {
@@ -27,18 +32,39 @@ export default function VerifiedDates({
   variant = 'full',
   className = '',
 }: Props) {
-  if (!lastVerified) return null
-  const when = formatDay(lastVerified)
+  if (!lastVerified && !sourceUrl) return null
+  const when = lastVerified ? formatDay(lastVerified) : null
 
   if (variant === 'compact') {
+    // Dense rows: only the strong "Verified" claim earns a pill; a bare source
+    // link would be noise here.
+    if (!lastVerified) return null
     return (
       <span
         className={`inline-flex items-center gap-1 text-gold/85 text-[10px] tracking-[0.16em] uppercase ${className}`}
-        title={`Dates confirmed with the company · ${when}`}
+        title={`Dates confirmed with the company${when ? ` · ${when}` : ''}`}
       >
         <BadgeCheck size={12} className="shrink-0" />
         Verified
       </span>
+    )
+  }
+
+  // Provenance-only: we have a source but no verification date. Be precise.
+  if (!lastVerified && sourceUrl) {
+    return (
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className={`inline-flex items-center gap-2 text-xs text-ivory/55 hover:text-gold transition-colors ${className}`}
+      >
+        <Link2 size={15} className="shrink-0 text-gold/80" />
+        <span>
+          Listing from the{' '}
+          <span className="text-gold/80 underline underline-offset-2">official source</span>
+        </span>
+      </a>
     )
   }
 

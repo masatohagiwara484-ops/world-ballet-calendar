@@ -1,23 +1,24 @@
 'use client'
 
 /**
- * VenueMapLoader — the client boundary for the Leaflet map.
+ * VenueMapLoader — the client boundary that picks and loads a map.
  *
- * Leaflet reaches for `window` at import time, so the actual map must never be
- * server-rendered. next/dynamic with `ssr: false` is only allowed inside a
- * Client Component, so this thin wrapper exists purely to provide that boundary
- * (server pages import THIS, not VenueMap directly) and to show an on-brand
- * placeholder while the map chunk loads.
+ * Both map engines reach for `window` at import time, so neither may be
+ * server-rendered: next/dynamic with `ssr: false` (only legal inside a Client
+ * Component, which is why this wrapper exists). We prefer Google Maps when an API
+ * key is configured (more universally familiar to users), and fall back to the
+ * key-less Leaflet/CARTO map otherwise — so the map always works, with or
+ * without a key.
  */
 import dynamic from 'next/dynamic'
 import type { VenueMarker } from './VenueMap'
 
-const VenueMap = dynamic(() => import('./VenueMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full w-full rounded-glass bg-stage-deep animate-pulse" aria-hidden />
-  ),
-})
+const loading = () => (
+  <div className="h-full w-full rounded-glass bg-stage-deep animate-pulse" aria-hidden />
+)
+
+const LeafletMap = dynamic(() => import('./VenueMap'), { ssr: false, loading })
+const GoogleMap = dynamic(() => import('./GoogleVenueMap'), { ssr: false, loading })
 
 interface Props {
   venues: VenueMarker[]
@@ -27,5 +28,7 @@ interface Props {
 }
 
 export default function VenueMapLoader(props: Props) {
-  return <VenueMap {...props} />
+  const hasGoogle = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+  const Map = hasGoogle ? GoogleMap : LeafletMap
+  return <Map {...props} />
 }
