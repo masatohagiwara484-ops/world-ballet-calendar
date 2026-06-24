@@ -98,6 +98,8 @@ git push origin main  # Vercel 自動デプロイ
 - `SUPABASE_SERVICE_ROLE_KEY` — GitHub Secrets + Vercel（サーバ）+ `.env.local`
 - `ANTHROPIC_API_KEY` — GitHub Secrets + `.env.local`（Haiku 抽出）
 - `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_WEBHOOK_SECRET` — 承認フロー
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — （任意）設定すると会場地図が Google Maps に切替。
+  未設定なら Leaflet/CARTO（キー不要）で動作。Vercel + `.env.local` に追加。
 
 ## Live URLs
 - Production: https://worldballetoperacalender.vercel.app
