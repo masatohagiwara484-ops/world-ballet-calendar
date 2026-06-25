@@ -38,3 +38,7 @@ dev.log
 
 # Ingest debug HTML dumps (operator-local)
 scripts/ingest/.debug/
+
+# Operator-saved HTML for the --local ingestion path (never commit raw pages)
+scripts/ingest/.local/*
+!scripts/ingest/.local/README.md
