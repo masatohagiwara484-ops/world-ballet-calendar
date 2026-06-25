@@ -119,7 +119,7 @@ export default function SeasonCalendar() {
           <div
             role="group"
             aria-label="Filter by type"
-            className="glass-pill inline-flex p-1"
+            className="glass-pill holo-edge inline-flex p-1"
           >
             {(['all', 'ballet', 'opera'] as KindFilter[]).map((k) => (
               <button
@@ -168,7 +168,7 @@ export default function SeasonCalendar() {
         <div
           role="group"
           aria-label="Calendar view"
-          className="glass-pill inline-flex p-1 self-start"
+          className="glass-pill holo-edge inline-flex p-1 self-start"
         >
           {(['grid', 'season'] as ViewMode[]).map((v) => (
             <button
@@ -269,7 +269,7 @@ function GridView({
             </div>
           ))}
         </div>
-        <div className="glass-panel specular grid grid-cols-7 gap-px overflow-hidden p-px bg-stage-deep">
+        <div className="lucid-glass holo-sheen holo-edge grid grid-cols-7 gap-px overflow-hidden p-px bg-white/25">
           {days.map((day) => {
             const iso = format(day, 'yyyy-MM-dd')
             const inMonth = isSameMonth(day, month)
@@ -283,11 +283,11 @@ function GridView({
                 aria-label={`${format(day, 'd MMMM yyyy')}${hasPerf ? `, ${list.length} performances` : ''}`}
                 disabled={!hasPerf}
                 className={clsx(
-                  'relative min-h-[112px] text-left p-2.5 transition-colors border border-[rgba(26,22,15,0.07)]',
-                  inMonth ? 'bg-stage-elevated' : 'bg-stage',
-                  hasPerf && 'hover:bg-gold-pale/60 cursor-pointer',
+                  'relative min-h-[112px] text-left p-2.5 transition-colors border border-white/30',
+                  inMonth ? 'lucid-cell' : 'lucid-cell-dim',
+                  hasPerf && 'lucid-cell-has cursor-pointer',
                   isToday && 'ring-1 ring-inset ring-gold/70',
-                  selectedDay === iso && 'ring-1 ring-inset ring-gold bg-gold-pale/40 shadow-[inset_0_0_24px_rgba(212,175,55,0.10)]'
+                  selectedDay === iso && 'ring-1 ring-inset ring-gold/80 lucid-cell-active shadow-[inset_0_0_24px_rgba(199,146,255,0.16)]'
                 )}
               >
                 <span
@@ -388,7 +388,7 @@ function SeasonView({
           <h2 className="font-serif text-3xl text-ivory mb-4">
             {format(parseISO(`${key}-01`), 'MMMM yyyy')}
           </h2>
-          <div className="glass-panel specular px-5 sm:px-8 py-2">
+          <div className="lucid-glass holo-sheen px-5 sm:px-8 py-2">
             {list.map((p) => (
               <a
                 key={p.id}
@@ -439,7 +439,7 @@ function DayPanel({
         onClick={onClose}
         aria-hidden
       />
-      <div className="glass-panel specular relative mt-auto sm:mt-0 w-full sm:w-[420px] max-h-[80vh] sm:max-h-none sm:h-full overflow-y-auto animate-fade-in-up sm:animate-fade-in rounded-t-glass-lg sm:rounded-none">
+      <div className="lucid-glass holo-sheen holo-edge relative mt-auto sm:mt-0 w-full sm:w-[420px] max-h-[80vh] sm:max-h-none sm:h-full overflow-y-auto animate-fade-in-up sm:animate-fade-in rounded-t-glass-lg sm:rounded-none">
         <div className="sticky top-0 z-10 bg-stage-elevated/90 backdrop-blur-glass border-b border-[rgba(26,22,15,0.10)] px-6 py-5 flex items-start justify-between">
           <div>
             <p className="text-gold text-[10px] tracking-[0.3em] uppercase mb-1">

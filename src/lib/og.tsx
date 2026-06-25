@@ -202,3 +202,122 @@ export async function renderOgCard(opts: OgCardOptions): Promise<ImageResponse> 
     { ...OG_SIZE, fonts }
   )
 }
+
+export interface WeekCardItem {
+  /** Short date label, e.g. "24 Jun" or "24–28 Jun". */
+  date: string
+  title: string
+  company: string
+  /** "ballet" | "opera" — drives the tiny dot colour. */
+  kind?: 'ballet' | 'opera'
+}
+
+/**
+ * Render the "this week on stage" share card (#10) — a multi-performance card
+ * for social. Unlike renderOgCard (one entity), this lists the week's run so the
+ * image itself is the content people share: beautiful, current, uniquely ours.
+ */
+export async function renderWeekCard(opts: {
+  rangeLabel: string
+  items: WeekCardItem[]
+}): Promise<ImageResponse> {
+  const fonts = await loadFonts()
+  const rows = opts.items.slice(0, 3)
+  const extra = opts.items.length - rows.length
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          background: INK,
+          padding: '56px 80px',
+          position: 'relative',
+        }}
+      >
+        {/* Gold corner glow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: -240,
+            right: -200,
+            width: 720,
+            height: 720,
+            borderRadius: 720,
+            background: 'radial-gradient(circle, rgba(212,175,55,0.20) 0%, rgba(11,11,13,0) 70%)',
+            display: 'flex',
+          }}
+        />
+
+        {/* Header: wordmark + eyebrow */}
+        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ color: GOLD, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 32, letterSpacing: 4 }}>
+              première
+            </div>
+            <div style={{ width: 10, height: 10, marginLeft: 16, background: GOLD_SOFT, transform: 'rotate(45deg)', display: 'flex' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 22 }}>
+            <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 56, lineHeight: 1.0, display: 'flex' }}>
+              This week on stage
+            </div>
+            <div style={{ color: GOLD_SOFT, fontSize: 25, letterSpacing: 2, display: 'flex' }}>
+              {opts.rangeLabel}
+            </div>
+          </div>
+        </div>
+
+        {/* Performance rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', marginTop: 8 }}>
+          {rows.length === 0 ? (
+            <div style={{ color: CREAM_DIM, fontFamily: SERIF_FAMILY, fontSize: 36, display: 'flex' }}>
+              The new season is being announced.
+            </div>
+          ) : (
+            rows.map((it, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  paddingTop: 15,
+                  paddingBottom: 15,
+                  borderTop: i === 0 ? '1px solid rgba(245,240,230,0.16)' : 'none',
+                  borderBottom: '1px solid rgba(245,240,230,0.16)',
+                }}
+              >
+                <div style={{ color: GOLD, fontSize: 23, width: 148, display: 'flex' }}>{it.date}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 35, lineHeight: 1.1, display: 'flex' }}>
+                    {it.title.length > 42 ? `${it.title.slice(0, 41)}…` : it.title}
+                  </div>
+                  <div style={{ color: CREAM_DIM, fontSize: 21, marginTop: 3, display: 'flex' }}>{it.company}</div>
+                </div>
+              </div>
+            ))
+          )}
+          {extra > 0 ? (
+            <div style={{ color: GOLD_SOFT, fontSize: 22, marginTop: 14, display: 'flex' }}>
+              +{extra} more this week
+            </div>
+          ) : null}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+          <div style={{ color: CREAM_DIM, fontSize: 22, letterSpacing: 3, display: 'flex' }}>
+            worldballetoperacalender.vercel.app
+          </div>
+          <div style={{ color: CREAM_DIM, fontSize: 22, letterSpacing: 3, display: 'flex' }}>
+            discover · plan · book
+          </div>
+        </div>
+      </div>
+    ),
+    { ...OG_SIZE, fonts }
+  )
+}
