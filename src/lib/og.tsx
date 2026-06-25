@@ -222,7 +222,7 @@ export async function renderWeekCard(opts: {
   items: WeekCardItem[]
 }): Promise<ImageResponse> {
   const fonts = await loadFonts()
-  const rows = opts.items.slice(0, 5)
+  const rows = opts.items.slice(0, 3)
   const extra = opts.items.length - rows.length
 
   return new ImageResponse(
@@ -235,7 +235,7 @@ export async function renderWeekCard(opts: {
           flexDirection: 'column',
           justifyContent: 'space-between',
           background: INK,
-          padding: '64px 80px',
+          padding: '56px 80px',
           position: 'relative',
         }}
       >
@@ -261,11 +261,11 @@ export async function renderWeekCard(opts: {
             </div>
             <div style={{ width: 10, height: 10, marginLeft: 16, background: GOLD_SOFT, transform: 'rotate(45deg)', display: 'flex' }} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 30 }}>
-            <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 64, lineHeight: 1.0, display: 'flex' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 22 }}>
+            <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 56, lineHeight: 1.0, display: 'flex' }}>
               This week on stage
             </div>
-            <div style={{ color: GOLD_SOFT, fontSize: 26, letterSpacing: 2, display: 'flex' }}>
+            <div style={{ color: GOLD_SOFT, fontSize: 25, letterSpacing: 2, display: 'flex' }}>
               {opts.rangeLabel}
             </div>
           </div>
@@ -284,24 +284,24 @@ export async function renderWeekCard(opts: {
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
-                  paddingTop: 18,
-                  paddingBottom: 18,
+                  paddingTop: 15,
+                  paddingBottom: 15,
                   borderTop: i === 0 ? '1px solid rgba(245,240,230,0.16)' : 'none',
                   borderBottom: '1px solid rgba(245,240,230,0.16)',
                 }}
               >
-                <div style={{ color: GOLD, fontSize: 24, width: 150, display: 'flex' }}>{it.date}</div>
+                <div style={{ color: GOLD, fontSize: 23, width: 148, display: 'flex' }}>{it.date}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 38, lineHeight: 1.1, display: 'flex' }}>
+                  <div style={{ color: CREAM, fontFamily: SERIF_FAMILY, fontWeight: 700, fontSize: 35, lineHeight: 1.1, display: 'flex' }}>
                     {it.title.length > 42 ? `${it.title.slice(0, 41)}…` : it.title}
                   </div>
-                  <div style={{ color: CREAM_DIM, fontSize: 22, marginTop: 4, display: 'flex' }}>{it.company}</div>
+                  <div style={{ color: CREAM_DIM, fontSize: 21, marginTop: 3, display: 'flex' }}>{it.company}</div>
                 </div>
               </div>
             ))
           )}
           {extra > 0 ? (
-            <div style={{ color: GOLD_SOFT, fontSize: 24, marginTop: 18, display: 'flex' }}>
+            <div style={{ color: GOLD_SOFT, fontSize: 22, marginTop: 14, display: 'flex' }}>
               +{extra} more this week
             </div>
           ) : null}
