@@ -94,3 +94,33 @@ You'll get one Telegram digest per company per run. Tap **✅ Approve all** /
 **🚫 Reject all**. Approved rows appear on the site within minutes (the webhook
 revalidates `/`, `/search`, the company, and the touched work/people/performance
 pages).
+
+## 7. `--local` — the Mac / browser-saved HTML path (recommended for launch)
+
+Most major houses return **403 to any datacenter IP** (GitHub Actions, Vercel),
+so the scheduled crawl can't reach them — this is the root cause of the site
+looking empty (ROADMAP #3 / #12). The fix is to let **your own browser** fetch
+the page (residential IP, logged in, fully JS-rendered) and feed that HTML to the
+exact same pipeline. Nothing is fabricated and nothing publishes without your
+Telegram approval — only the *fetch* step changes.
+
+**Per company (≈30 seconds each):**
+
+1. Open the house's what's-on page in Chrome/Safari.
+   - Don't know the URL? Run `npm run ingest:local -- --source <slug>` with no
+     file saved — it prints the exact URL and the filename to use.
+2. **File → Save As →** "Webpage, HTML Only" (Chrome) / "Page Source" (Safari).
+3. Save it as `scripts/ingest/.local/<slug>.html` (e.g. `tokyo-ballet.html`).
+4. Run the ingest:
+   ```bash
+   npm run ingest:local -- --source tokyo-ballet   # just this house
+   npm run ingest:local -- --all                   # every house you've saved
+   ```
+5. Approve in Telegram → live within minutes.
+
+Requirements: `.env.local` must have `SUPABASE_SERVICE_ROLE_KEY` (to write the
+pending rows) and `ANTHROPIC_API_KEY` (Haiku extraction, ~$0.025/page). Saved
+HTML is git-ignored — never committed. The page-hash cache means re-saving an
+unchanged page costs nothing; only changed pages spend a model call.
+
+See `scripts/ingest/.local/README.md` for the same checklist next to the folder.

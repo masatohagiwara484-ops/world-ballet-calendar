@@ -12,6 +12,7 @@
     "validate:data": "npx tsx scripts/validate-data.ts",
     "scrape": "npx tsx scripts/scrapers/run.ts",
     "ingest": "npx tsx scripts/ingest/run-ingest.ts",
+    "ingest:local": "npx tsx scripts/ingest/run-ingest.ts --local",
     "ingest:selftest": "npx tsx scripts/ingest/run-ingest.ts --selftest",
     "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts",
     "inspect:feed": "npx tsx scripts/ingest/inspect-feed.ts",
