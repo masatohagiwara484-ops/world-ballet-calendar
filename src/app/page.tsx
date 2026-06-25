@@ -72,13 +72,22 @@ export default async function HomePage() {
                 This week on stage
               </h2>
             </div>
-            <Link
-              href="/calendar"
-              className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
-            >
-              Full calendar
-              <ArrowUpRight size={14} />
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/this-week"
+                className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
+              >
+                Share this week
+                <ArrowUpRight size={14} />
+              </Link>
+              <Link
+                href="/calendar"
+                className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
+              >
+                Full calendar
+                <ArrowUpRight size={14} />
+              </Link>
+            </div>
           </div>
 
           {strip.length > 0 ? (
