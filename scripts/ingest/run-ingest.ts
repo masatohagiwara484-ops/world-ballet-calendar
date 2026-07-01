@@ -498,6 +498,9 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
         start_date: r.start_date,
         end_date: r.end_date,
         was: r.change_kind === 'date-changed' ? existing.get(r.id)?.start_date : undefined,
+        kind: r.kind,
+        price: r.price_range,
+        confidence: r.confidence,
       })),
       ...cancelled.map((c) => ({ change_kind: 'cancelled', title: c.id, start_date: c.start_date, end_date: c.end_date })),
     ]
@@ -506,7 +509,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
       const companyName = companies.find((c) => c.slug === src.companySlug)?.name ?? src.companySlug
       const text = formatDigest({ companyName, runId, batchId, lines, sourceUrl: src.url, confidence })
       try {
-        messageId = await sendDigest(chatId, text, batchId)
+        messageId = await sendDigest(chatId, text, batchId, src.url)
       } catch (err) {
         console.warn(`  ! telegram digest failed: ${msg(err)}`)
       }

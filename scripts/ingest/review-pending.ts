@@ -88,22 +88,47 @@ async function main(): Promise<void> {
     byCompany.set(r.company_slug, list)
   }
 
-  console.log(`\n=== ${rows.length} pending row(s)${slug ? ` for ${slug}` : ''} ===\n`)
+  // "2026-09-12" → "12 Sep 2026" for a scannable, human date.
+  const niceDate = (d: string | null): string => {
+    if (!d || !/^\d{4}-\d{2}-\d{2}/.test(d)) return d ?? '—'
+    const [y, m, day] = d.slice(0, 10).split('-')
+    const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(m, 10) - 1]
+    return `${parseInt(day, 10)} ${mon ?? m} ${y}`
+  }
+  const niceSpan = (s: string, e: string | null): string =>
+    !e || e === s ? niceDate(s) : `${niceDate(s)} → ${niceDate(e)}`
+  const glyph = (k: string): string => (k === 'ballet' ? '🩰' : k === 'opera' ? '🎭' : '🎟')
+  const changeTag = (k: string | null): string =>
+    k === 'date-changed' ? '📅 date' : k === 'price-changed' ? '💷 price' : k === 'cancelled' ? '❌ cancel' : '➕ new'
+
+  // Run-wide summary first — the at-a-glance the aim asks for.
+  const totals = new Map<string, number>()
+  for (const r of rows) totals.set(r.change_kind ?? 'new', (totals.get(r.change_kind ?? 'new') ?? 0) + 1)
+  const summary = [...totals].map(([k, n]) => `${changeTag(k)} ${n}`).join('   ')
+  const bar = '─'.repeat(72)
+  console.log(`\n┌${bar}┐`)
+  console.log(`│ 📋 ${rows.length} pending row(s)${slug ? ` · ${slug}` : ''} across ${byCompany.size} house(s)`)
+  console.log(`│ ${summary}`)
+  console.log(`└${bar}┘`)
+
   for (const [company, list] of byCompany) {
-    console.log(`▌ ${company} — ${list.length} performance(s)`)
+    console.log(`\n▌ ${glyph(list[0]?.kind ?? '')} ${company}  ·  ${list.length} performance(s)`)
+    console.log(`  ${'┈'.repeat(70)}`)
     for (const r of list) {
-      const span = r.end_date && r.end_date !== r.start_date ? `${r.start_date}…${r.end_date}` : r.start_date
       const flags = [
-        r.change_kind && r.change_kind !== 'new' ? `[${r.change_kind}]` : '',
-        r.confidence != null && r.confidence < 0.9 ? `(conf ${r.confidence})` : '',
-        r.affiliate_url ? '$aff' : r.ticket_url ? '$ticket' : 'no-link',
+        r.change_kind && r.change_kind !== 'new' ? changeTag(r.change_kind) : '',
+        r.confidence != null && r.confidence < 0.9 ? `⚠️ conf ${r.confidence.toFixed(2)}` : '',
+        r.affiliate_url ? '💰 aff' : r.ticket_url ? '🎟 ticket' : '⚠️ no-link',
+        r.price_range ? `· ${r.price_range}` : '',
       ]
         .filter(Boolean)
-        .join(' ')
-      console.log(`    ${span}  ${r.title.slice(0, 64).padEnd(64)} ${flags}`)
+        .join('  ')
+      const title = r.title.length > 48 ? `${r.title.slice(0, 47)}…` : r.title
+      console.log(`   ${glyph(r.kind)} ${title.padEnd(49)} ${niceSpan(r.start_date, r.end_date)}`)
+      if (flags) console.log(`      ${flags}`)
     }
-    console.log('')
   }
+  console.log('')
 
   if (!publish && !reject) {
     console.log('Review the list above. To act:')
