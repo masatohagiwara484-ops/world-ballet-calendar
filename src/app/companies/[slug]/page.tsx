@@ -5,6 +5,7 @@ import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
 import { gradientFor, monogram, typeLabel } from '@/components/shared/design'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import FollowButton from '@/components/audience/FollowButton'
+import VenueMapLoader from '@/components/map/VenueMapLoader'
 import type { Company, PerformanceWithCompany } from '@/lib/types'
 
 export const revalidate = 3600
@@ -195,6 +196,32 @@ export default async function CompanyPage({ params }: Props) {
                 <dd className="text-ivory text-sm">{company.country}</dd>
               </div>
             </dl>
+          </div>
+        </section>
+      )}
+
+      {/* Where to find it — the venue on the map, the entry to "plan the trip" */}
+      {Number.isFinite(company.lat) && Number.isFinite(company.lng) && (
+        <section className="py-12 md:py-16 px-6 md:px-10 bg-stage-deep">
+          <div className="max-w-5xl mx-auto">
+            <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-5">
+              On the map
+            </p>
+            <VenueMapLoader
+              venues={[
+                {
+                  slug: company.slug,
+                  name: company.name,
+                  city: company.city,
+                  country: company.country,
+                  venue: company.venue,
+                  lat: company.lat,
+                  lng: company.lng,
+                },
+              ]}
+              single
+              className="h-[320px] w-full glass-panel"
+            />
           </div>
         </section>
       )}

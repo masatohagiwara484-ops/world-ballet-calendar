@@ -19,6 +19,7 @@
  */
 import { config } from 'dotenv'
 import { readFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { companies } from '../../src/data/companies'
@@ -177,20 +178,29 @@ interface Args {
   all: boolean
   fixture: boolean
   live: boolean
+  /**
+   * Operator path: extract from HTML the owner saved with their OWN browser into
+   * scripts/ingest/.local/<slug>.html. This sidesteps the datacenter-IP 403 wall
+   * (ROADMAP #12) entirely — the page was fetched by a real logged-in visitor —
+   * and writes pending rows to Supabase for the same Telegram approval gate.
+   */
+  local: boolean
   selftest: boolean
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { all: false, fixture: false, live: false, selftest: false }
+  const a: Args = { all: false, fixture: false, live: false, local: false, selftest: false }
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i]
     if (t === '--adapter' || t === '--source') a.adapter = argv[++i]
     else if (t === '--all') a.all = true
     else if (t === '--fixture') a.fixture = true
     else if (t === '--live') a.live = true
+    else if (t === '--local') a.local = true
     else if (t === '--selftest') a.selftest = true
   }
-  if (!a.fixture && !a.live && !a.selftest) a.fixture = true
+  // --local implies a real write (pending → review), like --live.
+  if (!a.fixture && !a.live && !a.local && !a.selftest) a.fixture = true
   return a
 }
 
@@ -205,8 +215,37 @@ const INGEST_UA =
   process.env.INGEST_UA ??
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function loadContent(src: SourceConfig, live: boolean): Promise<string> {
-  if (live) {
+/** Where the operator drops browser-saved HTML for the `--local` path. */
+const LOCAL_DIR = join(__dirname, '.local')
+
+/**
+ * Resolve the saved-HTML file for a source. Accepts a few extensions a browser's
+ * "Save As" produces so the operator doesn't have to rename anything:
+ *   <slug>.html  ·  <slug>.htm  ·  <slug>.txt
+ */
+function localPathFor(slug: string): string | null {
+  for (const ext of ['html', 'htm', 'txt']) {
+    const p = join(LOCAL_DIR, `${slug}.${ext}`)
+    if (existsSync(p)) return p
+  }
+  return null
+}
+
+async function loadContent(src: SourceConfig, args: Args): Promise<string> {
+  // Operator path: read the page the owner saved from their own browser.
+  if (args.local) {
+    const p = localPathFor(src.companySlug)
+    if (!p) {
+      throw new Error(
+        `no saved HTML at ${join('scripts/ingest/.local', `${src.companySlug}.html`)} — ` +
+          `open ${src.url} in your browser, Save As → "Page Source"/"Web Page, HTML Only", ` +
+          `name it ${src.companySlug}.html, and drop it in scripts/ingest/.local/`
+      )
+    }
+    console.log(`  · reading saved HTML: ${p}`)
+    return readFile(p, 'utf8')
+  }
+  if (args.live) {
     // JS-rendered listings need a real browser; static pages/feeds use fetch.
     if (src.render) {
       return renderPage(src.url, {
@@ -308,12 +347,15 @@ interface SourceResult {
 
 /** Run one source through the full pipeline. */
 async function runSource(src: SourceConfig, args: Args, runId: string): Promise<SourceResult> {
-  const writer = args.live ? getWriter() : null
-  console.log(`\n=== ${src.companySlug} (${args.live ? 'live' : 'fixture'}, ${src.adapter ? 'adapter' : src.kind}) ===`)
+  // --local writes pending rows too, so it needs the Supabase writer like --live.
+  const write = args.live || args.local
+  const writer = write ? getWriter() : null
+  const mode = args.local ? 'local' : args.live ? 'live' : 'fixture'
+  console.log(`\n=== ${src.companySlug} (${mode}, ${src.adapter ? 'adapter' : src.kind}) ===`)
 
   let content: string
   try {
-    content = await loadContent(src, args.live)
+    content = await loadContent(src, args)
   } catch (err) {
     console.warn(`  ! could not load source (${msg(err)}); skipping.`)
     return { ok: false, line: `⚠️ ${src.companySlug}: load failed (${msg(err)})` }
@@ -456,6 +498,9 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
         start_date: r.start_date,
         end_date: r.end_date,
         was: r.change_kind === 'date-changed' ? existing.get(r.id)?.start_date : undefined,
+        kind: r.kind,
+        price: r.price_range,
+        confidence: r.confidence,
       })),
       ...cancelled.map((c) => ({ change_kind: 'cancelled', title: c.id, start_date: c.start_date, end_date: c.end_date })),
     ]
@@ -464,7 +509,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
       const companyName = companies.find((c) => c.slug === src.companySlug)?.name ?? src.companySlug
       const text = formatDigest({ companyName, runId, batchId, lines, sourceUrl: src.url, confidence })
       try {
-        messageId = await sendDigest(chatId, text, batchId)
+        messageId = await sendDigest(chatId, text, batchId, src.url)
       } catch (err) {
         console.warn(`  ! telegram digest failed: ${msg(err)}`)
       }
@@ -559,9 +604,12 @@ async function main(): Promise<void> {
 
   if (selected.length === 0) {
     console.error(
-      `Usage: tsx scripts/ingest/run-ingest.ts --all [--fixture|--live]\n` +
-        `       tsx scripts/ingest/run-ingest.ts --source <name> [--fixture|--live]\n` +
+      `Usage: tsx scripts/ingest/run-ingest.ts --all [--fixture|--live|--local]\n` +
+        `       tsx scripts/ingest/run-ingest.ts --source <name> [--fixture|--live|--local]\n` +
         `       tsx scripts/ingest/run-ingest.ts --selftest\n\n` +
+        `  --local  extract from HTML you saved into scripts/ingest/.local/<slug>.html\n` +
+        `           (your own browser fetched it → no datacenter-IP 403). Writes\n` +
+        `           pending rows for Telegram approval, exactly like --live.\n\n` +
         `Sources: ${Object.keys(ALL_SOURCES).join(', ')}`
     )
     process.exit(args.adapter ? 1 : 0)
@@ -585,7 +633,7 @@ async function main(): Promise<void> {
   // End-of-run report — one Telegram message so the owner sees the whole crawl
   // at a glance (auto-published, pending, skipped, errors).
   console.log(`\n=== run ${runId} summary ===\n${summary.join('\n')}`)
-  if (args.live) {
+  if (args.live || args.local) {
     const chatId = process.env.TELEGRAM_CHAT_ID
     if (chatId) {
       await sendNotice(chatId, `🗂 *Ingest run ${runId}*\n${summary.join('\n')}`).catch(() => {})

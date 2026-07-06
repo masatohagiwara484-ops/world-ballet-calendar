@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getCompanies, getPerformances } from '@/lib/data'
 import SearchHero from '@/components/home/SearchHero'
+import CuratedRail from '@/components/home/CuratedRail'
 import CompanyCard from '@/components/shared/CompanyCard'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import NewsletterCapture from '@/components/audience/NewsletterCapture'
@@ -19,23 +20,42 @@ function thisWeekRange(): { start: string; end: string } {
 export default async function HomePage() {
   const { start, end } = thisWeekRange()
 
-  const [companies, weekPerformances, featured] = await Promise.all([
+  const [companies, weekPerformances, featured, upcoming] = await Promise.all([
     getCompanies(),
     getPerformances({ start_date: start, end_date: end }),
     getPerformances({ featured_only: true }),
+    getPerformances({ start_date: start }),
   ])
 
-  // Prefer this-week runs; fall back to featured, then the earliest upcoming.
+  // Prefer this-week runs; fall back to the earliest upcoming.
   let strip = weekPerformances
-  if (strip.length === 0) strip = featured
-  if (strip.length === 0) strip = await getPerformances({ start_date: start })
+  if (strip.length === 0) strip = upcoming
   strip = strip.slice(0, 5)
+
+  // Curated rail: the editor's hand-picks (is_featured) when they exist; otherwise
+  // a curated fallback of the soonest upcoming runs, one per company for variety,
+  // so the rail is never empty while real data exists but nothing is flagged yet.
+  let curated = featured
+  if (curated.length === 0) {
+    const seen = new Set<string>()
+    curated = upcoming.filter((p) => {
+      if (seen.has(p.company_id)) return false
+      seen.add(p.company_id)
+      return true
+    })
+  }
+  curated = curated.slice(0, 12)
 
   const teaser = companies.slice(0, 8)
 
   return (
     <>
       <SearchHero />
+
+      {/* Unmissable this season — the curated editorial rail (the moat).
+          Featured picks first; otherwise a curated fallback of upcoming runs.
+          Hidden entirely only when there is no performance data at all. */}
+      <CuratedRail performances={curated} />
 
       {/* This Week on Stage */}
       <section
@@ -52,13 +72,22 @@ export default async function HomePage() {
                 This week on stage
               </h2>
             </div>
-            <Link
-              href="/calendar"
-              className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
-            >
-              Full calendar
-              <ArrowUpRight size={14} />
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/this-week"
+                className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
+              >
+                Share this week
+                <ArrowUpRight size={14} />
+              </Link>
+              <Link
+                href="/calendar"
+                className="inline-flex items-center gap-1.5 text-ivory/62 text-xs tracking-[0.2em] uppercase hover:text-gold transition-colors"
+              >
+                Full calendar
+                <ArrowUpRight size={14} />
+              </Link>
+            </div>
           </div>
 
           {strip.length > 0 ? (
