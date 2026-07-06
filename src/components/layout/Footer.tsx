@@ -4,6 +4,7 @@ const NAV = [
   { href: '/', label: 'Globe' },
   { href: '/calendar', label: 'Calendar' },
   { href: '/companies', label: 'Companies' },
+  { href: '/trips', label: 'Trips' },
   { href: '/partners', label: 'Partners' },
 ]
 

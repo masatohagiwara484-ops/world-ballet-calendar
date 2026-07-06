@@ -13,6 +13,7 @@
  * reminder that pulls the visitor back when the run approaches — and the act of
  * saving is a low-friction reason to surface première in the user's own tools.
  */
+import { addDaysISO } from './dates'
 
 export interface CalendarEvent {
   /** Stable id for the run (used to build the iCal UID). */
@@ -40,9 +41,7 @@ function compact(iso: string): string {
 
 /** Add one day to an ISO date (all-day DTEND/Google end date is exclusive). */
 function nextDay(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`)
-  d.setUTCDate(d.getUTCDate() + 1)
-  return d.toISOString().slice(0, 10)
+  return addDaysISO(iso, 1)
 }
 
 /** Inclusive last day of the run (defaults to the start for single-day runs). */

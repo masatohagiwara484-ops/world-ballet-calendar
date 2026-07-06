@@ -1,9 +1,6 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowUpRight } from 'lucide-react'
 import { getCities } from '@/lib/cities'
-import { gradientFor } from '@/components/shared/design'
-import CityScene, { hasCityScene } from '@/components/cities/CityScene'
+import CityTile from '@/components/cities/CityTile'
 
 export const revalidate = 3600
 
@@ -37,59 +34,18 @@ export default async function CitiesPage() {
 
       <section className="pb-28 px-6 md:px-10">
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cities.map((city) => {
-            const scene = hasCityScene(city.slug)
-            return (
-            <Link
+          {cities.map((city) => (
+            <CityTile
               key={city.slug}
+              slug={city.slug}
+              name={city.name}
+              country={city.country}
               href={`/cities/${city.slug}`}
-              className="group relative overflow-hidden rounded-glass p-8 min-h-[180px] flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1"
-              // Cities with a bespoke skyline scene let it fill the tile; the rest
-              // keep the jewel gradient.
-              style={scene ? undefined : { background: gradientFor(city.slug) }}
-            >
-              {scene ? (
-                <>
-                  <CityScene
-                    slug={city.slug}
-                    className="absolute inset-0 w-full h-full scale-105 group-hover:scale-110 transition-transform duration-500 pointer-events-none"
-                  />
-                  {/* Scrim so the gold/white type stays legible over the scene. */}
-                  <div
-                    aria-hidden
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        'linear-gradient(180deg, rgba(8,8,12,0.20) 0%, rgba(8,8,12,0.30) 55%, rgba(8,8,12,0.82) 100%)',
-                    }}
-                  />
-                </>
-              ) : (
-                <div
-                  aria-hidden
-                  className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-2xl"
-                  style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
-                />
-              )}
-              <div className="relative">
-                <p className="text-white/55 text-[10px] tracking-[0.3em] uppercase mb-2">
-                  {city.country}
-                </p>
-                <h2 className="font-serif text-3xl text-white leading-tight">{city.name}</h2>
-              </div>
-              <div className="relative flex items-center justify-between">
-                <span className="text-white/70 text-sm">
-                  {city.companies.length}{' '}
-                  {city.companies.length === 1 ? 'company' : 'companies'}
-                </span>
-                <ArrowUpRight
-                  size={18}
-                  className="text-gold opacity-70 group-hover:opacity-100 transition-opacity"
-                />
-              </div>
-            </Link>
-            )
-          })}
+              footer={`${city.companies.length} ${
+                city.companies.length === 1 ? 'company' : 'companies'
+              }`}
+            />
+          ))}
         </div>
       </section>
     </main>

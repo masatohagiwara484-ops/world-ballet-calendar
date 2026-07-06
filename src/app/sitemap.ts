@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/calendar`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/cities`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/trips`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/partners`, lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
   ]
 
@@ -38,6 +39,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // as the calendar fills. These are the no-ad-spend growth surface.
     const cityPages: MetadataRoute.Sitemap = cities.map((c) => ({
       url: `${baseUrl}/cities/${c.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    }))
+
+    // Trip-bundle pages: "ballet trip to Vienna" long-tail — the travel-intent
+    // twin of the city pages, one per city.
+    const tripPages: MetadataRoute.Sitemap = cities.map((c) => ({
+      url: `${baseUrl}/trips/${c.slug}`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.7,
@@ -68,6 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...staticRoutes,
       ...companyPages,
       ...cityPages,
+      ...tripPages,
       ...workPages,
       ...personPages,
       ...performancePages,

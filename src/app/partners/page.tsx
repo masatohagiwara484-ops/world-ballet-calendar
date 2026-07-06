@@ -1,17 +1,22 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { PARTNER_STATUS } from '@/lib/affiliate'
 
 export const metadata: Metadata = {
   title: 'Plan Your Visit — première',
   description:
-    'Hotels near the great opera houses, curated tours and backstage experiences, and flights to the cultural capitals — coming soon to première.',
+    'Hotels near the great opera houses, curated tours and backstage experiences, and flights to the cultural capitals — the travel layer of première is live.',
   openGraph: {
     title: 'Plan Your Visit — première',
     description:
-      'Hotels, tours, and flights curated for ballet and opera-goers — coming soon.',
+      'Hotels, tours, and flights curated for ballet and opera-goers — live on every performance and trip page.',
   },
 }
 
-/* ---------- Upcoming category data ---------- */
+/* ---------- Partner category data ---------- */
+
+type PartnerState = 'live' | 'links-active' | 'deep-link'
 
 type Category = {
   icon: string
@@ -20,6 +25,14 @@ type Category = {
   headline: string
   body: string
   accent: string
+  partner: string
+  state: PartnerState
+}
+
+const STATE_LABEL: Record<PartnerState, string> = {
+  live: 'Live — partnership active',
+  'links-active': 'Links live — partnership pending',
+  'deep-link': 'Live — direct link',
 }
 
 const categories: Category[] = [
@@ -29,8 +42,10 @@ const categories: Category[] = [
     eyebrow: 'Accommodation',
     headline: 'Stay steps from the stage',
     body:
-      'Hand-picked hotels within walking distance of the great opera houses and ballet theatres. We are curating a collection that balances proximity, comfort, and a sense of occasion — so the evening does not end when the curtain falls.',
+      'Hotel searches near the great opera houses and ballet theatres, pre-dated to the run you are booking. Every performance and trip page links straight into a stay that matches the curtain times — so the evening does not end when the curtain falls.',
     accent: '#1B2A4A',
+    partner: 'Booking.com',
+    state: PARTNER_STATUS.booking ? 'live' : 'links-active',
   },
   {
     icon: '🎭',
@@ -38,8 +53,10 @@ const categories: Category[] = [
     eyebrow: 'Backstage & Tours',
     headline: 'Beyond the performance',
     body:
-      'Rehearsal visits, backstage tours, meet-the-artist evenings, and institution-led cultural programmes at the world\'s great companies. Think GetYourGuide and Tiqets — but filtered for the serious ballet and opera-goer.',
+      'Tours, museums and cultural experiences in each performance city — the daytime around the evening. Surfaced through GetYourGuide and Tiqets, filtered by the city you are travelling to.',
     accent: '#1A3A2E',
+    partner: 'GetYourGuide · Tiqets',
+    state: PARTNER_STATUS.getyourguide || PARTNER_STATUS.tiqets ? 'live' : 'links-active',
   },
   {
     icon: '✈️',
@@ -47,14 +64,17 @@ const categories: Category[] = [
     eyebrow: 'Travel',
     headline: 'Fly to the cultural capitals',
     body:
-      'Curated flight options to the cities where the season\'s premieres take the stage — London, Paris, Vienna, Milan, New York, Tokyo. We plan to surface flexible fares so you can build a trip around a performance, not around an airline schedule.',
+      'Flight searches to the cities where the season’s premieres take the stage — London, Paris, Vienna, Milan, New York, Tokyo — dated to the performance run, so you build the trip around the curtain, not the airline schedule.',
     accent: '#2D1B4E',
+    partner: 'Google Flights',
+    state: PARTNER_STATUS.flights ? 'live' : 'deep-link',
   },
 ]
 
 /* ---------- Category Card ---------- */
 
 function CategoryCard({ cat }: { cat: Category }) {
+  const live = cat.state !== 'links-active'
   return (
     <article className="glass-card specular relative overflow-hidden rounded-glass">
       {/* Jewel accent top bar */}
@@ -89,9 +109,31 @@ function CategoryCard({ cat }: { cat: Category }) {
         <h3 className="font-serif text-2xl text-ivory mb-4">
           {cat.headline}
         </h3>
-        <p className="text-ivory/70 text-sm leading-relaxed">
+        <p className="text-ivory/70 text-sm leading-relaxed mb-6">
           {cat.body}
         </p>
+
+        {/* Partner + status */}
+        <div className="flex items-center justify-between gap-3 pt-4"
+          style={{ borderTop: '1px solid rgba(26,22,15,0.08)' }}
+        >
+          <span className="text-ivory/55 text-xs">{cat.partner}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${live ? 'bg-gold-deep' : 'bg-ivory/25'}`}
+            />
+            <span
+              style={{
+                color: live ? '#A8842A' : 'rgba(26,26,26,0.40)',
+                fontSize: '10px',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {STATE_LABEL[cat.state]}
+            </span>
+          </span>
+        </div>
       </div>
     </article>
   )
@@ -114,7 +156,7 @@ export default function PartnersPage() {
               textTransform: 'uppercase',
             }}
           >
-            Coming Soon
+            The travel layer
           </p>
           <h1 className="font-serif text-5xl md:text-7xl leading-tight text-gradient-gold mb-6">
             Plan your performance trip
@@ -122,20 +164,25 @@ export default function PartnersPage() {
           <p className="text-ivory/70 text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
             A performance is the heart of the evening. Everything around it —
             where you stay, how you get there, what you discover along the way —
-            will soon be curated here, in one place, specifically for ballet and
-            opera-goers.
+            is now bundled on every performance page and in our city trip
+            guides, curated specifically for ballet and opera-goers.
           </p>
+          <div className="mt-9">
+            <Link
+              href="/trips"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold text-[#111] font-semibold text-xs tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold transition-all"
+            >
+              Browse trip bundles
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* "Coming soon" badge */}
+      {/* Live status badge */}
       <div className="flex justify-center px-6 pb-12">
-        <div
-          className="glass-pill px-6 py-2.5 inline-flex items-center gap-2"
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-gold-deep animate-pulse"
-          />
+        <div className="glass-pill px-6 py-2.5 inline-flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-gold-deep" />
           <span
             style={{
               color: '#A8842A',
@@ -144,12 +191,12 @@ export default function PartnersPage() {
               textTransform: 'uppercase',
             }}
           >
-            In development — launching later in 2026
+            Live — first partnerships active
           </span>
         </div>
       </div>
 
-      {/* Three upcoming categories */}
+      {/* Three partner categories */}
       <section className="py-16 px-6 md:px-16 lg:px-24">
         <div className="max-w-5xl mx-auto">
           <div className="grid gap-6 md:grid-cols-3">
@@ -180,11 +227,10 @@ export default function PartnersPage() {
             </p>
             <p className="text-ivory/70 text-sm leading-relaxed">
               We believe attending the ballet or opera should be effortless from
-              the first search to the final bow. Our ambition is to surface
-              curated hotels, tours, and flights alongside every performance
-              listing — so you can plan an entire trip from a single calendar.
-              When we launch the travel layer, we will only surface services we
-              believe genuinely serve our audience.
+              the first search to the final bow. Curated hotels, tours, and
+              flights now sit alongside every performance listing — so you can
+              plan an entire trip from a single calendar. We only surface
+              services we believe genuinely serve our audience.
             </p>
           </div>
         </div>
@@ -212,13 +258,12 @@ export default function PartnersPage() {
               A note on independence
             </p>
             <p className="text-ivory/60 text-xs leading-relaxed">
-              When this feature launches, premi&egrave;re may
-              earn a referral fee when you book accommodation, experiences, or
-              travel through links on this site. This will come at no additional
-              cost to you, and it will help us keep the calendar free,
-              independent, and continually updated. We will only surface services
-              we believe genuinely serve our audience — the performance always
-              comes first.
+              premi&egrave;re may earn a referral fee when you book
+              accommodation, experiences, or travel through links on this site.
+              This comes at no additional cost to you, and it helps us keep the
+              calendar free, independent, and continually updated. We only
+              surface services we believe genuinely serve our audience — the
+              performance always comes first.
             </p>
           </div>
         </div>
