@@ -1,11 +1,17 @@
-# Design System — Liquid Glass × Champagne Noir
+# Design System — Liquid Glass on White Gradient Luxury
 
-The visual language for World Ballet & Opera Calendar. Apple's **Liquid Glass**
+The visual language of **première**: a **Liquid Glass** surface language
 (translucency, backdrop blur, refraction-feel borders, specular top highlights,
-layered depth) rendered in a **Champagne Noir** palette — an opera house at night.
+layered depth) rendered on the **White Gradient Luxury** palette — a gallery-lit
+season brochure. Quality is defined by our own charter (CLAUDE.md §2), not by
+reference to other brands.
 
-This system **replaces** the previous White-Gradient-Luxury system. Apply it
-consistently across all pages and components.
+> **Current palette source of truth: `tailwind.config.ts`.** The token *names*
+> below date from the earlier Champagne-Noir (dark) phase and were kept for
+> compatibility, but they now *render light*: `stage.*` = warm white surfaces,
+> `ivory.*` = dark ink text, `gold.*` = champagne accents (+ `gold.deep` for
+> small text on white). Read the hex values in this file's dark-palette tables
+> as historical; the glass/motion/typography guidance remains current.
 
 ---
 

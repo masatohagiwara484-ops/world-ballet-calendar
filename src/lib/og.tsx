@@ -194,7 +194,7 @@ export async function renderOgCard(opts: OgCardOptions): Promise<ImageResponse> 
         <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
           <div style={{ width: 90, height: 2, background: GOLD, marginBottom: 22, display: 'flex' }} />
           <div style={{ color: CREAM_DIM, fontSize: 24, letterSpacing: 3, display: 'flex' }}>
-            every stage in the world
+            the world&rsquo;s great stages — worth the journey
           </div>
         </div>
       </div>

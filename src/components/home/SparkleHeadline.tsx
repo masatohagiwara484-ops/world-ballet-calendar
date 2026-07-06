@@ -8,8 +8,8 @@ import type { CSSProperties, ReactNode } from 'react'
  *  - <SparkleHeadline>: gold text with a slow specular shimmer, a soft luminous
  *    aura, and a handful of twinkling sparkles. Used for the main headline.
  *  - <GlowText>: keeps its own color but breathes a gentle gold glow. Used for
- *    the tagline so the whole "Every stage / in the world. / One search." block
- *    reads as one luminous unit.
+ *    the tagline so the whole "The world's / great stages. / Worth the journey."
+ *    block reads as one luminous unit.
  * Both honor prefers-reduced-motion (render as static text).
  */
 
