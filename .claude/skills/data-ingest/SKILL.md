@@ -6,7 +6,7 @@ description: Ingestion protocol for replacing seed data with live, real-world ba
 # Data Ingestion — World Ballet & Opera Calendar
 
 ## Why this exists
-The catalogue's promise is "every stage on earth, searchable from one word."
+The catalogue's promise is "the world's great stages, with never a wrong date."
 That is only credible if the data is **real and current**. Hand-entry does not
 scale to hundreds of houses, and brittle per-site CSS scrapers break on every
 redesign. This skill defines the durable pipeline that keeps the entity graph

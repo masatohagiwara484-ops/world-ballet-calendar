@@ -50,9 +50,9 @@ export default function SearchHero() {
           style={{ animationDelay: '80ms' }}
         >
           <SparkleHeadline className="font-seasons text-[5.4rem] sm:text-[6.75rem] md:text-[8.1rem] leading-[1.05]">
-            Every stage
+            The world&rsquo;s
             <br />
-            in the world.
+            great stages.
           </SparkleHeadline>
         </h1>
 
@@ -62,7 +62,7 @@ export default function SearchHero() {
           style={{ animationDelay: '140ms' }}
         >
           <GlowText className="font-seasons text-[2.25rem] sm:text-[2.7rem] text-ivory/80 italic">
-            One search.
+            Worth the journey.
           </GlowText>
         </p>
 
@@ -71,7 +71,7 @@ export default function SearchHero() {
           className="font-seasons text-ivory/65 text-[1.3rem] sm:text-[1.4625rem] leading-snug mb-10 animate-fade-in-up"
           style={{ animationDelay: '200ms' }}
         >
-          Type a work, an artist, a company, or a city — and find every performance on Earth.
+          Type a work, an artist, a company, or a city — and find the performances worth travelling for.
         </p>
 
         {/* Search box */}

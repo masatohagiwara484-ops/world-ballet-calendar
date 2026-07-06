@@ -25,3 +25,4 @@ The site must render rich, believable, accurate data **with zero external depend
 - Dataset reads like an editor at a cultural institution wrote it: real company names, real venues, real repertoire (Swan Lake, La Bohème, Giselle, Tosca…), correct composers/choreographers, plausible 2026-27 run dates.
 - Every record passes zod validation. No placehold.co images — use curated Unsplash URLs.
 - Scrapers: one adapter per company, fixture-tested offline, graceful failure, never corrupt existing data.
+- Ingestion trust gate is absolute: pipeline writes `review_status='pending'` only — publishing happens exclusively via owner approval (Telegram webhook or `review:pending --publish`). The `--local` path (browser-saved HTML in `scripts/ingest/.local/`) is the operator route around datacenter-IP 403s; it uses the identical extract→diff→pending pipeline.
