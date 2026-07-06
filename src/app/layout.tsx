@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   ),
   title: {
     template: '%s — première',
-    default: 'première — every stage in the world',
+    default: 'première — the world’s great stages, worth the journey',
   },
-  description: 'première — discover ballet and opera performances around the world. Find upcoming shows from the Royal Ballet, Paris Opéra Ballet, Bolshoi, Metropolitan Opera, and more.',
+  description: 'première — the world’s great ballet and opera stages, worth the journey. Discover verified performances, plan the trip around them, and book — from the Royal Ballet to the Metropolitan Opera.',
   keywords: ['ballet', 'opera', 'performances', 'calendar', 'première'],
   openGraph: {
     type: 'website',

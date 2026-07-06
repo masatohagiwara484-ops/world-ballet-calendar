@@ -2,13 +2,13 @@
 
 > **これが最新かつ唯一の実行計画書です。** 散在した古い docs（STRATEGY.md /
 > PHASE1_LAUNCH_PLAN.md 等）は背景資料として残しますが、矛盾する場合はこの
-> ROADMAP が優先します。方針・ブランドは `CLAUDE.md` の「Strategic Direction v2」、
+> ROADMAP が優先します。方針・ブランドは `CLAUDE.md` の Brand Charter（§2）、
 > 日次記録は `reports/day-XX-report.md`。
 >
 > **This is the current, canonical plan.** Older docs are background only and are
 > superseded here on conflict.
 
-Last updated: 2026-06-24
+Last updated: 2026-07-06
 
 ---
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-24
 **Discovery → itinerary → booking, beautifully and trustworthily.** A curated
 travel product for the world's ~30–80 greatest ballet & opera houses — not an
 Operabase coverage clone. Four moats: **Curation · Trust · Travel · Design.**
-(詳細は CLAUDE.md §Strategic Direction v2。)
+(詳細は CLAUDE.md §2 Brand Charter。)
 
 ---
 
@@ -44,7 +44,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⏸ deferred (post-tr
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 9 | Editorial long-tail SEO | ✅ | `/journal` + `/journal/[slug]`: 5 evergreen articles (travel guides, work explainers, company stories), per-article SEO + Article JSON-LD + sitemap, related-house links, trip/newsletter CTAs. Add more articles over time. |
-| 10 | Auto social cards ("this week") | ⬜ | Beautiful shareable cards for this week's performances. Our unique visual distribution edge. **NEXT.** |
+| 10 | Auto social cards ("this week") | ✅ | `/this-week` page + auto-generated weekly OG card (`renderWeekCard`) + share/download affordances. Merged & deployed. |
 
 ### D. Quality & infra / 品質・基盤
 | # | Task | Status | Notes |
@@ -79,16 +79,19 @@ i18n · user accounts / favorites · PWA · B2B casting tool — all post-tracti
 ---
 
 ## Priority order / 推奨優先順
-1. **#10 Auto social cards** — visual distribution / virality (NEXT).
-2. **#3 Data verification & publishing** — more verified rows = a fuller site
-   (and more for #1/#6 to show). Ingestion/approval ops.
-3. **#2 Affiliate IDs** — turn on revenue once traffic exists.
-4. **#12 Ingestion automation** — scale coverage of the curated set.
-5. **#11 Tests · #13 bios** — hardening.
-6. **Bigger bets** — performance-trip bundle, premium tier, data-model flip.
+1. **#3 Data verification & publishing** — more verified rows = a fuller site
+   (and more for #1/#6 to show). Ingestion/approval ops — the owner-run
+   `--live`/`--local` ingest for the 7 missing houses is the current step.
+2. **#2 Affiliate IDs** — turn on revenue once traffic exists.
+3. **#12 Ingestion automation** — scale coverage of the curated set.
+4. **#11 Tests · #13 bios** — hardening.
+5. **Bigger bets** — performance-trip bundle, premium tier, data-model flip.
 
 ## Bigger bets (from strategy) / 大きな賭け
 - **Performance-trip bundle** (ticket + hotel + flight) — the killer travel unit.
+  Owner-approved plan (2026-07): Phase 1 = deep-link Trip Bundle Card from venue
+  lat/lng + run dates (no inventory, needs #2 IDs) → Phase 2 = honest "from ¥X"
+  estimated totals → Phase 3 = bundle builder (premium groundwork).
 - **Editorial journal `/journal`** — SEO compounding + curation moat.
 - **Premium tier** — follow + alerts + multi-city planner.
 - **Data-model flip** — houses push feeds in; B2B "what's on + book" widget.
