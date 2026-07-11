@@ -48,12 +48,16 @@ Leaflet/Google Maps · GSAP · Vercel (push → auto deploy).
 
 ```bash
 npm run dev / build / lint            # develop · verify production build
+npm run validate:data                 # bundled-dataset integrity check
 npm run seed                          # load curated companies/performances
 npm run ingest -- --all --live        # crawl → write pending + Telegram digest
 npm run ingest:local -- --source <slug>  # extract from browser-saved HTML (no 403)
 npm run ingest:selftest               # diff-engine self-check
 npm run review:pending [-- --publish] # terminal review queue
 ```
+
+Full command table: `README.md`. Every PR runs CI (`.github/workflows/ci.yml`:
+lint → validate:data → ingest:selftest → build) — keep it green.
 
 Ingestion ops runbook: `docs/INGESTION_SETUP.md`. The `review_status` gate is
 absolute: nothing publishes without owner approval (Telegram or `--publish`).

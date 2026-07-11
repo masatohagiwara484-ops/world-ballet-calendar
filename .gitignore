@@ -36,6 +36,9 @@ yarn-error.log*
 next-env.d.ts
 dev.log
 
+# Claude Code personal settings (shared settings live in .claude/settings.json)
+.claude/settings.local.json
+
 # Ingest debug HTML dumps (operator-local)
 scripts/ingest/.debug/
 
