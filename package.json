@@ -17,6 +17,8 @@
     "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts",
     "inspect:feed": "npx tsx scripts/ingest/inspect-feed.ts",
     "review:pending": "npx tsx scripts/ingest/review-pending.ts",
+    "audit:published": "npx tsx scripts/ingest/audit-published.ts",
+    "telegram:check": "npx tsx scripts/ingest/telegram-check.ts",
     "clean:published": "npx tsx scripts/ingest/clean-published.ts",
     "inspect:dump": "npx tsx scripts/ingest/inspect-dump.ts"
   },
