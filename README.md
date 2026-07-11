@@ -98,6 +98,8 @@ The complete `npm run` script list (canonical — keep in sync with `package.jso
 | `ingest:local -- --source <slug>` | Extract from operator-saved HTML (bypasses 403s) |
 | `ingest:selftest` | Diff-engine self-check, no network/DB (runs in CI) |
 | `review:pending [-- --publish]` | Terminal review queue for pending rows |
+| `audit:published [-- --slug <s>] [-- --suspicious]` | Read-only trust audit of already-`published` rows (dates/provenance) |
+| `telegram:check` | Read-only self-check that the Telegram approval channel is wired (getMe/getChat/getWebhookInfo) |
 | `discover:feeds` / `inspect:feed` | Probe houses for official iCal/RSS/JSON feeds · inspect one feed |
 | `inspect:dump` | Inspect a saved ingest HTML dump |
 | `clean:published` | Maintenance cleanup of published rows |
