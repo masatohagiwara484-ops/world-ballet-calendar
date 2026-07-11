@@ -50,7 +50,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⏸ deferred (post-tr
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 11 | Automated tests / test runner | ⬜ | Currently manual (`verifier-web`). Regression risk = project's known weakness. |
-| 12 | Ingestion 403 / automation | ⬜ | GitHub Action DC-IP gets 403 on major houses. Needs residential proxy / self-hosted runner. Key to scale. |
+| 12 | Ingestion 403 / automation | 🟡 | Root-caused: DC-IP (Actions/Vercel) gets 403; only the owner's **residential IP + real Chrome** reaches the houses. Plan = daily **owner-Mac** run (`--live`), not a cloud cron. Phased plan below. |
 | 13 | People bios | ⬜ | Some placeholders (Day 9). Small effort. |
 
 ### E. Deferred (intentional) / 意図的に後回し
@@ -86,6 +86,34 @@ i18n · user accounts / favorites · PWA · B2B casting tool — all post-tracti
 3. **#12 Ingestion automation** — scale coverage of the curated set.
 4. **#11 Tests · #13 bios** — hardening.
 5. **Bigger bets** — performance-trip bundle, premium tier, data-model flip.
+
+## Ingestion automation plan / 取り込み自動化計画 (#3 + #12)
+
+**Goal:** a near-hands-off daily loop — crawl once/day, detect new shows + date
+changes, confirm in Telegram with a tap, live within minutes. Owner input reduced
+to the trust-gate tap plus a save-as ritual for the few houses that block bots.
+**目標:** 毎日1回巡回 → 新規/日付変更を検出 → Telegramでタップ承認 → 数分で反映。
+人力は「承認タップ」＋割れない少数館の保存のみ。
+
+**Hard constraint / 制約:** a background agent and cloud cron (GitHub Actions,
+Vercel) get **403** from major houses — datacenter IP. The **only** machine that
+reaches them is the owner's own (residential IP + real Chrome). So the daily job
+runs **on the owner's Mac**, never in the cloud. Fetch for a blocked house can't
+be fully automated (a real browser session is what defeats the block); everything
+*after* fetch — extract → diff → Telegram → publish — already is.
+
+| Phase | Work | Owner or agent | State |
+|---|---|---|---|
+| 0a | **Fix wrong live dates** (trust #1). `npm run audit:published` lists every PUBLISHED row + provenance + suspicion flags; owner verifies vs official page, agent corrects the flagged ids. | both | tool shipped |
+| 0b | **Telegram wiring.** BotFather → token/chat_id/secret → setWebhook. `npm run telegram:check` proves getMe/getChat/getWebhookInfo without sending a message. | owner | tool shipped |
+| 1 | **Canary on the Mac.** `npm run ingest -- --source tokyo-ballet --live`. Measures which houses pass `--live` render vs 403 → split into *auto-OK* / *needs-manual*. | owner | ⬜ |
+| 2 | **Real-Chrome-profile path** (the human-input-minimizer). Add `CHROME_USER_DATA_DIR` → `launchPersistentContext` in `fetch-browser.ts` so the crawl uses the owner's logged-in profile/fingerprint. Likely converts most *needs-manual* houses back to *auto*. | agent | ⬜ (after P1) |
+| 3 | **Daily schedule.** launchd (recommended) / cron on the Mac runs `npm run ingest -- --all --live` each morning → Telegram digest → tap approve. | both | ⬜ |
+| 4 | **Minimize the residual manual houses.** One-click Save-As bookmarklet → `.local/<slug>.html`, then `npm run ingest:local -- --all`. Target ≤2–3 min/day. | agent | ⬜ |
+| 5 | **Better Telegram confirmation.** Emphasize date-changes, attach an official-page screenshot to the digest, add per-row approve (today: approve-all/reject-all). | agent | ⬜ |
+
+New operator tools this stream: `npm run audit:published` (read-only live-date
+audit) · `npm run telegram:check` (read-only channel self-check).
 
 ## Bigger bets (from strategy) / 大きな賭け
 - **Performance-trip bundle** (ticket + hotel + flight) — the killer travel unit.
