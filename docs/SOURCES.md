@@ -1,7 +1,7 @@
 # Data Sources — the ingestion fuel list
 
 This is the authoritative list of where live performance data comes from. The
-scraper/ingestion pipeline (see `docs/INGESTION.md` and the `data-ingest` skill)
+scraper/ingestion pipeline (see `docs/INGESTION_SETUP.md` and the `data-ingest` skill)
 reads one **adapter** per source. The richer this list, the more of the world's
 stages the catalogue covers.
 
@@ -154,7 +154,7 @@ then move rows up to Tier 1 once they have an adapter.
 2. An adapter is written under `scripts/scrapers/adapters/<slug>.ts` (the
    existing ones — `royal-ballet`, `paris-opera-ballet`, `wiener-staatsoper` —
    are the templates). For sites with a feed, the adapter parses the feed; for
-   HTML-only sites it uses the LLM-extraction path (see `docs/INGESTION.md`).
+   HTML-only sites it uses the LLM-extraction path (see `docs/INGESTION_SETUP.md`).
 3. The scheduled job fetches → extracts → normalizes (`scripts/scrapers/
    normalize.ts`) → resolves entities (people/works) → writes to a **review
    queue** (`review_status = 'pending'`) in Supabase.

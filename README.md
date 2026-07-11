@@ -8,6 +8,8 @@
 
 🌐 **Live:** [worldballetoperacalender.vercel.app](https://worldballetoperacalender.vercel.app)
 
+[![CI](https://github.com/masatohagiwara484-ops/world-ballet-calendar/actions/workflows/ci.yml/badge.svg)](https://github.com/masatohagiwara484-ops/world-ballet-calendar/actions/workflows/ci.yml)
+
 </div>
 
 ---
@@ -83,9 +85,29 @@ npm run dev                  # http://localhost:3000
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_WEBHOOK_SECRET` | Approval flow |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Optional — venue maps upgrade from Leaflet to Google Maps |
 
-Common commands: `npm run build` · `npm run seed` ·
-`npm run ingest -- --all --live` · `npm run ingest:local -- --source <slug>` ·
-`npm run review:pending`
+### Command reference
+
+The complete `npm run` script list (canonical — keep in sync with `package.json`):
+
+| Command | What it does |
+|---|---|
+| `dev` / `build` / `start` / `lint` | Next.js develop · production build · serve · ESLint |
+| `seed` | Seed Supabase with the curated bundled dataset |
+| `validate:data` | Zod-validate the bundled dataset + cross-record integrity (runs in CI) |
+| `ingest -- --all --live` | Full ingestion crawl → `pending` rows + Telegram digest |
+| `ingest:local -- --source <slug>` | Extract from operator-saved HTML (bypasses 403s) |
+| `ingest:selftest` | Diff-engine self-check, no network/DB (runs in CI) |
+| `review:pending [-- --publish]` | Terminal review queue for pending rows |
+| `audit:published [-- --slug <s>] [-- --suspicious]` | Read-only trust audit of already-`published` rows (dates/provenance) |
+| `telegram:check` | Read-only self-check that the Telegram approval channel is wired (getMe/getChat/getWebhookInfo) |
+| `discover:feeds` / `inspect:feed` | Probe houses for official iCal/RSS/JSON feeds · inspect one feed |
+| `inspect:dump` | Inspect a saved ingest HTML dump |
+| `clean:published` | Maintenance cleanup of published rows |
+| `purge:performances` | ⚠️ Destructive: wipe performance rows (re-seed after) |
+| `scrape -- --adapter <slug> --fixture` | Adapter debug CLI — run one scraper against its local fixture |
+
+Ops runbook for the ingestion commands: [`docs/INGESTION_SETUP.md`](./docs/INGESTION_SETUP.md).
+Every PR runs CI (`.github/workflows/ci.yml`): lint → `validate:data` → `ingest:selftest` → build.
 
 ## Documentation
 

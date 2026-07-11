@@ -86,7 +86,7 @@ manual regardless.
 ## 6. Run it
 
 - Manual: GitHub → Actions → **Ingest** → Run workflow (or `npm run ingest -- --all --live`).
-- Scheduled: every 2 days (`.github/workflows/scrape.yml`).
+- Scheduled: every 2 days (`.github/workflows/ingest.yml`).
 - Dry run offline: `npm run ingest -- --all --fixture` (writes nothing).
 - Diff self-check: `npm run ingest:selftest`.
 

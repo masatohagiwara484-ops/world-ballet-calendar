@@ -5,10 +5,14 @@
 > 専門用語はそのつど「＝かんたんに言うと」で説明します。あせらず上から順に進めてください。
 >
 > 関連ドキュメント:
-> - プロジェクト全体像 → `docs/HANDOFF.md`, `CLAUDE.md`
-> - データ取り込みの仕組み → `docs/INGESTION.md`
+> - プロジェクト全体像 → ルートの `README.md`, `CLAUDE.md`
+> - データ取り込みの仕組み → `docs/INGESTION_SETUP.md`（日本語版: `docs/INGESTION_SETUP_JA.md`）
 > - 取材元リスト（あなたの宿題） → `docs/SOURCES.md`
 > - **リンク記入用の空欄シート** → `docs/SOURCES_FILL_IN_JA.md`（このマニュアルとセット）
+>
+> ⚠️ **第6章の注意**: 執筆当時「Telegram bot は存在しない」と書きましたが、その後
+> **Telegram 承認システムが実装されました**。第6章の記述は当時のまま残しています —
+> 最新の仕組みとセットアップ手順は `docs/INGESTION_SETUP_JA.md` を正としてください。
 
 ---
 

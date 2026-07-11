@@ -1,7 +1,8 @@
 # 🤖 自動取り込み＋Telegram承認システム セットアップ指南書（日本語・初心者向け）
 
-> このドキュメントは `docs/INGESTION_SETUP.md`（英語の運用手順書）を、
+> このドキュメントは [`docs/INGESTION_SETUP.md`](./INGESTION_SETUP.md)（英語の運用手順書＝**正本**）を、
 > **プログラミング未経験のオーナー**でも一人で設定できるように日本語で解説したものです。
+> 内容が食い違う場合は英語版が優先します。 — *Last synced with the EN runbook: 2026-07-11*
 > 専門用語はそのつど「＝かんたんに言うと」で説明します。上から順に進めてください。
 >
 > 📌 **前回の `OWNER_GUIDE_JA.md` からの変更点**
@@ -229,7 +230,7 @@ curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKENをここに>/setWebhook" \
 |---|---|
 | 手動で今すぐ巡回 | GitHub → **Actions** タブ → **「Ingest」** → **Run workflow** |
 | 同上（ターミナル） | `npm run ingest -- --all --live` |
-| 自動巡回 | **2日に1回**自動（`.github/workflows/scrape.yml` で設定済み・操作不要） |
+| 自動巡回 | **2日に1回**自動（`.github/workflows/ingest.yml` で設定済み・操作不要） |
 | ネットに触れず練習 | `npm run ingest -- --all --fixture`（何も書き込まない安全なテスト） |
 | 仕組みの自己点検 | `npm run ingest:selftest` |
 

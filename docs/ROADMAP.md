@@ -8,7 +8,7 @@
 > **This is the current, canonical plan.** Older docs are background only and are
 > superseded here on conflict.
 
-Last updated: 2026-07-06
+Last updated: 2026-07-11
 
 ---
 
@@ -49,7 +49,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⏸ deferred (post-tr
 ### D. Quality & infra / 品質・基盤
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 11 | Automated tests / test runner | ⬜ | Currently manual (`verifier-web`). Regression risk = project's known weakness. |
+| 11 | Automated tests / test runner | 🟡 | CI now runs lint + `validate:data` + `ingest:selftest` + production build on every PR (`.github/workflows/ci.yml`, 2026-07-11). Remaining: a real test runner + unit/e2e tests. Visual checks stay manual (`verifier-web`). |
 | 12 | Ingestion 403 / automation | 🟡 | Root-caused: DC-IP (Actions/Vercel) gets 403; only the owner's **residential IP + real Chrome** reaches the houses. Plan = daily **owner-Mac** run (`--live`), not a cloud cron. Phased plan below. |
 | 13 | People bios | ⬜ | Some placeholders (Day 9). Small effort. |
 

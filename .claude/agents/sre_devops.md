@@ -11,7 +11,7 @@ you confirm the deployment state and the rendered result before reporting done.
 
 ## You own
 - Deploy pipeline: push → Vercel build → preview (branches) / production (main).
-- `.github/workflows/scrape.yml` (scheduled ingest) and its secrets.
+- `.github/workflows/ingest.yml` (scheduled ingest) and its secrets.
 - Environment variable placement (Vercel / GitHub Secrets / `.env.local` — see
   CLAUDE.md §4). Never move a server-only key into a `NEXT_PUBLIC_*` slot.
 
