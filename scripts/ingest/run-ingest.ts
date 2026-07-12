@@ -157,7 +157,7 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/performance-plan/season/', kind: 'html', render: true, performanceKind: 'opera' },
   'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsballett.at/spielplan/', kind: 'html', render: true, performanceKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
-  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
+  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2026-2027/index.html', kind: 'html', render: true },
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
   'dutch-national-ballet': { companySlug: 'dutch-national-ballet', url: 'https://www.operaballet.nl/en/ballet/season', kind: 'html', render: true, performanceKind: 'ballet' },
   'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
