@@ -96,6 +96,9 @@ function toAbsolute(href: string | undefined, baseUrl?: string): string | null {
 const BOOKING_HREF_RE =
   /ticket|book|event|performance|production|show|whats-?on|calendar|programme|program|season|spectacle|vorstellung/i
 
+/** Marker inlined next to booking links — also used to decide the text scope. */
+const LINK_MARK = '(link: '
+
 /**
  * Strip chrome from a single HTML document and return the listings text with
  * booking links inlined as "(link: …)". Used by trimHtml for each page.
@@ -121,8 +124,27 @@ function trimSinglePage(html: string, baseUrl?: string): string {
     if (BOOKING_HREF_RE.test(probe)) $el.append(` (link: ${abs}) `)
   })
 
-  const main = $('main').first()
-  return (main.length ? main : $('body')).text().replace(/\s+/g, ' ').trim()
+  // SCOPE SELECTION. <main> used to be trusted unconditionally, but several
+  // houses (ABT was the proven case: 257k-char page, 32 booking links, yet the
+  // extractor saw almost nothing) render a skeleton/empty <main> while the real
+  // listing lives elsewhere in the <body>. The crawl's booking-link probe scans
+  // the WHOLE page, so the logs looked healthy while the model received an
+  // empty room. Decide by where the annotated booking links actually are: trust
+  // <main> only when it is substantial AND carries at least half of them.
+  const clean = (s: string) => s.replace(/\s+/g, ' ').trim()
+  const marks = (s: string) => s.split(LINK_MARK).length - 1
+  const bodyText = clean($('body').text())
+  const $main = $('main').first()
+  if (!$main.length) return bodyText
+  const mainText = clean($main.text())
+  const useMain = mainText.length >= 500 && marks(mainText) * 2 >= marks(bodyText)
+  if (!useMain) {
+    console.log(
+      `  · <main> holds ${marks(mainText)}/${marks(bodyText)} booking links ` +
+        `(${mainText.length} chars) — extracting from <body> instead`
+    )
+  }
+  return useMain ? mainText : bodyText
 }
 
 /**
@@ -212,10 +234,11 @@ export async function extractWithLlm(
   const content = trimHtml(html, baseUrl)
   if (!content) return []
 
+  // ALWAYS log the model's input size — the ABT failure went unnoticed for
+  // weeks precisely because a starved input (empty <main>) was silent: the
+  // crawl logs showed a healthy page while the model received ~nothing.
   const chunks = chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
-  if (chunks.length > 1) {
-    console.log(`  · extracting ${content.length} chars across ${chunks.length} chunk(s)`)
-  }
+  console.log(`  · LLM input: ${content.length} chars → ${chunks.length} chunk(s)`)
 
   const all: RawPerformance[] = []
   for (const c of chunks) {
@@ -235,6 +258,20 @@ export async function extractWithLlm(
     if (seen.has(key)) continue
     seen.add(key)
     deduped.push(r)
+  }
+
+  // Contradiction alarm: a page whose text carries several booking links but
+  // yields zero performances means the listing text is not reaching the model
+  // in a readable form — a structural problem to inspect, never a quiet "no
+  // changes". (inspect with: npx tsx scripts/ingest/inspect-dump.ts)
+  if (deduped.length === 0) {
+    const links = content.split(LINK_MARK).length - 1
+    if (links >= 3) {
+      console.warn(
+        `  ! LLM returned 0 performances from ${content.length} chars containing ${links} booking links — ` +
+          `listing text is likely not reaching the model; inspect the debug dump`
+      )
+    }
   }
   return deduped
 }
