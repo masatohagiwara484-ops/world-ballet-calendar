@@ -345,6 +345,25 @@ interface SourceResult {
   line: string
 }
 
+/**
+ * TRUST GUARD: a run that extracted ZERO productions against a source that
+ * already has published rows is almost certainly a broken fetch/extraction
+ * (site layout changed, JS didn't render, `<main>` moved, API down) — NOT the
+ * house going dark. diffRun() has no way to tell the two apart: it marks every
+ * previously-seen id "not present this run" → cancelled either way. Left
+ * unguarded, one bad crawl silently un-publishes an entire house's live season
+ * (this is exactly what happened to american-ballet-theatre's 4 published
+ * rows on 2026-07-13). So: 0 kept + existing rows present == treat the run as
+ * FAILED and touch nothing, rather than as "everything cancelled".
+ *
+ * A house that is genuinely dark (real season end) will keep failing this way
+ * every run — which is the correct, safe failure mode: the owner sees a
+ * standing "extraction failed" line instead of the site quietly going empty.
+ */
+export function isFailedExtraction(keptCount: number, existingCount: number): boolean {
+  return keptCount === 0 && existingCount > 0
+}
+
 /** Run one source through the full pipeline. */
 async function runSource(src: SourceConfig, args: Args, runId: string): Promise<SourceResult> {
   // --local writes pending rows too, so it needs the Supabase writer like --live.
@@ -425,6 +444,18 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   // companies that already succeeded while re-attempting the ones that didn't.
   if (writer && pageHashValue && kept.length > 0) {
     await saveSourceState(writer, src.companySlug, { last_hash: pageHashValue })
+  }
+
+  // TRUST GUARD — see isFailedExtraction() doc comment. A zero-extraction run
+  // must never reach diffRun(): diffRun cannot distinguish "this house has
+  // nothing this run" from "the crawl broke", and would mark every published
+  // row for this source as cancelled.
+  if (isFailedExtraction(kept.length, existing.size)) {
+    console.warn(
+      `  ! extraction returned 0 productions but ${existing.size} row(s) already exist for this source ` +
+        `— treating as a FAILED crawl, not a mass cancellation. No rows changed.`
+    )
+    return { ok: false, line: `⚠️ ${src.companySlug}: extraction failed (0 productions, ${existing.size} preserved)` }
   }
 
   // Provenance per production row.
@@ -568,7 +599,19 @@ function selftest(): void {
     rows.find((r) => r.id === 'p-c')?.change_kind === 'price-changed' &&
     counts.cancelled === 1
   console.log(ok ? '\n  ✓ all change kinds classified correctly' : '\n  ✗ classification FAILED')
-  if (!ok) process.exit(1)
+
+  // Trust guard: 0 extracted + published rows already present must be flagged
+  // as a failed crawl BEFORE it ever reaches diffRun — never as a mass cancel.
+  const guardOk =
+    isFailedExtraction(0, 4) === true &&
+    isFailedExtraction(0, 0) === false &&
+    isFailedExtraction(3, 4) === false
+  console.log(
+    guardOk
+      ? '  ✓ zero-extraction guard blocks a false mass-cancellation'
+      : '  ✗ zero-extraction guard FAILED'
+  )
+  if (!ok || !guardOk) process.exit(1)
 }
 
 const badge = (k?: string) =>
