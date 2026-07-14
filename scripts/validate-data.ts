@@ -11,6 +11,7 @@
 import { z } from 'zod'
 import { companies } from '../src/data/companies'
 import { performances } from '../src/data/performances'
+import { mediaSources, MEDIA_REGIONS } from '../src/data/media-sources'
 
 /* ------------------------------------------------------------------ */
 /* Zod schemas (mirror src/lib/types.ts)                               */
@@ -72,6 +73,26 @@ const PerformanceSchema = z
     message: 'end_date must be >= start_date',
     path: ['end_date'],
   })
+
+const MediaSourceSchema = z.object({
+  id: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id must be kebab-case'),
+  name: z.string().min(1),
+  url: z.string().url(),
+  region: z.enum(MEDIA_REGIONS as [string, ...string[]]),
+  // Full country name (première's model), or "" for a truly global source.
+  country: z.string(),
+  // ISO alpha-2 lowercase, or "" if truly global.
+  country_code: z
+    .string()
+    .regex(/^([a-z]{2})?$/, 'country_code must be ISO alpha-2 lowercase or ""'),
+  scope: z.enum(['international', 'national']),
+  languages: z.array(z.string().regex(/^[a-z]{2}$/, 'language must be ISO 639-1')).min(1),
+  type: z.array(z.string().min(1)).min(1),
+  blurb: z.string().min(1),
+  status: z.enum(['ok', 'verify']),
+})
 
 /* ------------------------------------------------------------------ */
 /* Validation runner                                                   */
@@ -139,6 +160,40 @@ for (const p of performances) {
   )
 }
 
+// 4b. Media sources (the /read directory) — per-record + uniqueness.
+mediaSources.forEach((m, i) => {
+  const res = MediaSourceSchema.safeParse(m)
+  if (!res.success) {
+    for (const issue of res.error.issues) {
+      errors.push(
+        `mediaSources[${i}] (${m.id ?? '?'}): ${issue.path.join('.')} — ${issue.message}`
+      )
+    }
+  }
+  // A non-global source (has a country_code) must carry a country name too.
+  check(
+    !m.country_code || m.country.length > 0,
+    `mediaSources[${i}] (${m.id}): country_code "${m.country_code}" set but country name is empty`
+  )
+})
+
+const mediaIds = new Set<string>()
+for (const m of mediaSources) {
+  check(!mediaIds.has(m.id), `duplicate media source id: ${m.id}`)
+  mediaIds.add(m.id)
+}
+
+// Informational: media countries not present in the company dataset (allowed —
+// e.g. Spain — but surfaced so new countries are a conscious choice).
+const companyCountryCodes = new Set(companies.map((c) => c.country_code))
+const foreignMediaCountries = [
+  ...new Set(
+    mediaSources
+      .filter((m) => m.country_code && !companyCountryCodes.has(m.country_code))
+      .map((m) => `${m.country} (${m.country_code})`)
+  ),
+]
+
 // 5. Company volume (these are real institutions — keep the floor).
 check(
   companies.length >= 24,
@@ -181,4 +236,10 @@ console.log(`    featured:           ${featuredCount}`)
 console.log(`  overlapping summer:   ${overlapping.length} (window ${WINDOW_START}..${WINDOW_END})`)
 console.log(`  unique company ids:   ${companyIds.size}`)
 console.log(`  unique performance ids: ${perfIds.size}`)
+const verifyMedia = mediaSources.filter((m) => m.status === 'verify')
+console.log(`  media sources:        ${mediaSources.length}`)
+console.log(`    verify (confirm URL): ${verifyMedia.length}${verifyMedia.length ? ' — ' + verifyMedia.map((m) => m.id).join(', ') : ''}`)
+if (foreignMediaCountries.length) {
+  console.log(`    countries not in company set: ${foreignMediaCountries.join(', ')}`)
+}
 process.exit(0)
