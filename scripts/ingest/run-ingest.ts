@@ -387,18 +387,35 @@ const companyIdMap = () => new Map(companies.map((c) => [c.slug, c.id]))
 const JUNK_TITLE = /\b(load[\s-]*test|test\s*prod(uction)?|lorem ipsum|placeholder|do not (use|book))\b/i
 
 /**
- * Collapse rows that share an id into one production spanning the whole run
- * (earliest start … latest end). JSON-LD/iCal calendars emit ONE event per
- * performance date, so a single production arrives as dozens of same-id rows;
- * without this the upsert hits "ON CONFLICT cannot affect row a second time"
- * and the entire run fails. One row per production is also the right shape for
- * a season calendar. Junk titles are filtered out here too.
+ * Two per-night rows further apart than this are treated as SEPARATE
+ * engagements, never bridged into one continuous run. Proven necessary from
+ * ABT's Master Calendar: "Swan Lake" plays 06-17→06-20, then a 23-day silence
+ * (other ballets rotate through the same rep season), then 07-13→07-18 — same
+ * title, same venue, but collapsing them into "06-17→07-18" would tell a
+ * traveller they could book any night in that month, when most of those
+ * nights aren't Swan Lake at all. 14 days is comfortably below that 23-day
+ * gap while still tolerating a normal run's rest days/dark nights.
+ */
+const MAX_RUN_GAP_DAYS = 14
+const DAY_MS = 24 * 60 * 60 * 1000
+const daysBetween = (a: string, b: string): number => (new Date(b).getTime() - new Date(a).getTime()) / DAY_MS
+
+/**
+ * Collapse rows that share an id into one production per continuous run
+ * (earliest start … latest end, split on any gap over MAX_RUN_GAP_DAYS).
+ * JSON-LD/iCal/wp-ajax calendars emit ONE event per performance date, so a
+ * single run arrives as dozens of same-id rows; without merging, the upsert
+ * hits "ON CONFLICT cannot affect row a second time" and the entire batch
+ * fails. Splitting on gaps keeps a rotating-repertory season's separate
+ * engagements from being reported as one falsely-continuous date range.
+ * Split blocks after the first get their id suffixed (`-2`, `-3`, …) so both
+ * remain stable, distinct rows across re-runs. Junk titles are filtered here.
  */
 function collapseProductions<T extends { id: string; title: string; start_date: string; end_date: string }>(
   rows: T[],
   excludeTitle?: RegExp
 ): { kept: T[]; dropped: number; collapsed: number } {
-  const byId = new Map<string, T>()
+  const byId = new Map<string, T[]>()
   let dropped = 0
   for (const r of rows) {
     if (
@@ -409,16 +426,32 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
       dropped += 1
       continue
     }
-    const existing = byId.get(r.id)
-    if (!existing) {
-      byId.set(r.id, { ...r })
-      continue
-    }
-    // Widen the existing production's span to cover this date.
-    if (r.start_date < existing.start_date) existing.start_date = r.start_date
-    if (r.end_date > existing.end_date) existing.end_date = r.end_date
+    const list = byId.get(r.id)
+    if (list) list.push(r)
+    else byId.set(r.id, [r])
   }
-  const kept = [...byId.values()]
+
+  const kept: T[] = []
+  for (const group of byId.values()) {
+    group.sort((a, b) => a.start_date.localeCompare(b.start_date))
+    let block: T | null = null
+    let blockNum = 1
+    for (const r of group) {
+      if (!block) {
+        block = { ...r }
+        continue
+      }
+      if (daysBetween(block.end_date, r.start_date) > MAX_RUN_GAP_DAYS) {
+        kept.push(block)
+        blockNum += 1
+        block = { ...r, id: `${r.id}-${blockNum}` }
+        continue
+      }
+      if (r.start_date < block.start_date) block.start_date = r.start_date
+      if (r.end_date > block.end_date) block.end_date = r.end_date
+    }
+    if (block) kept.push(block)
+  }
   return { kept, dropped, collapsed: rows.length - dropped - kept.length }
 }
 
