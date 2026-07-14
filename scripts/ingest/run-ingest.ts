@@ -290,9 +290,16 @@ async function loadContent(src: SourceConfig, args: Args): Promise<string> {
     // wp-ajax: replicate the calendar widget's own POST — never rendered HTML.
     if (src.kind === 'wp-ajax') {
       if (!src.wpAjax) throw new Error(`${src.companySlug}: kind 'wp-ajax' requires a wpAjax config`)
-      // A rolling ~14-month window (today .. +14mo) so the source never goes
-      // stale — re-computed fresh on every run, unlike a hardcoded date range.
-      const start = new Date().toISOString().slice(0, 10)
+      // A rolling window, re-computed fresh on every run so the source never
+      // goes stale. Start is 45 DAYS IN THE PAST, not today: a production that
+      // opened before today (still running) has its true opening night before
+      // "now", and starting the window at today would silently truncate it —
+      // confirmed live 2026-07-14, Swan Lake's real run is 07-13→07-18 but a
+      // today-anchored window recorded 07-14→07-18, one night short. 45 days
+      // comfortably covers any ballet/opera run length. End is +14 months out.
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 45)
+      const start = startDate.toISOString().slice(0, 10)
       const endDate = new Date()
       endDate.setMonth(endDate.getMonth() + 14)
       const end = endDate.toISOString().slice(0, 10)
