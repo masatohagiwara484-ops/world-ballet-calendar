@@ -15,6 +15,7 @@
     "ingest:local": "npx tsx scripts/ingest/run-ingest.ts --local",
     "ingest:selftest": "npx tsx scripts/ingest/run-ingest.ts --selftest",
     "discover:feeds": "npx tsx scripts/ingest/discover-feeds.ts",
+    "probe:endpoints": "npx tsx scripts/ingest/probe-endpoints.ts",
     "inspect:feed": "npx tsx scripts/ingest/inspect-feed.ts",
     "review:pending": "npx tsx scripts/ingest/review-pending.ts",
     "audit:published": "npx tsx scripts/ingest/audit-published.ts",
