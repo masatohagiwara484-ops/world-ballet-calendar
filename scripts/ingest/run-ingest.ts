@@ -31,7 +31,7 @@ import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
 import { extractFeed, type FeedKind } from './extract-feed'
 import { extractWpCalendar } from './extract-wp-calendar'
-import { NON_PERFORMANCE_TITLE, ROYAL_OPERA_BALLET_TITLE } from './filters'
+import { isNonPerformance, ROYAL_OPERA_BALLET_TITLE } from './filters'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
 import { renderPage } from './fetch-browser'
 import {
@@ -420,7 +420,7 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
   for (const r of rows) {
     if (
       JUNK_TITLE.test(r.title) ||
-      NON_PERFORMANCE_TITLE.test(r.title) ||
+      isNonPerformance(r.title) ||
       (excludeTitle && excludeTitle.test(r.title))
     ) {
       dropped += 1
