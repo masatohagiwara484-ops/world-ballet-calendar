@@ -30,6 +30,7 @@ import { contentHash, pageHash } from './hash'
 import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
 import { extractFeed, type FeedKind } from './extract-feed'
+import { extractWpCalendar } from './extract-wp-calendar'
 import { NON_PERFORMANCE_TITLE, ROYAL_OPERA_BALLET_TITLE } from './filters'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
 import { renderPage } from './fetch-browser'
@@ -55,8 +56,23 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 interface SourceConfig {
   companySlug: string
   url: string
-  /** 'html' uses the adapter (if present) or the LLM; feeds parse deterministically. */
-  kind: 'html' | FeedKind
+  /** 'html' uses the adapter (if present) or the LLM; feeds and 'wp-ajax' parse
+   *  deterministically. */
+  kind: 'html' | FeedKind | 'wp-ajax'
+  /**
+   * For kind:'wp-ajax' — a house whose listing is a client-side calendar widget
+   * backed by a WordPress admin-ajax.php action (American Ballet Theatre is the
+   * proven case). `params` replicates the exact default-checked category/
+   * taxonomy checkboxes the page's own JS sends — discover them with
+   * `curl .../admin-ajax.php` from a residential IP + `inspect-dump.ts`, never
+   * guessed. `categoryLabel` keeps only rows tagged with it (drops Training/
+   * Community/Opportunities noise sharing the same calendar).
+   */
+  wpAjax?: {
+    action: string
+    params: Record<string, string[]>
+    categoryLabel: string
+  }
   /**
    * Default performance kind ('ballet'|'opera') applied to any extracted row
    * that doesn't supply its own. Feeds (iCal/JSON-LD) never set kind, so this
@@ -121,6 +137,33 @@ const SOURCES: Record<string, SourceConfig> = {
     performanceKind: 'opera',
     excludeTitle: /\bABT\b|\bin concert\b|\bconcert\b|\bsymphony\b|\bjubilee\b|\bcelebration\b|\btoast\b|special guest artist|grand finals/i,
   },
+  // ABT's "Performances" page renders an empty <main> — the Master Calendar is
+  // a client-side FullCalendar widget with NO listing text in the served HTML
+  // at all (confirmed via inspect-dump.ts: <body> text was 6,841 chars of pure
+  // nav chrome). No amount of HTML-scope fixing or LLM prompting can recover
+  // data that was never in the page. Its own calendar.js POSTs to
+  // admin-ajax.php?action=get_calendar_events with every category/taxonomy
+  // checkbox checked (discovered 2026-07-13 via curl from a residential IP +
+  // reading the theme's calendar.js); replicating that POST gets the same
+  // JSON the widget renders. Deterministic, no model call — confidence 1.
+  'american-ballet-theatre': {
+    companySlug: 'american-ballet-theatre',
+    url: 'https://www.abt.org/wp-admin/admin-ajax.php',
+    kind: 'wp-ajax',
+    performanceKind: 'ballet',
+    wpAjax: {
+      action: 'get_calendar_events',
+      categoryLabel: 'Performance',
+      params: {
+        'event_category[]': ['Performance', 'Special Events', 'Training', 'Community', 'Opportunities', 'Virtual'],
+        'filter_events[]': ['24', '26', '25', '28', '30', '27', '29'],
+        'filter_performance[]': ['33', '32', '234', '31', '34'],
+        'filters_membership[]': ['35', '38', '36', '39', '37'],
+        'filter_dancer_training[]': ['42', '41', '40', '43'],
+        'filter_teacher_training[]': ['44'],
+      },
+    },
+  },
 }
 
 /**
@@ -130,7 +173,6 @@ const SOURCES: Record<string, SourceConfig> = {
  * URL is known from the operator; the others need their season/what's-on URL.
  */
 const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/season/ballet'
-const ABT_LISTING = 'https://www.abt.org/performances/'
 const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
@@ -144,8 +186,7 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // Paris Opera — dedicated ballet and opera season pages.
   'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/season/operas', kind: 'html', render: true, performanceKind: 'opera' },
-  // US companies.
-  'american-ballet-theatre': { companySlug: 'american-ballet-theatre', url: ABT_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
+  // US companies. (american-ballet-theatre moved to SOURCES — wp-ajax, see above)
   'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   // German companies — expose only per-event .ics files (no season feed), so
@@ -246,6 +287,36 @@ async function loadContent(src: SourceConfig, args: Args): Promise<string> {
     return readFile(p, 'utf8')
   }
   if (args.live) {
+    // wp-ajax: replicate the calendar widget's own POST — never rendered HTML.
+    if (src.kind === 'wp-ajax') {
+      if (!src.wpAjax) throw new Error(`${src.companySlug}: kind 'wp-ajax' requires a wpAjax config`)
+      // A rolling ~14-month window (today .. +14mo) so the source never goes
+      // stale — re-computed fresh on every run, unlike a hardcoded date range.
+      const start = new Date().toISOString().slice(0, 10)
+      const endDate = new Date()
+      endDate.setMonth(endDate.getMonth() + 14)
+      const end = endDate.toISOString().slice(0, 10)
+
+      const body = new URLSearchParams()
+      body.append('action', src.wpAjax.action)
+      body.append('start', start)
+      body.append('end', end)
+      for (const [key, values] of Object.entries(src.wpAjax.params)) {
+        for (const v of values) body.append(key, v)
+      }
+
+      const res = await fetch(src.url, {
+        method: 'POST',
+        headers: {
+          'user-agent': INGEST_UA,
+          'content-type': 'application/x-www-form-urlencoded',
+          accept: 'application/json, text/javascript, */*; q=0.9',
+        },
+        body: body.toString(),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      return res.text()
+    }
     // JS-rendered listings need a real browser; static pages/feeds use fetch.
     if (src.render) {
       return renderPage(src.url, {
@@ -266,14 +337,19 @@ async function loadContent(src: SourceConfig, args: Args): Promise<string> {
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
     return res.text()
   }
-  return readFile(join(__dirname, '..', 'scrapers', 'fixtures', `${src.companySlug}.html`), 'utf8')
+  // wp-ajax fixtures are the raw JSON response, not a rendered HTML page.
+  const ext = src.kind === 'wp-ajax' ? 'json' : 'html'
+  return readFile(join(__dirname, '..', 'scrapers', 'fixtures', `${src.companySlug}.${ext}`), 'utf8')
 }
 
 /** Extract raw performances by source kind. Confidence: feed/adapter=1.0, LLM=0.85. */
 async function extract(src: SourceConfig, content: string): Promise<{ raws: RawPerformance[]; confidence: number }> {
   let raws: RawPerformance[]
   let confidence: number
-  if (src.kind !== 'html') {
+  if (src.kind === 'wp-ajax') {
+    raws = extractWpCalendar(content, src.companySlug, src.wpAjax!.categoryLabel)
+    confidence = 1
+  } else if (src.kind !== 'html') {
     raws = extractFeed(src.kind, content, src.companySlug)
     confidence = 1
   } else if (src.adapter) {
