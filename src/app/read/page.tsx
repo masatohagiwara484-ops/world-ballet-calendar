@@ -65,10 +65,12 @@ export default function ReadPage({ searchParams }: PageProps) {
           <div className="mt-8 hairline border-t" />
         </div>
 
-        <div className="flex gap-7 items-start">
-          <FilterRailSuspense facets={facets} filters={filters} />
+        <div className="flex flex-col lg:flex-row gap-7 items-start">
+          {(facets.region.length > 0 || facets.country.length > 0) && (
+            <FilterRailSuspense facets={facets} filters={filters} />
+          )}
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             {/* Region / country results */}
             {national.length > 0 ? (
               <>
@@ -83,7 +85,7 @@ export default function ReadPage({ searchParams }: PageProps) {
                   ))}
                 </div>
               </>
-            ) : (
+            ) : filtered ? (
               <div className="glass-panel p-12 text-center">
                 <p className="font-serif text-2xl text-ivory/60 mb-3">
                   No titles based in {where} yet
@@ -91,6 +93,17 @@ export default function ReadPage({ searchParams }: PageProps) {
                 <p className="text-ivory/50 text-sm max-w-md mx-auto">
                   Our directory is curated by hand and still growing here. The international
                   titles below cover it too — or clear the filter to see every publication.
+                </p>
+              </div>
+            ) : (
+              /* Graceful fallback — should never happen with the seed present. */
+              <div className="glass-panel p-12 text-center">
+                <p className="font-serif text-2xl text-ivory/60 mb-3">
+                  The directory is being curated
+                </p>
+                <p className="text-ivory/50 text-sm max-w-md mx-auto">
+                  We’re assembling the critics and magazines worth following. Please check back
+                  soon.
                 </p>
               </div>
             )}
