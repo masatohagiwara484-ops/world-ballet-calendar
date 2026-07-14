@@ -207,3 +207,41 @@ confirm each resolves to the intended live publication before public launch.
   (CI-covered). One seed country (**Spain/`es`**) is new; **5 entries are `status:"verify"`**.
 
 Ready for Phase 1 (data layer) once the owner confirms §6.
+
+---
+
+## 8. Build log — decisions taken (Phases 1–5)
+
+Owner directed autonomous progression through Phases 0–5 (site review at the end). The
+in-code confirmation prompt could not be delivered (harness error), so the §6 **recommended
+defaults were adopted** and are easily changed:
+- **Route/nav:** `/read`, label **"Read"** (Q1).
+- **Region taxonomy:** 6 regions, **Russia standalone** (Q3).
+- **Scope:** inferred international/national assignments per §3 (Q2).
+- **Spain (`es`):** kept as metadata-only; validation warns (not fails) on non-dataset countries (Q4).
+
+## 9. Phase 5 — QA result (against spec §9 "Success criteria")
+
+| Criterion | Status |
+|---|---|
+| Directory reachable from primary nav ("Read") | ✅ `Navbar.tsx` LINKS |
+| All seed sources render; `verify` listed in notes | ✅ 18 cards · §5 / §9 lists verify |
+| Filter by country and by region, reusing performances UX | ✅ `MediaFilterRail` + URL params |
+| International/Global reachable regardless of region filter | ✅ Global bucket beneath results |
+| Every card: text-only, "External ↗", new tab + `rel="noopener noreferrer"`, "External media" | ✅ `MediaSourceCard.tsx` |
+| No third-party logo/image/favicon loaded | ✅ grep-audited; monogram/CSS only |
+| Responsive to mobile; empty-state on no results | ✅ `flex-col lg:flex-row`; filtered empty state + Global bucket |
+| a11y: keyboard-focusable links, visible focus ring, contrast | ✅ anchor cards, gold `focus-visible` ring, SR link text |
+| CLAUDE.md documents feature + "how to add a source" | ✅ CLAUDE.md §7 |
+
+**Verification:** `npm run validate:data`, `npm run lint`, `npx tsc --noEmit`, `npm run build`
+all green; `/read` rendered on desktop + mobile, filtered (Germany/Asia), empty state, and
+keyboard focus confirmed via screenshots.
+
+## 10. `status:"verify"` — owner to confirm live URLs before launch (repeat)
+
+1. **tanznetz.de** — https://www.tanznetz.de/
+2. **ResMusica (Danse)** — https://www.resmusica.com/
+3. **Ballet2000** — https://www.ballet2000.com/
+4. **Ballet Channel** — https://balletchannel.jp/
+5. **Danza Ballet** — https://www.danzaballet.com/

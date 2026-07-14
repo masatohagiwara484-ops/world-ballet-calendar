@@ -89,3 +89,38 @@ file boundaries, frozen contracts, definition of done):
 2. **Day Reports** (`reports/day-XX-report.md`) are bilingual — English first, then 日本語.
 3. **`docs/ROADMAP.md` is the only plan.** Update it when priorities change; don't
    spawn parallel plan documents.
+
+## 7. Read — Ballet media directory / 読む — バレエメディア一覧
+
+A curated directory of the world's leading ballet & opera publications, rendered as
+**text-only outbound-link cards**. A goodwill curation surface — we link out, never
+reproduce third-party content. Spec + phased plan: `docs/features/journal-media-directory-spec.md`;
+discovery/decisions: `docs/features/journal-media-directory-IMPLEMENTATION_NOTES.md`.
+
+- **Where it lives:** route **`/read`** (`src/app/read/page.tsx`, nav label "Read").
+  Card `src/components/read/MediaSourceCard.tsx`; filter rail
+  `src/components/read/MediaFilterRail.tsx`; select/facet logic `src/lib/media.ts`;
+  data + `MediaSource` type `src/data/media-sources.ts`. *(Distinct from `/journal`,
+  the hand-written editorial layer.)*
+- **Geography model — reuses performances' geo-filter.** `country` uses première's
+  exact identifiers (full name + lowercase ISO `country_code`, same as `Company`);
+  filter state is **URL query params** (`?region=…&country=…`), mirroring the
+  `/search` `FilterRail` pattern. `region` is a directory-local grouping (première
+  has no site-wide region enum). `international` sources always surface in a separate
+  "Global" bucket when a filter is active, so a worldwide outlet is never hidden.
+- **Hard legal guardrails (P0 — do not violate):** ① **text/CSS only** — brand is a
+  monogram via `GradientArt`/`design.ts`; never fetch/embed a publisher logo, favicon,
+  article image or `og:image`. ② **self-authored blurbs** — never the publisher's own
+  tagline verbatim. ③ every card is one anchor with `target="_blank"
+  rel="noopener noreferrer"` + an "External ↗" affordance. ④ "External media"
+  labelling marks these as independent third parties, not première properties.
+- **How to add a source (no code changes):**
+  1. Append one `MediaSource` entry to `mediaSources` in `src/data/media-sources.ts`.
+  2. Required fields: `id` (unique kebab-case), `name`, `url`, `region` (a `MediaRegion`),
+     `country` (full name matching première's model, or `""` if truly global),
+     `country_code` (lowercase ISO alpha-2, or `""`), `scope`
+     (`international` also appears in the Global bucket), `languages` (ISO 639-1),
+     `type` (tags), `blurb` (owner's own words), `status` (`ok` | `verify`).
+  3. Run `npm run validate:data` — it asserts valid url, region/scope/status enums,
+     non-empty blurb, unique ids, and reports `verify` + new-country entries. Green = done;
+     `/read` renders the new card automatically.
