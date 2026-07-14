@@ -24,13 +24,13 @@
  */
 import { config } from 'dotenv'
 import * as cheerio from 'cheerio'
+import { renderPage } from './fetch-browser'
 
 config({ path: '.env.local' })
 
 const UA =
   process.env.PROBE_UA ??
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-const TIMEOUT_MS = 20000
 
 /** The houses to triage: every one that has no data or known quality issues.
  *  (Deterministic, already-clean houses — Met, ABT — are intentionally omitted.) */
@@ -50,24 +50,23 @@ const TARGETS: Record<string, string> = {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
+/**
+ * Render with real Chrome (the SAME path the crawl uses), NOT plain fetch: these
+ * houses return 404/403 to a bare fetch but serve a normal browser. paginate is
+ * off — we only need the first-screen DOM to read data-source signatures, not
+ * the whole exhausted listing. External <script> bodies (e.g. a theme's
+ * calendar.js) aren't inlined by page.content(), so an admin-ajax action name
+ * living in an external file won't show; detecting admin-ajax + FullCalendar is
+ * still enough to classify the pattern.
+ */
 async function get(url: string): Promise<{ status: number | string; body: string }> {
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
-    const res = await fetch(url, {
-      headers: {
-        'user-agent': UA,
-        accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
-        'accept-language': 'en;q=0.9',
-      },
-      redirect: 'follow',
-      signal: ctrl.signal,
-    })
-    return { status: res.status, body: await res.text().catch(() => '') }
+    const body = await renderPage(url, { ua: UA, paginate: false, timeoutMs: 45000 })
+    return { status: 200, body }
   } catch (err) {
-    return { status: msg(err), body: '' }
-  } finally {
-    clearTimeout(t)
+    const m = msg(err)
+    const code = /HTTP (\d+)/.exec(m)?.[1]
+    return { status: code ? Number(code) : m, body: '' }
   }
 }
 
