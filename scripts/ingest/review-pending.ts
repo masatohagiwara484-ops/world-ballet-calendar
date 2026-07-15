@@ -20,6 +20,7 @@
  */
 import { config } from 'dotenv'
 import { getWriter } from './state'
+import { isNonPerformance } from './filters'
 
 config({ path: '.env.local' })
 
@@ -178,12 +179,25 @@ async function main(): Promise<void> {
   // publish — mirror the webhook: cancellations + bad-date rows are hidden, the rest go live.
   const cancelledIds = rows.filter((r) => r.change_kind === 'cancelled').map((r) => r.id)
   const insaneRows = rows.filter((r) => r.change_kind !== 'cancelled' && isInsane(r))
-  const rejectIds = [...new Set([...cancelledIds, ...insaneRows.map((r) => r.id)])]
+  // Non-performance rows (costume sales, guided tours, adult classes, …) that
+  // predate the ingest-time filter can still sit in the pending queue. Apply the
+  // SAME filter at publish time so a stale "Ballettführung" can never reach the
+  // live site just because it was written before the filter existed.
+  const nonPerfRows = rows.filter((r) => r.change_kind !== 'cancelled' && isNonPerformance(r.title))
+  const rejectIds = [
+    ...new Set([...cancelledIds, ...insaneRows.map((r) => r.id), ...nonPerfRows.map((r) => r.id)]),
+  ]
 
   if (insaneRows.length) {
     console.log(`⚠️  Auto-rejecting ${insaneRows.length} row(s) with implausible dates (kept off the live site):`)
     for (const r of insaneRows.slice(0, 10)) {
       console.log(`      - ${r.company_slug}  "${r.title.slice(0, 40)}"  ${r.start_date}…${r.end_date}`)
+    }
+  }
+  if (nonPerfRows.length) {
+    console.log(`⚠️  Auto-rejecting ${nonPerfRows.length} non-performance row(s) (sales/tours/classes):`)
+    for (const r of nonPerfRows.slice(0, 10)) {
+      console.log(`      - ${r.company_slug}  "${r.title.slice(0, 40)}"`)
     }
   }
   if (rejectIds.length) {
@@ -211,7 +225,8 @@ async function main(): Promise<void> {
   console.log(
     `✅ Published ${publishIds.length} row(s)` +
       `${cancelledIds.length ? `, hid ${cancelledIds.length} cancellation(s)` : ''}` +
-      `${insaneRows.length ? `, rejected ${insaneRows.length} bad-date row(s)` : ''}.`
+      `${insaneRows.length ? `, rejected ${insaneRows.length} bad-date row(s)` : ''}` +
+      `${nonPerfRows.length ? `, rejected ${nonPerfRows.length} non-performance row(s)` : ''}.`
   )
   console.log('   They appear on the live site at the next revalidate (≤1h) or after a redeploy.')
 }
