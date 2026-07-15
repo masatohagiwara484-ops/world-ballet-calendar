@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Manrope, Cormorant_Garamond, Italiana, Fraunces, Playfair_Display } from 'next/font/google'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import CurtainReveal from '@/components/loaders/CurtainReveal'
 import NewsletterPopup from '@/components/audience/NewsletterPopup'
 import './globals.css'
 
@@ -105,19 +104,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${italiana.variable} ${fraunces.variable} ${playfair.variable}`}>
       <body className="bg-stage text-ivory font-sans antialiased">
-        {/* Prime the curtain state before first paint so the curtain (not the
-            page) is what appears on load, and returning visitors never see it. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var s=localStorage.getItem('wboc_curtain_seen');var r=window.matchMedia('(prefers-reduced-motion: reduce)').matches;var d=document.documentElement;if(s||r){d.classList.add('wboc-curtain-done')}else{d.classList.add('wboc-lock')}}catch(e){}})();",
-          }}
-        />
+        {/*
+          Opening curtain animation — DISABLED (removed from the live site).
+          It was freezing the page: the prime-script below locked scroll
+          (`wboc-lock`) on first load and only <CurtainReveal /> could unlock it,
+          so any hiccup left the site unscrollable until a reload. The component
+          (src/components/loaders/CurtainReveal.tsx) and its CSS
+          (`wboc-lock`/`wboc-curtain-done` in globals.css) are kept intact.
+
+          To RE-ENABLE later, restore all three pieces:
+            1. import CurtainReveal from '@/components/loaders/CurtainReveal'
+            2. the prime <script> that adds wboc-lock / wboc-curtain-done
+               (see git history of this file), placed before <CurtainReveal />
+            3. <CurtainReveal /> just below, before <Navbar />
+        */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <CurtainReveal />
         <Navbar />
         {children}
         <Footer />
