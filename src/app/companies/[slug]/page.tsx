@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
-import { gradientFor, monogram, typeLabel } from '@/components/shared/design'
+import { monogram, typeLabel } from '@/components/shared/design'
+import { companyGradient } from '@/lib/companyPalette'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import FollowButton from '@/components/audience/FollowButton'
 import VenueMapLoader from '@/components/map/VenueMapLoader'
@@ -92,43 +93,43 @@ export default async function CompanyPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Editorial gradient hero */}
+      {/* Editorial hero — white-based, per-company tint (matches the cards) */}
       <section
         className="relative pt-36 pb-20 px-6 md:px-10 overflow-hidden"
-        style={{ background: gradientFor(company.slug) }}
+        style={{ background: companyGradient(company.slug) }}
       >
         <div
           aria-hidden
-          className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-20 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
+          className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-40 blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.30) 0%, transparent 70%)' }}
         />
         <span
           aria-hidden
-          className="absolute -bottom-16 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
+          className="absolute -bottom-16 -left-6 font-serif font-light text-ivory/[0.05] leading-none select-none pointer-events-none"
           style={{ fontSize: 'clamp(16rem, 42vw, 40rem)' }}
         >
           {monogram(company.name)}
         </span>
 
         <div className="relative max-w-5xl mx-auto">
-          <p className="text-gold text-[11px] tracking-[0.34em] uppercase mb-5">
+          <p className="text-gold-deep text-[11px] tracking-[0.34em] uppercase mb-5">
             {typeLabel(company.type)} · {company.country}
           </p>
-          <h1 className="font-warbler text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
+          <h1 className="font-warbler font-bold text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
             {company.name}
           </h1>
           {company.name_local && company.name_local !== company.name && (
-            <p className="mt-3 text-white/60 text-lg font-light">
+            <p className="mt-3 text-ivory/70 text-lg font-light">
               {company.name_local}
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-white/75 text-sm">
+          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-ivory/75 text-sm">
             <span>{company.city}</span>
             {company.venue && <span>{company.venue}</span>}
             {company.founded_year && <span>Founded {company.founded_year}</span>}
             {heritage && heritage > 0 && (
-              <span className="text-gold">{heritage}+ years of heritage</span>
+              <span className="text-gold-deep">{heritage}+ years of heritage</span>
             )}
           </div>
 
@@ -139,7 +140,7 @@ export default async function CompanyPage({ params }: Props) {
                   href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-pill px-6 py-3 border border-gold/50 text-gold text-[11px] tracking-[0.2em] uppercase hover:bg-gold/10 hover:shadow-glow-gold transition-all"
+                  className="px-6 py-3 rounded-full bg-white/70 border border-ivory/15 text-ivory text-[11px] tracking-[0.2em] uppercase hover:border-gold/50 hover:text-gold-deep transition-all"
                 >
                   Official site
                 </a>
@@ -149,7 +150,7 @@ export default async function CompanyPage({ params }: Props) {
                   href={`https://instagram.com/${company.instagram.replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glass-pill px-6 py-3 border border-white/30 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:border-white/60 transition-colors"
+                  className="px-6 py-3 rounded-full bg-white/70 border border-ivory/15 text-ivory text-[11px] tracking-[0.2em] uppercase hover:border-gold/50 hover:text-gold-deep transition-colors"
                 >
                   Instagram
                 </a>

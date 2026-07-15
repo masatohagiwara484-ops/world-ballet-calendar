@@ -14,7 +14,6 @@ const LINKS = [
   { href: '/cities', label: 'Cities' },
   { href: '/trips', label: 'Trips' },
   { href: '/map', label: 'Map' },
-  { href: '/journal', label: 'Journal' },
   { href: '/read', label: 'Read' },
   { href: '/partners', label: 'Partners' },
 ]

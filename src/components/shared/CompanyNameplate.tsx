@@ -52,16 +52,18 @@ export default function CompanyNameplate({
         </span>
       )}
 
-      {/* Full name — the plate itself (readable, not decorative) */}
-      <span className="absolute inset-0 flex flex-col items-center justify-center px-7 text-center">
-        <span className="h-px w-8 bg-gold/35 mb-4" aria-hidden />
+      {/* Full name — the plate itself (readable, not decorative). Sized to keep
+          even the longest names (e.g. "The National Ballet of Canada") fully
+          inside the plate, descenders and all — never clipped. */}
+      <span className="absolute inset-0 flex flex-col items-center justify-center px-6 py-10 text-center">
+        <span className="h-px w-8 bg-gold/35 mb-3 flex-shrink-0" aria-hidden />
         <span
-          className="font-serif font-light text-ivory leading-[1.12] [text-wrap:balance]"
-          style={{ fontSize: 'clamp(1.35rem, 2.1vw + 0.9rem, 2.2rem)' }}
+          className="font-serif font-light text-ivory leading-[1.2] [text-wrap:balance]"
+          style={{ fontSize: 'clamp(1.15rem, 1.5vw + 0.75rem, 1.85rem)' }}
         >
           {company.name}
         </span>
-        <span className="h-px w-8 bg-gold/35 mt-4" aria-hidden />
+        <span className="h-px w-8 bg-gold/35 mt-3 flex-shrink-0" aria-hidden />
       </span>
     </div>
   )
