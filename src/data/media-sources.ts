@@ -220,7 +220,7 @@ export const mediaSources: MediaSource[] = [
     languages: ['de'],
     type: ['portal', 'reviews'],
     blurb: 'Germany’s large dance portal — news, reviews and listings.',
-    status: 'verify',
+    status: 'ok',
   },
   {
     id: 'dance-for-you',
@@ -261,7 +261,7 @@ export const mediaSources: MediaSource[] = [
     type: ['reviews'],
     blurb:
       'French classical arts site with a dedicated dance/ballet review section.',
-    status: 'verify',
+    status: 'ok',
   },
   {
     id: 'ballet2000',
@@ -274,7 +274,7 @@ export const mediaSources: MediaSource[] = [
     languages: ['fr', 'it', 'en'],
     type: ['reviews', 'features'],
     blurb: 'Trilingual European magazine on ballet and contemporary dance.',
-    status: 'verify',
+    status: 'ok',
   },
   {
     id: 'la-personne',
@@ -315,20 +315,6 @@ export const mediaSources: MediaSource[] = [
     languages: ['ja'],
     type: ['web magazine'],
     blurb: 'Japanese web magazine focused on ballet features and interviews.',
-    status: 'verify',
-  },
-  {
-    id: 'danza-ballet',
-    name: 'Danza Ballet',
-    url: 'https://www.danzaballet.com/',
-    region: 'Europe',
-    country: 'Spain',
-    country_code: 'es',
-    scope: 'international',
-    languages: ['es'],
-    type: ['reviews', 'news'],
-    blurb:
-      'Spanish-language ballet coverage spanning Spain and Latin America.',
-    status: 'verify',
+    status: 'ok',
   },
 ]
