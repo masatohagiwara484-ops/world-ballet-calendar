@@ -33,7 +33,7 @@ export const NON_PERFORMANCE_TITLE =
 // match "Aufführung" (= a performance) and "Uraufführung" (= a premiere). Match
 // only the guided-tour compounds + standalone word, never the -aufführung forms.
 const NON_VIEWABLE_TITLE =
-  /costume sale|kost[üu]mverkauf|ballettf[üu]hrung|opernf[üu]hrung|hausf[üu]hrung|\bf[üu]hrung\b|guided tour|adult ballet|adult class|open class|offene klasse|brezeln|\bpretzel/i
+  /costume sale|kost[üu]mverkauf|ballettf[üu]hrung|opernf[üu]hrung|hausf[üu]hrung|\bf[üu]hrung\b|guided tour|adult ballet|adult class|open class|offene klasse|brezeln|\bpretzel|\bworkshop\b|werkstatt|patenklasse|tanz für mich|sneak.?klub/i
 
 /** Ballet / shared RBO events that must not appear under the Royal Opera. */
 export const ROYAL_OPERA_BALLET_TITLE =
