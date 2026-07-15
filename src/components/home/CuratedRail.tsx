@@ -87,17 +87,15 @@ function CuratedCard({ performance: p }: { performance: PerformanceWithCompany }
         seed={p.id}
         title={p.title}
         badge={KIND_LABEL[p.kind]}
+        mode="nameplate"
         className="aspect-[4/5] w-full"
-        monogramClassName="text-7xl"
       />
       <div className="p-6">
-        <p className="text-gold text-sm font-medium tabular-nums">
+        {/* Title is the poster above; lead here with the run + place. */}
+        <p className="text-gold text-sm font-medium tabular-nums group-hover:text-gold-deep transition-colors">
           {formatRange(p.start_date, p.end_date)}
         </p>
-        <h3 className="mt-2 font-serif text-2xl text-ivory leading-tight group-hover:text-gold-deep transition-colors line-clamp-2">
-          {p.title}
-        </h3>
-        <p className="mt-2 text-ivory/62 text-sm">
+        <p className="mt-2 text-ivory text-base leading-snug">
           {p.company.name}
           {p.venue ? ` · ${p.venue}` : p.company.venue ? ` · ${p.company.venue}` : ''}
         </p>

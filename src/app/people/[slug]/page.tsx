@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
 import { buildGraph, buildGraphAsync } from '@/lib/graph'
 import { searchAsync } from '@/lib/search'
-import { gradientFor, monogram } from '@/components/shared/design'
+import { gradientFor } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
 import FollowButton from '@/components/audience/FollowButton'
 import type { PersonRole, SearchResultItem } from '@/lib/types'
@@ -130,14 +130,6 @@ export default async function PersonPage({ params }: Props) {
           className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-20 blur-3xl"
           style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
         />
-        {/* Watermark monogram */}
-        <span
-          aria-hidden
-          className="absolute -bottom-16 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
-          style={{ fontSize: 'clamp(14rem, 40vw, 38rem)' }}
-        >
-          {monogram(person.name)}
-        </span>
 
         <div className="relative max-w-5xl mx-auto">
           <Link

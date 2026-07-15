@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getCompanies, getCompanyBySlug, getPerformances } from '@/lib/data'
-import { monogram, typeLabel } from '@/components/shared/design'
+import { typeLabel } from '@/components/shared/design'
 import { companyGradient } from '@/lib/companyPalette'
 import PerformanceListItem from '@/components/shared/PerformanceListItem'
 import FollowButton from '@/components/audience/FollowButton'
@@ -103,28 +103,22 @@ export default async function CompanyPage({ params }: Props) {
           className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-40 blur-3xl"
           style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.30) 0%, transparent 70%)' }}
         />
-        <span
-          aria-hidden
-          className="absolute -bottom-16 -left-6 font-serif font-light text-ivory/[0.05] leading-none select-none pointer-events-none"
-          style={{ fontSize: 'clamp(16rem, 42vw, 40rem)' }}
-        >
-          {monogram(company.name)}
-        </span>
 
         <div className="relative max-w-5xl mx-auto">
-          <p className="text-gold-deep text-[11px] tracking-[0.34em] uppercase mb-5">
+          <p className="text-gold-deep text-[13px] tracking-[0.34em] uppercase mb-5">
             {typeLabel(company.type)} · {company.country}
           </p>
-          <h1 className="font-warbler font-bold text-5xl md:text-7xl text-gradient-gold leading-[1.05]">
+          {/* Extra line-height + padding so gold-clip descenders (e.g. "Royal") never cut. */}
+          <h1 className="font-warbler text-6xl md:text-[5.85rem] text-gradient-gold leading-[1.16] pb-[0.12em]">
             {company.name}
           </h1>
           {company.name_local && company.name_local !== company.name && (
-            <p className="mt-3 text-ivory/70 text-lg font-light">
+            <p className="mt-3 text-ivory/70 text-2xl font-light">
               {company.name_local}
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-ivory/75 text-sm">
+          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 text-ivory/80 text-lg">
             <span>{company.city}</span>
             {company.venue && <span>{company.venue}</span>}
             {company.founded_year && <span>Founded {company.founded_year}</span>}
@@ -178,23 +172,23 @@ export default async function CompanyPage({ params }: Props) {
             <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-8 gap-x-8">
               {company.founded_year && (
                 <div>
-                  <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Founded</dt>
-                  <dd className="font-serif text-2xl text-ivory">{company.founded_year}</dd>
+                  <dt className="text-[13px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Founded</dt>
+                  <dd className="font-serif text-3xl text-ivory">{company.founded_year}</dd>
                 </div>
               )}
               {company.venue && (
                 <div>
-                  <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Venue</dt>
-                  <dd className="text-ivory text-sm leading-snug">{company.venue}</dd>
+                  <dt className="text-[13px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Venue</dt>
+                  <dd className="text-ivory text-lg leading-snug">{company.venue}</dd>
                 </div>
               )}
               <div>
-                <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">City</dt>
-                <dd className="text-ivory text-sm">{company.city}</dd>
+                <dt className="text-[13px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">City</dt>
+                <dd className="text-ivory text-lg">{company.city}</dd>
               </div>
               <div>
-                <dt className="text-[10px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Country</dt>
-                <dd className="text-ivory text-sm">{company.country}</dd>
+                <dt className="text-[13px] tracking-[0.28em] uppercase text-ivory/40 mb-1.5">Country</dt>
+                <dd className="text-ivory text-lg">{company.country}</dd>
               </div>
             </dl>
           </div>

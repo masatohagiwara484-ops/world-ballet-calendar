@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
 import { formatRange } from '@/components/shared/format'
-import { gradientFor, monogram, KIND_LABEL, ticketTarget } from '@/components/shared/design'
+import { KIND_LABEL, ticketTarget } from '@/components/shared/design'
 import type { SearchResultItem, CreditGroup } from '@/lib/types'
 
 interface Props {
@@ -30,25 +30,12 @@ function kindLabel(kind: string): string {
 
 export default function ResultCard({ item }: Props) {
   const tt = ticketTarget(item, item.company)
-  const gradient = gradientFor(item.company.slug)
-  const initials = monogram(item.company.name)
 
   // Filter credits to meaningful groups (non-empty)
   const creditGroups = item.credits.filter((g) => g.people.length > 0)
 
   return (
     <article className="glass-card specular overflow-hidden rounded-glass flex">
-      {/* Art tile — jewel gradient with monogram */}
-      <div
-        className="w-16 flex-shrink-0 flex items-center justify-center rounded-l-glass"
-        style={{ background: gradient }}
-        aria-hidden
-      >
-        <span className="font-serif text-lg text-white/90 select-none tracking-wide">
-          {initials}
-        </span>
-      </div>
-
       <div className="flex-1 p-5 sm:p-6 min-w-0">
         {/* Eyebrow */}
         <p className="text-gold-deep text-[11px] tracking-[0.4em] uppercase mb-2">

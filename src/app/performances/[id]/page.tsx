@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { getPerformances } from '@/lib/data'
 import { formatRange } from '@/components/shared/format'
-import { gradientFor, monogram, KIND_LABEL, bookingUrl, ticketTarget, creditLine } from '@/components/shared/design'
+import { gradientFor, KIND_LABEL, bookingUrl, ticketTarget, creditLine } from '@/components/shared/design'
 import { PlanYourTrip } from '@/components/shared/PlanYourTrip'
 import AddToCalendar from '@/components/shared/AddToCalendar'
 import VerifiedDates from '@/components/shared/VerifiedDates'
@@ -78,14 +78,6 @@ export default async function PerformancePage({ params }: Props) {
           className="absolute -top-24 -right-24 w-[34rem] h-[34rem] rounded-full opacity-20 blur-3xl"
           style={{ background: 'radial-gradient(circle, #D4AF37 0%, transparent 70%)' }}
         />
-        <span
-          aria-hidden
-          className="absolute -bottom-20 -left-6 font-serif font-light text-white/[0.06] leading-none select-none pointer-events-none"
-          style={{ fontSize: 'clamp(16rem, 42vw, 40rem)' }}
-        >
-          {monogram(p.title)}
-        </span>
-
         <div className="relative max-w-4xl mx-auto">
           <Link
             href={`/companies/${p.company.slug}`}
