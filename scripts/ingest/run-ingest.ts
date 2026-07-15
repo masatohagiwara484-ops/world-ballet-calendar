@@ -43,6 +43,8 @@ import {
   upsertCredits,
   writePending,
   markCancelledPending,
+  markSeen,
+  bumpMisses,
   publishIds,
   recordBatch,
 } from './state'
@@ -480,6 +482,15 @@ export function isFailedExtraction(keptCount: number, existingCount: number): bo
   return keptCount === 0 && existingCount > 0
 }
 
+/**
+ * Consecutive runs a published row must be MISSING before it is cancelled. The
+ * crawl's rendered card count varies slightly run-to-run (pagination/network
+ * timing), so a one-run absence is usually a flaky render, not a real
+ * cancellation. Requiring two misses debounces that flicker; at a once-daily
+ * cadence a show must be gone two days running before it leaves the site.
+ */
+const MISS_THRESHOLD = 2
+
 /** Run one source through the full pipeline. */
 async function runSource(src: SourceConfig, args: Args, runId: string): Promise<SourceResult> {
   // --local writes pending rows too, so it needs the Supabase writer like --live.
@@ -606,9 +617,23 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   await upsertEntities(writer, resolved)
   const writtenIds = await writePending(writer, changed)
   await upsertCredits(writer, resolved.credits)
-  await markCancelledPending(writer, cancelled.map((c) => c.id))
+
+  // Cancellation debounce (migration 006): every row seen this run has its miss
+  // streak reset; a row absent this run is only cancelled once it has been
+  // missing MISS_THRESHOLD runs in a row — so a single flaky render can't
+  // un-publish a real, still-running show.
+  await markSeen(writer, rows.map((r) => r.id))
+  const cancelIds = await bumpMisses(
+    writer,
+    cancelled.map((c) => ({ id: c.id, miss_count: existing.get(c.id)?.miss_count })),
+    MISS_THRESHOLD
+  )
+  await markCancelledPending(writer, cancelIds)
+  const cancelledNow = cancelled.filter((c) => cancelIds.includes(c.id))
+  const heldCount = cancelled.length - cancelledNow.length
   console.log(
-    `  ↑ wrote ${writtenIds.length} pending rows (+${cancelled.length} cancelled, ` +
+    `  ↑ wrote ${writtenIds.length} pending rows (+${cancelledNow.length} cancelled` +
+      `${heldCount ? `, ${heldCount} missing held <${MISS_THRESHOLD} runs` : ''}, ` +
       `${rows.length - changed.length} unchanged preserved) to Supabase`
   )
 
@@ -620,7 +645,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
   const autoEligible =
     autoApprove &&
     confidence >= 0.9 &&
-    cancelled.length === 0 &&
+    cancelledNow.length === 0 &&
     changed.length > 0 &&
     changed.every((r) => r.change_kind === 'new')
 
@@ -634,8 +659,10 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     return { ok: true, line: `✅ ${src.companySlug}: ${changed.length} auto-published` }
   }
 
-  // One Telegram digest per company per run — only when something changed.
-  const allIds = [...changed.map((r) => r.id), ...cancelled.map((c) => c.id)]
+  // One Telegram digest per company per run — only when something changed. Only
+  // rows that ACTUALLY cancelled (past the miss debounce) go in the digest;
+  // still-held misses are silent until they cross the threshold.
+  const allIds = [...changed.map((r) => r.id), ...cancelledNow.map((c) => c.id)]
   if (allIds.length > 0) {
     const batchId = `${runId}:${src.companySlug}`
     const lines: DigestLine[] = [
@@ -649,7 +676,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
         price: r.price_range,
         confidence: r.confidence,
       })),
-      ...cancelled.map((c) => ({ change_kind: 'cancelled', title: c.id, start_date: c.start_date, end_date: c.end_date })),
+      ...cancelledNow.map((c) => ({ change_kind: 'cancelled', title: c.id, start_date: c.start_date, end_date: c.end_date })),
     ]
     let messageId: string | null = null
     if (chatId) {
@@ -671,7 +698,7 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
       counts,
     })
   }
-  const pendingN = changed.length + cancelled.length
+  const pendingN = changed.length + cancelledNow.length
   return {
     ok: true,
     line: pendingN > 0 ? `📝 ${src.companySlug}: ${pendingN} pending review` : `· ${src.companySlug}: no changes`,

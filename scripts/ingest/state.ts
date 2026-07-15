@@ -70,14 +70,71 @@ export async function fetchExistingForSource(
   client: SupabaseClient,
   sourceUrl: string
 ): Promise<Map<string, ExistingRow>> {
-  const { data, error } = await client
+  // miss_count is migration 006; select it, but fall back gracefully so a crawl
+  // run before the migration lands still works (misses just aren't tracked).
+  let data: unknown
+  let error: { message?: string } | null
+  ;({ data, error } = await client
     .from('performances')
-    .select('id, content_hash, start_date, end_date, price_range')
-    .eq('source_url', sourceUrl)
+    .select('id, content_hash, start_date, end_date, price_range, miss_count')
+    .eq('source_url', sourceUrl))
+  if (error && /miss_count/.test(error.message ?? '')) {
+    ;({ data, error } = await client
+      .from('performances')
+      .select('id, content_hash, start_date, end_date, price_range')
+      .eq('source_url', sourceUrl))
+  }
   if (error) throw error
   const map = new Map<string, ExistingRow>()
   for (const r of (data ?? []) as ExistingRow[]) map.set(r.id, r)
   return map
+}
+
+/**
+ * Mark rows the crawl saw this run: reset their miss streak and stamp last_seen.
+ * A lightweight UPDATE that touches ONLY miss_count/last_seen_at — never
+ * review_status — so it can safely run over already-published rows. No-op
+ * (warns once) before migration 006 adds the columns.
+ */
+export async function markSeen(client: SupabaseClient, ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const { error } = await client
+    .from('performances')
+    .update({ miss_count: 0, last_seen_at: new Date().toISOString() })
+    .in('id', ids)
+  if (error && !/miss_count|last_seen_at/.test(errMsg(error))) {
+    console.warn(`  ! markSeen failed: ${errMsg(error)}`)
+  }
+}
+
+/**
+ * Debounce cancellations. Given the rows absent from THIS run (with their current
+ * miss_count), bump each by one; return the ids that have now been missing for
+ * `threshold` consecutive runs and should actually be cancelled. Rows still under
+ * the threshold are persisted with their incremented count and left published —
+ * this is what stops a single flaky render from un-publishing a real show.
+ */
+export async function bumpMisses(
+  client: SupabaseClient,
+  candidates: { id: string; miss_count?: number }[],
+  threshold: number
+): Promise<string[]> {
+  if (!candidates.length) return []
+  const cancelIds: string[] = []
+  const holdByValue = new Map<number, string[]>()
+  for (const c of candidates) {
+    const next = (c.miss_count ?? 0) + 1
+    if (next >= threshold) cancelIds.push(c.id)
+    else holdByValue.set(next, [...(holdByValue.get(next) ?? []), c.id])
+  }
+  // Persist the incremented streak for rows we're holding (not yet cancelling).
+  for (const [value, ids] of holdByValue) {
+    const { error } = await client.from('performances').update({ miss_count: value }).in('id', ids)
+    if (error && !/miss_count/.test(errMsg(error))) {
+      console.warn(`  ! bumpMisses(hold) failed: ${errMsg(error)}`)
+    }
+  }
+  return cancelIds
 }
 
 /** Extract a readable message from any error value (Error, Supabase error object, or unknown). */

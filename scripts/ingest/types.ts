@@ -49,4 +49,7 @@ export interface ExistingRow {
   start_date: string
   end_date: string
   price_range: string | null
+  /** Consecutive runs this row was absent from its source's crawl (migration 006).
+   *  Undefined when the column is absent (pre-migration) → treated as 0. */
+  miss_count?: number
 }
