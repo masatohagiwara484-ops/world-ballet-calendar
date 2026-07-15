@@ -30,6 +30,35 @@ export function gradientFor(key: string): string {
   return LUXE_GRADIENTS[hashString(key) % LUXE_GRADIENTS.length]
 }
 
+/**
+ * A WHITE-BASED gradient for a given hue — the whisper-tint plate used by
+ * company cards. Stays inside White Gradient Luxury: near-white, low saturation,
+ * so ink text and gold rules sit cleanly on top. Hue assignment (so no two
+ * companies read alike) lives in src/lib/companyPalette.ts.
+ */
+export function lightGradientForHue(hue: number): string {
+  const h = Math.round(((hue % 360) + 360) % 360)
+  const soft = `hsl(${h} 36% 90%)`
+  const softer = `hsl(${h} 30% 95%)`
+  return `linear-gradient(135deg, #FFFFFF 0%, ${softer} 48%, ${soft} 100%)`
+}
+
+/**
+ * Country flag as an emoji from an ISO 3166-1 alpha-2 code (e.g. "gb" → 🇬🇧).
+ * Pure Unicode — no external image/asset is loaded. Returns "" for a bad code.
+ * (Note: some platforms, e.g. Windows Chrome, render the two letters instead of
+ * a flag glyph; swap for an SVG flag set later if that matters.)
+ */
+export function flagEmoji(countryCode: string): string {
+  const cc = (countryCode || '').trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(cc)) return ''
+  const A = 0x1f1e6
+  return String.fromCodePoint(
+    A + (cc.charCodeAt(0) - 65),
+    A + (cc.charCodeAt(1) - 65)
+  )
+}
+
 /** 1–2 letter monogram from a company/performance name. */
 export function monogram(name: string): string {
   const words = name

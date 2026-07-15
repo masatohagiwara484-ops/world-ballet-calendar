@@ -1,6 +1,5 @@
 import Link from 'next/link'
-import GradientArt from './GradientArt'
-import { typeLabel } from './design'
+import CompanyNameplate from './CompanyNameplate'
 import type { Company } from '@/lib/types'
 
 export default function CompanyCard({ company }: { company: Company }) {
@@ -9,13 +8,7 @@ export default function CompanyCard({ company }: { company: Company }) {
       href={`/companies/${company.slug}`}
       className="group glass-card specular block overflow-hidden rounded-glass"
     >
-      <GradientArt
-        seed={company.slug}
-        title={company.name}
-        badge={typeLabel(company.type)}
-        mode="nameplate"
-        className="aspect-[16/10] w-full"
-      />
+      <CompanyNameplate company={company} className="aspect-[16/10] w-full" />
       <div className="p-6">
         {/* Name is the nameplate above (the card's "art"); lead here with place. */}
         <p className="text-gold text-[10px] tracking-[0.3em] uppercase group-hover:text-gold-deep transition-colors">
