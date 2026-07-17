@@ -83,6 +83,70 @@ earns `auto_approve` automatically after **3** consecutive clean human
 approvals (any reject resets it); date-changes and cancellations always stay
 manual regardless.
 
+## 5b. Ingestion tiers & 30-house routing (first-principles)
+
+**The one hard constraint is trust: never publish a wrong date.** Everything
+below is derived from it. A house is routed to the *most deterministic tier it
+allows*, because a parser cannot hallucinate a date but a model can. Reliability
+and cost both rank **A > B > C** — always try to promote a house up a tier.
+
+| Tier | How | Fetch | Extract | Confidence | Cost |
+|---|---|---|---|---|---|
+| **A · Feed** | Official structured data | plain fetch *or* render | deterministic parse (`ical`/`rss`/`jsonld`/`wp-ajax`) | 1.0 | ~free |
+| **B · Render + LLM** | JS listing, no feed | headless Chrome (real UA) | one Haiku call, hash-cached | 0.85 | ~$0.025/changed page |
+| **C · Operator-local** | 403/SPA blocks even the Mac's Chrome | owner saves the page in their **own** browser → `scripts/ingest/.local/<slug>.html` | same as its kind | as above | manual save |
+
+Two guardrails make even Tier B safe to auto-run: (1) **plausibility validators**
+reject implausible rows before they reach the queue (e.g. a run spanning >200
+days is two merged engagements, not one show); (2) **the human approval gate** —
+nothing publishes without a Telegram tap. Tier A still passes the same gate.
+
+**Fetch rule of thumb:** a `jsonld` house whose plain `fetch` 403s (Cloudflare/
+Akamai bot wall) should carry `render: true` — headless Chrome clears the wall,
+then the JSON-LD is parsed out of the rendered HTML deterministically (still no
+model call). This is exactly how `metropolitan-opera` is wired.
+
+### Current routing of the target houses
+
+Status legend: ✅ verified extracting · ⚠️ registered, needs a live check ·
+🔧 known issue (see below) · ⬜ not yet registered.
+
+**Tier A — deterministic feed**
+- ✅ `american-ballet-theatre` — `wp-ajax` (replicates the site's own calendar POST)
+- ✅ `metropolitan-opera` — `jsonld` + `render:true` (renders past the 403, parses JSON-LD)
+
+**Tier B — render + LLM** (all `kind:'html', render:true`)
+- ✅ `royal-ballet` · `royal-opera` (one RBO site, split by `hotFilter`)
+- ✅ `new-york-city-ballet` · `san-francisco-ballet` (SF: graph-link FK, see below)
+- ✅ `hamburg-ballett` · `stuttgart-ballet` · `bayerische-staatsoper`
+- ⚠️ `wiener-staatsoper` · `wiener-staatsballett`
+- ⚠️ `teatro-alla-scala` · `royal-danish-ballet` · `dutch-national-ballet`
+- ⚠️ `national-ballet-of-canada` · `australian-ballet`
+- ⚠️ `tokyo-ballet` · `new-national-theatre-tokyo`
+- ⚠️ `teatro-colon` · `opera-australia`
+- 🔧 `paris-opera-ballet` · `opera-national-de-paris` — render returns a listing-
+  less shell (SPA/consent wall): 0 booking-links, identical HTML for both URLs.
+  Needs a live diagnostic (`waitForSelector`, or promote to Tier C).
+
+**Runway to ~30:** the remaining seats are new Tier-B rows (a real what's-on URL
+is all that's needed) or Tier-A promotions where a house exposes a feed. Add one
+house at a time, run it alone (`npm run ingest -- --source <slug> --live`),
+confirm the digest, then leave it in `--all`.
+
+### Known issues & their blast radius
+
+- **Stale ghost rows (`…-0026`/`…-0027`)** — an *old* year-parse bug wrote slugs
+  with a stripped century. The parser is fixed (`fixLowYear`/`withFixedYear` in
+  `scripts/scrapers/normalize.ts`), so **no new ghosts are created**; the current
+  crawl only sees them as "missing" and the 2-miss debounce is cleaning them out.
+  They can be purged directly — see `npm run` purge below. **No real show is at
+  risk** (the debounce holds genuine absences too).
+- **`works_slug_key` duplicate + FK** (Royal, SF) — the same work (e.g. *Manon*)
+  is minted with a fresh `work_id` per company crawl, colliding on the unique
+  `slug`. The listing still publishes: the writer falls back to storing the
+  performance **without** graph links (the site doesn't yet query them). A proper
+  fix is shared cross-company work resolution — deferred, no data loss today.
+
 ## 6. Run it
 
 - Manual: GitHub → Actions → **Ingest** → Run workflow (or `npm run ingest -- --all --live`).

@@ -136,6 +136,12 @@ const SOURCES: Record<string, SourceConfig> = {
     companySlug: 'metropolitan-opera',
     url: 'https://www.metopera.org/calendar',
     kind: 'jsonld',
+    // metopera.org 403s a plain fetch even from a residential IP (its bot wall
+    // demands a real browser). Render the page with headless Chrome first, THEN
+    // pull the JSON-LD Event objects out of the rendered HTML — deterministic
+    // parse, no model call, but past the 403. extract() still branches on
+    // kind:'jsonld', so rendering only changes HOW the HTML is fetched.
+    render: true,
     performanceKind: 'opera',
     excludeTitle: /\bABT\b|\bin concert\b|\bconcert\b|\bsymphony\b|\bjubilee\b|\bcelebration\b|\btoast\b|special guest artist|grand finals/i,
   },
