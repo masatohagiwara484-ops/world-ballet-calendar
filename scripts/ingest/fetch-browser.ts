@@ -59,7 +59,7 @@ const CHROME_CANDIDATES = [
  * Find the first Chrome/Chromium executable present on this machine.
  * Returns undefined when none is found → Playwright uses its bundled browser.
  */
-function findSystemChrome(): string | undefined {
+export function findSystemChrome(): string | undefined {
   for (const p of CHROME_CANDIDATES) {
     if (p && existsSync(p)) return p
   }
