@@ -56,6 +56,17 @@ function toIsoDate(v: unknown): string | undefined {
   return s
 }
 
+/** Some feeds' title field carries markup (NNTT: "<small>series caption</small><br>Title")
+ *  rather than plain text. Turn <br> into a readable separator, then strip all tags —
+ *  otherwise literal "<small>…" text renders on the live site. */
+function cleanTitle(raw: string): string {
+  return raw
+    .replace(/<br\s*\/?>/gi, ' — ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function extractJsonApi(json: string, companySlug: string, cfg: JsonApiConfig): RawPerformance[] {
   let parsed: unknown
   try {
@@ -69,7 +80,7 @@ export function extractJsonApi(json: string, companySlug: string, cfg: JsonApiCo
   const out: RawPerformance[] = []
   for (const raw of items as Record<string, unknown>[]) {
     if (!raw || typeof raw !== 'object') continue
-    const title = String(raw[cfg.titleField] ?? '').trim()
+    const title = cleanTitle(String(raw[cfg.titleField] ?? ''))
     const start_date = toIsoDate(raw[cfg.startField])
     if (!title || !start_date) continue
 
