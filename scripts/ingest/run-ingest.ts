@@ -500,7 +500,7 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
     else byId.set(r.id, [r])
   }
 
-  const kept: T[] = []
+  const merged: T[] = []
   for (const group of byId.values()) {
     group.sort((a, b) => a.start_date.localeCompare(b.start_date))
     let block: T | null = null
@@ -511,7 +511,7 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
         continue
       }
       if (daysBetween(block.end_date, r.start_date) > MAX_RUN_GAP_DAYS) {
-        kept.push(block)
+        merged.push(block)
         blockNum += 1
         block = { ...r, id: `${r.id}-${blockNum}` }
         continue
@@ -519,8 +519,16 @@ function collapseProductions<T extends { id: string; title: string; start_date: 
       if (r.start_date < block.start_date) block.start_date = r.start_date
       if (r.end_date > block.end_date) block.end_date = r.end_date
     }
-    if (block) kept.push(block)
+    if (block) merged.push(block)
   }
+
+  // Drop productions that already ENDED — a discovery/travel calendar shows only
+  // what a traveller can still book. Filters Vienna's past-season rows (Kallirhoe
+  // 2025-10, etc.) that its search page lists alongside the upcoming season.
+  const today = new Date().toISOString().slice(0, 10)
+  const kept = merged.filter((r) => r.end_date >= today)
+  dropped += merged.length - kept.length
+
   return { kept, dropped, collapsed: rows.length - dropped - kept.length }
 }
 
