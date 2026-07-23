@@ -31,6 +31,20 @@ function dig(obj: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined), obj)
 }
 
+/** Last path segment of a detail URL, as a stable latin slug. Gives NNTT-style
+ *  houses a meaningful, stable id even when the title is non-latin (a Japanese
+ *  title slugifies to empty, collapsing every production to `p-company--year`). */
+function urlSlug(u: unknown): string {
+  if (!u) return ''
+  try {
+    const path = new URL(String(u)).pathname.replace(/\/+$/, '')
+    const seg = path.split('/').filter(Boolean).pop() ?? ''
+    return seg.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  } catch {
+    return ''
+  }
+}
+
 /** Normalise the common feed date shapes to strict YYYY-MM-DD. Anything else is
  *  passed through untouched for the downstream date-fns normalizer to attempt. */
 function toIsoDate(v: unknown): string | undefined {
@@ -60,11 +74,18 @@ export function extractJsonApi(json: string, companySlug: string, cfg: JsonApiCo
     if (!title || !start_date) continue
 
     const end_date = cfg.endField ? toIsoDate(raw[cfg.endField]) : undefined
-    const ticket =
-      (cfg.ticketField ? raw[cfg.ticketField] : undefined) ?? (cfg.urlField ? raw[cfg.urlField] : undefined)
+    const detailUrl = cfg.urlField ? raw[cfg.urlField] : undefined
+    const ticket = (cfg.ticketField ? raw[cfg.ticketField] : undefined) ?? detailUrl
     const ticket_url = ticket ? String(ticket).trim() : undefined
 
+    // Stable id from the detail-page slug when available, so non-latin titles
+    // don't collapse to `p-company--year`. Falls back (id undefined) to the
+    // normalizer's title-slug for latin-title feeds.
+    const slug = urlSlug(detailUrl)
+    const id = slug ? `p-${companySlug}-${slug}-${start_date.slice(0, 4)}` : undefined
+
     out.push({
+      id,
       company_slug: companySlug,
       title,
       start_date,
