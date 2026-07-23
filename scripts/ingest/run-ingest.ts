@@ -108,6 +108,15 @@ interface SourceConfig {
    * misattributed one. Distinct from JUNK_TITLE, which is the global junk filter.
    */
   excludeTitle?: RegExp
+  /**
+   * When a house serves opera AND ballet from ONE mixed calendar (Vienna: the
+   * genre URL tag doesn't survive the crawl's month pagination), keep only the
+   * rows the extractor classified as this art form — so the opera company never
+   * shows a ballet and vice-versa. Uses the LLM's per-row kind, so set this
+   * INSTEAD of performanceKind (which would force every row to one kind and
+   * defeat the filter).
+   */
+  filterKind?: 'ballet' | 'opera'
 }
 
 /**
@@ -215,8 +224,8 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // frontend loads (found via DevTools Network, 2026-07). Genre-tagged so opera
   // → the opera company and ballet → the ballet company. NOTE: the season slug
   // (2026-27) is hardcoded and needs bumping each new season.
-  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aoper', kind: 'html', render: true, performanceKind: 'opera' },
-  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, performanceKind: 'ballet' },
+  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aoper', kind: 'html', render: true, filterKind: 'opera' },
+  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, filterKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
   'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
@@ -598,7 +607,13 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     console.warn(`  ! extraction threw (${msg(err)}); skipping.`)
     return { ok: false, line: `⚠️ ${src.companySlug}: extraction failed (${msg(err)})` }
   }
-  const { valid, rejected } = normalizeMany(raws, companyIdMap())
+  const { valid: allValid, rejected } = normalizeMany(raws, companyIdMap())
+  // Genre split for mixed-calendar houses: keep only rows the extractor tagged
+  // as this source's art form (Vienna's one calendar carries both).
+  const valid = src.filterKind ? allValid.filter((v) => v.kind === src.filterKind) : allValid
+  if (src.filterKind && valid.length !== allValid.length) {
+    console.log(`  · genre filter (${src.filterKind}): kept ${valid.length}/${allValid.length} rows`)
+  }
   // Collapse per-date events into one row per production, and drop junk. This
   // is what makes the upsert safe (no duplicate ids in a batch) and the calendar
   // correct (one entry per production run, not one per night).
