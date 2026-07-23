@@ -288,10 +288,14 @@ interface Args {
    */
   local: boolean
   selftest: boolean
+  /** Bypass the page-hash cache and re-extract even if the page is unchanged —
+   *  needed after an EXTRACTION-LOGIC change (the cache only knows the page
+   *  didn't change, not that our parser did). */
+  force: boolean
 }
 
 function parseArgs(argv: string[]): Args {
-  const a: Args = { all: false, fixture: false, live: false, local: false, selftest: false }
+  const a: Args = { all: false, fixture: false, live: false, local: false, selftest: false, force: false }
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i]
     if (t === '--adapter' || t === '--source') a.adapter = argv[++i]
@@ -300,6 +304,7 @@ function parseArgs(argv: string[]): Args {
     else if (t === '--live') a.live = true
     else if (t === '--local') a.local = true
     else if (t === '--selftest') a.selftest = true
+    else if (t === '--force') a.force = true
   }
   // --local implies a real write (pending → review), like --live.
   if (!a.fixture && !a.live && !a.local && !a.selftest) a.fixture = true
@@ -587,9 +592,12 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     const state = await getSourceState(writer, src.companySlug)
     autoApprove = state?.auto_approve ?? false
     pageHashValue = pageHash(content)
-    if (state?.last_hash === pageHashValue && existing.size > 0) {
+    if (!args.force && state?.last_hash === pageHashValue && existing.size > 0) {
       console.log(`  · page unchanged since last run, ${existing.size} rows stored — skipping (0 cost)`)
       return { ok: true, line: `· ${src.companySlug}: unchanged` }
+    }
+    if (args.force && state?.last_hash === pageHashValue) {
+      console.log('  · --force: re-extracting despite unchanged page (extraction logic changed)')
     }
     if (state?.last_hash === pageHashValue && existing.size === 0) {
       console.log('  · page unchanged but 0 rows stored — RE-extracting (previous run failed)')
