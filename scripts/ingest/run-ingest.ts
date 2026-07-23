@@ -210,8 +210,13 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   'stuttgart-ballet': { companySlug: 'stuttgart-ballet', url: 'https://www.stuttgart-ballet.de/schedule/calendar/', kind: 'html', render: true, performanceKind: 'ballet' },
   'bayerische-staatsoper': { companySlug: 'bayerische-staatsoper', url: 'https://www.staatsoper.de/en/performances.html', kind: 'html', render: true, performanceKind: 'opera' },
   // Austrian companies.
-  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/performance-plan/season/', kind: 'html', render: true, performanceKind: 'opera' },
-  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsballett.at/spielplan/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Vienna: the /performance-plan/season/ SPA shell serves no listing text; the
+  // real data is the server-rendered calendar SEARCH page the site's own
+  // frontend loads (found via DevTools Network, 2026-07). Genre-tagged so opera
+  // → the opera company and ballet → the ballet company. NOTE: the season slug
+  // (2026-27) is hardcoded and needs bumping each new season.
+  'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aoper', kind: 'html', render: true, performanceKind: 'opera' },
+  'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, performanceKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
   'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
