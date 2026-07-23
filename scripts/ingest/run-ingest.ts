@@ -236,6 +236,22 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
       urlField: 'url',
     },
   },
+  // NNTT's ballet division — a parallel JSON feed of the same shape, ingested
+  // into the SAME company (type 'both') so the house shows opera + ballet like
+  // Teatro alla Scala. Separate source_url keeps the two diffs independent.
+  'new-national-theatre-tokyo-ballet': {
+    companySlug: 'new-national-theatre-tokyo',
+    url: 'https://www.nntt.jac.go.jp/ballet/js/performance.json',
+    kind: 'json-api',
+    performanceKind: 'ballet',
+    jsonApi: {
+      titleField: 'detail',
+      startField: 'startDate',
+      endField: 'endDate',
+      ticketField: 'ticketurl',
+      urlField: 'url',
+    },
+  },
   // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
   // so render the real calendar page and AI-extract instead.
   'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },

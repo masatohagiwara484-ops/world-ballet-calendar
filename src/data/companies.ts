@@ -456,7 +456,9 @@ export const companies: Company[] = [
     slug: 'new-national-theatre-tokyo',
     name: 'New National Theatre, Tokyo',
     name_local: '新国立劇場',
-    type: 'opera',
+    // NNTT resident companies cover both arts (opera + ballet divisions), each
+    // with its own JSON feed — ingested into this one company like Teatro alla Scala.
+    type: 'both',
     country: 'Japan',
     country_code: 'jp',
     city: 'Tokyo',
