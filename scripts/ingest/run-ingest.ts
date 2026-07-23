@@ -31,6 +31,7 @@ import { diffRun } from './differ'
 import { resolveEntities } from './resolver'
 import { extractFeed, type FeedKind } from './extract-feed'
 import { extractWpCalendar } from './extract-wp-calendar'
+import { extractJsonApi, type JsonApiConfig } from './extract-json-api'
 import { isNonPerformance, ROYAL_OPERA_BALLET_TITLE } from './filters'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
 import { renderPage } from './fetch-browser'
@@ -58,9 +59,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 interface SourceConfig {
   companySlug: string
   url: string
-  /** 'html' uses the adapter (if present) or the LLM; feeds and 'wp-ajax' parse
-   *  deterministically. */
-  kind: 'html' | FeedKind | 'wp-ajax'
+  /** 'html' uses the adapter (if present) or the LLM; feeds, 'wp-ajax' and
+   *  'json-api' parse deterministically. */
+  kind: 'html' | FeedKind | 'wp-ajax' | 'json-api'
+  /**
+   * For kind:'json-api' — a house whose SPA fetches its schedule from a plain
+   * JSON endpoint (found via `npm run probe:network`). `url` is that endpoint;
+   * this maps its field names. New National Theatre Tokyo is the first case.
+   */
+  jsonApi?: JsonApiConfig
   /**
    * For kind:'wp-ajax' — a house whose listing is a client-side calendar widget
    * backed by a WordPress admin-ajax.php action (American Ballet Theatre is the
@@ -212,7 +219,23 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
   'australian-ballet': { companySlug: 'australian-ballet', url: 'https://australianballet.com.au/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
   'tokyo-ballet': { companySlug: 'tokyo-ballet', url: 'https://www.thetokyoballet.com/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
-  'new-national-theatre-tokyo': { companySlug: 'new-national-theatre-tokyo', url: 'https://www.nntt.jac.go.jp/english/opera/schedule/', kind: 'html', render: true, performanceKind: 'opera' },
+  // NNTT's schedule page is a JS shell; the operas load from a plain JSON feed
+  // (found via probe:network). Fetch it directly — deterministic, no model call.
+  // Titles come from the JP `detail` field; the `url` slug carries the original
+  // opera name if an English swap is wanted later.
+  'new-national-theatre-tokyo': {
+    companySlug: 'new-national-theatre-tokyo',
+    url: 'https://www.nntt.jac.go.jp/opera/js/performance.json',
+    kind: 'json-api',
+    performanceKind: 'opera',
+    jsonApi: {
+      titleField: 'detail',
+      startField: 'startDate',
+      endField: 'endDate',
+      ticketField: 'ticketurl',
+      urlField: 'url',
+    },
+  },
   // Teatro Colón & Opera Australia: RSS was news/empty (verified via inspect:feed),
   // so render the real calendar page and AI-extract instead.
   'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },
@@ -353,7 +376,7 @@ async function loadContent(src: SourceConfig, args: Args): Promise<string> {
     return res.text()
   }
   // wp-ajax fixtures are the raw JSON response, not a rendered HTML page.
-  const ext = src.kind === 'wp-ajax' ? 'json' : 'html'
+  const ext = src.kind === 'wp-ajax' || src.kind === 'json-api' ? 'json' : 'html'
   return readFile(join(__dirname, '..', 'scrapers', 'fixtures', `${src.companySlug}.${ext}`), 'utf8')
 }
 
@@ -363,6 +386,9 @@ async function extract(src: SourceConfig, content: string): Promise<{ raws: RawP
   let confidence: number
   if (src.kind === 'wp-ajax') {
     raws = extractWpCalendar(content, src.companySlug, src.wpAjax!.categoryLabel)
+    confidence = 1
+  } else if (src.kind === 'json-api') {
+    raws = extractJsonApi(content, src.companySlug, src.jsonApi!)
     confidence = 1
   } else if (src.kind !== 'html') {
     raws = extractFeed(src.kind, content, src.companySlug)
