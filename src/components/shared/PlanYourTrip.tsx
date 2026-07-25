@@ -17,7 +17,12 @@ export function PlanYourTrip({ ctx }: { ctx: TripContext }) {
     <div className="glass-panel p-6 mt-6">
       <p className="text-[10px] tracking-[0.3em] uppercase text-ivory/50 mb-1">Make a night of it</p>
       <p className="text-ivory/45 text-[11px] mb-4">{ctx.city}, {ctx.country}</p>
-      <TripBundleStrip ctx={ctx} variant="vertical" />
+      {/* Sidebar restraint: five steps. The full seven-link board lives on /trips. */}
+      <TripBundleStrip
+        ctx={ctx}
+        variant="vertical"
+        keys={['hotels', 'experiences', 'flights', 'trains', 'transfers']}
+      />
       <Link
         href={`/trips/${citySlug(ctx.city)}`}
         className="mt-4 flex items-center justify-between rounded-xl px-3 py-3 border border-gold/25 bg-gold/[0.06] hover:bg-gold/[0.12] hover:border-gold/50 transition-all group"

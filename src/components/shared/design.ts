@@ -7,6 +7,7 @@
  * text reading clearly on top.
  */
 import type { Company, Performance } from '@/lib/types'
+import { wrapTicketUrl } from '@/lib/affiliate'
 
 /** Rich jewel-tone accent gradients, rotated deterministically per entity. */
 export const LUXE_GRADIENTS: string[] = [
@@ -90,7 +91,8 @@ export function creditLine(p: Pick<Performance, 'composer' | 'choreographer'>): 
 
 /** Best available booking URL for a performance. */
 export function bookingUrl(p: Pick<Performance, 'affiliate_url' | 'ticket_url'>): string | null {
-  return p.affiliate_url ?? p.ticket_url ?? null
+  const direct = p.affiliate_url ?? p.ticket_url
+  return direct ? wrapTicketUrl(direct) : null
 }
 
 /** A ticket destination plus whether it's a direct booking link or the company's
@@ -114,7 +116,7 @@ export function ticketTarget(
   company?: { website?: string | null }
 ): TicketTarget | null {
   const direct = p.affiliate_url ?? p.ticket_url
-  if (direct) return { url: direct, isBoxOffice: false }
+  if (direct) return { url: wrapTicketUrl(direct), isBoxOffice: false }
   if (company?.website) return { url: company.website, isBoxOffice: true }
   return null
 }

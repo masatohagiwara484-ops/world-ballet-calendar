@@ -15,6 +15,9 @@ import {
   Plane,
   Landmark,
   Ticket,
+  TrainFront,
+  CarFront,
+  Smartphone,
   ExternalLink,
 } from 'lucide-react'
 import { tripBundle, type BundleKey, type TripContext } from '@/lib/affiliate'
@@ -23,7 +26,10 @@ const ICONS: Record<BundleKey, typeof Building2> = {
   hotels: Building2,
   experiences: Compass,
   flights: Plane,
+  trains: TrainFront,
+  transfers: CarFront,
   attractions: Landmark,
+  esim: Smartphone,
 }
 
 interface Step {
@@ -51,6 +57,11 @@ interface Props {
   tickets?: TicketsStep
   /** Hide the referral-fee disclosure (when the page renders its own). */
   hideDisclosure?: boolean
+  /**
+   * Which bundle links to show, in bundle order (editorial restraint — a
+   * sidebar wants 4-5 steps, the /trips board wants all). Omit for all.
+   */
+  keys?: BundleKey[]
 }
 
 /** External steps get a sponsored-aware anchor; internal steps a next/link. */
@@ -87,6 +98,7 @@ export default function TripBundleStrip({
   variant = 'vertical',
   tickets,
   hideDisclosure,
+  keys,
 }: Props) {
   const steps: Step[] = []
 
@@ -101,7 +113,10 @@ export default function TripBundleStrip({
       sponsored: false,
     })
   }
-  for (const link of tripBundle(ctx)) {
+  const links = keys
+    ? tripBundle(ctx).filter((l) => keys.includes(l.key))
+    : tripBundle(ctx)
+  for (const link of links) {
     steps.push({
       key: link.key,
       label: link.label,

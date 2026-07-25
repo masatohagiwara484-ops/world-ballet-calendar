@@ -69,7 +69,33 @@ const categories: Category[] = [
     partner: 'Google Flights',
     state: PARTNER_STATUS.flights ? 'live' : 'deep-link',
   },
+  {
+    icon: '🚄',
+    label: 'Getting there',
+    eyebrow: 'Rail & Transfers',
+    headline: 'Arrive without friction',
+    body:
+      'Rail between the European houses and a driver waiting at the airport — the connective tissue of an opera itinerary. Trains through Trainline, arrivals through Welcome Pickups, both matched to your destination city.',
+    accent: '#1B2A4A',
+    partner: 'Trainline · Welcome Pickups',
+    state:
+      PARTNER_STATUS.trainline || PARTNER_STATUS.welcomepickups ? 'live' : 'links-active',
+  },
+  {
+    icon: '📶',
+    label: 'Stay connected',
+    eyebrow: 'Travel eSIM',
+    headline: 'Data from the moment you land',
+    body:
+      'A travel eSIM for the destination country, installed before you leave home — tickets on your phone at the door, the curtain-call photograph shared before the applause ends. Through Airalo.',
+    accent: '#1A3A2E',
+    partner: 'Airalo',
+    state: PARTNER_STATUS.airalo ? 'live' : 'links-active',
+  },
 ]
+
+/** True when at least one partner id is configured — drives the status badge. */
+const ANY_PARTNER_LIVE = Object.values(PARTNER_STATUS).some(Boolean)
 
 /* ---------- Category Card ---------- */
 
@@ -191,7 +217,9 @@ export default function PartnersPage() {
               textTransform: 'uppercase',
             }}
           >
-            Live — first partnerships active
+            {ANY_PARTNER_LIVE
+              ? 'Live — first partnerships active'
+              : 'Links live — partnerships onboarding'}
           </span>
         </div>
       </div>
