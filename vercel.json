@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/digest/weekly",
+      "schedule": "0 22 * * 3"
+    }
+  ],
   "headers": [
     {
       "source": "/_next/static/(.*)",

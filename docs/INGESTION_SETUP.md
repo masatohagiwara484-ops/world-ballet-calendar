@@ -188,3 +188,26 @@ HTML is git-ignored — never committed. The page-hash cache means re-saving an
 unchanged page costs nothing; only changed pages spend a model call.
 
 See `scripts/ingest/.local/README.md` for the same checklist next to the folder.
+
+## 8. Reader email — what approval actually sends
+
+Approving a batch does **not** email everyone. The daily crawl exists for
+freshness; a reader who follows twenty houses must never get twenty emails a
+day. So the send is split:
+
+| When | What | Who |
+|---|---|---|
+| On approval (instant) | **Date changes only** (`change_kind='date-changed'`) | followers of that company / touched works |
+| Thursday 07:00 JST (cron) | **The weekly digest** — this week on stage · worth the journey (12 weeks out, every house, never repeated to the same reader) · newly announced | every subscriber, including newsletter-only ones |
+
+A reader with nothing in all three sections is skipped that week — an empty
+letter costs more trust than a missed one. Both paths are idempotent
+(`notification_log` keyed by `digest:<ISO-week>` or the batch id), so a retry
+or a double-tap can't double-send. Cast is never listed; every entry links to
+the company's own site and the source listing, under a standing "confirm with
+the house before booking" note.
+
+Setup: run `007_notifications.sql` + `008_digest.sql`, set `RESEND_API_KEY`
+(and later `EMAIL_FROM` once the domain is verified) and `CRON_SECRET` in
+Vercel. Test with `npx tsx scripts/test-digest.ts you@example.com` (dry run),
+then `--send`; re-running must report `sent: 0`.

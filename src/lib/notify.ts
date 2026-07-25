@@ -1,6 +1,12 @@
 /**
- * Follower alerts — email everyone who follows a company (or a touched work)
- * the moment its performances publish.
+ * URGENT alerts — a date change at a house you follow, sent the moment it is
+ * approved.
+ *
+ * This is deliberately narrow. Newly announced runs travel in the Thursday
+ * digest (src/lib/digest.ts); only a CHANGE to dates already published is
+ * worth interrupting someone's week, because a reader may have booked flights
+ * around the old ones. Cancellations are hidden at approval time (rejected),
+ * so 'date-changed' is the whole urgent set.
  *
  * Design constraints (in priority order):
  *   1. NEVER break the approval flow — the whole run is wrapped, errors are
@@ -10,9 +16,9 @@
  *   3. One email per subscriber per approval — a follower of the company AND
  *      three of its works still gets a single message.
  *
- * Scope (v1): company + work followers. person followers (dancers) are on
- * hold by owner decision; the `city:all` sentinel is the newsletter list and
- * never receives per-approval alerts.
+ * Scope: company + work followers. person followers (dancers) are on hold by
+ * owner decision; the `city:all` sentinel is the newsletter list and receives
+ * the weekly digest instead.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
@@ -65,13 +71,13 @@ export async function notifyFollowersOfBatch(
       ((sentBefore ?? []) as { email: string }[]).map((r) => r.email)
     )
 
-    // Which of the batch's rows are actually live and alert-worthy?
+    // Only date changes are urgent — new runs wait for the weekly digest.
     const { data: perfData } = await client
       .from('performances')
       .select('id, title, start_date, end_date, change_kind, work_id')
       .in('id', ids)
       .eq('review_status', 'published')
-      .in('change_kind', ['new', 'date-changed'])
+      .eq('change_kind', 'date-changed')
     const perfs = (perfData ?? []) as PerfRow[]
     if (perfs.length === 0) return
 
@@ -119,8 +125,10 @@ export async function notifyFollowersOfBatch(
     )
     if (subscribers.length === 0) return
 
-    const added = perfs.filter((p) => p.change_kind === 'new')
-    const redated = perfs.filter((p) => p.change_kind === 'date-changed')
+    // Urgent alerts carry date changes only; `added` stays empty by design so
+    // the template renders its "Dates updated" section alone.
+    const added: PerfRow[] = []
+    const redated = perfs
 
     let sent = 0
     let skipped = 0
