@@ -32,8 +32,13 @@ export const LLM_CONFIDENCE = 0.85
 /** Characters per model call (~5k tokens of input). Chunking keeps each call
  *  cheap while removing the old single-page truncation that dropped later rows. */
 const CHARS_PER_CHUNK = 20_000
-/** Hard cap on chunks per page — bounds worst-case cost (8 × ~$0.025 ≈ $0.20). */
-const MAX_CHUNKS = 8
+/**
+ * Hard cap on chunks per page — bounds worst-case cost (~$0.025/chunk). Raised
+ * from 8 after Vienna's full-season calendar came in at 7 chunks: one more month
+ * of listings and the tail of the season would have been silently dropped. When
+ * the cap IS hit we now warn loudly rather than truncating in silence.
+ */
+const MAX_CHUNKS = 16
 
 const RowSchema = z.object({
   title: z.string(),
@@ -239,6 +244,14 @@ export async function extractWithLlm(
   // crawl logs showed a healthy page while the model received ~nothing.
   const chunks = chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
   console.log(`  · LLM input: ${content.length} chars → ${chunks.length} chunk(s)`)
+  // Silent truncation is how a season's tail disappears without anyone noticing.
+  const covered = chunks.reduce((n, c) => n + c.length, 0)
+  if (chunks.length >= MAX_CHUNKS && covered < content.length) {
+    console.warn(
+      `  ! chunk cap hit: only ${covered}/${content.length} chars sent to the model ` +
+        `— the END of this listing was NOT read. Raise MAX_CHUNKS or narrow the page.`
+    )
+  }
 
   const all: RawPerformance[] = []
   for (const c of chunks) {
