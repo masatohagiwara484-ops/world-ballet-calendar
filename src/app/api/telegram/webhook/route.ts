@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { answerCallback, editMessage } from '@/lib/telegram'
+import { notifyFollowersOfBatch } from '@/lib/notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -160,6 +161,9 @@ export async function POST(req: NextRequest): Promise<Response> {
     await client.from('ingest_batches').update({ status: 'approved' }).eq('id', batchId)
     await adjustTrust(client, batch.company_slug, true)
     await revalidateFor(client, batch.company_slug, ids)
+    // Follower alerts — awaited (Vercel may freeze the function after the
+    // response), but internally never-throwing, so approval can't break.
+    await notifyFollowersOfBatch(client, batchId, batch.company_slug, ids)
     resultText = `✅ *Approved* — ${ids.length} change${ids.length === 1 ? '' : 's'} now live.`
   } else if (action === 'reject') {
     await client
