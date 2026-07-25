@@ -226,6 +226,13 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // (2026-27) is hardcoded and needs bumping each new season.
   'wiener-staatsoper': { companySlug: 'wiener-staatsoper', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aoper', kind: 'html', render: true, filterKind: 'opera' },
   'wiener-staatsballett': { companySlug: 'wiener-staatsballett', url: 'https://www.wiener-staatsoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, filterKind: 'ballet' },
+  // The Vienna State Ballet is resident at BOTH Vienna houses — several of its
+  // productions (Masterpieces for Two, Carmen Suite, Marie Antoinette, Max und
+  // Moritz) play only at the Volksoper and are absent from the Staatsoper
+  // calendar entirely. Same CMS, so the same calendar-search URL shape; ingested
+  // into the SAME company, like NNTT's two divisional feeds. filterKind drops
+  // the Volksoper's own operetta/musical programming.
+  'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: 'https://www.volksoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, filterKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
   'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
