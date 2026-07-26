@@ -239,7 +239,12 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // calendar entirely. Same CMS, so the same calendar-search URL shape; ingested
   // into the SAME company, like NNTT's two divisional feeds. filterKind drops
   // the Volksoper's own operetta/musical programming.
-  'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: 'https://www.volksoper.at/en/calendar/search/2026-27/?tags=genres%3Aballette', kind: 'html', render: true, filterKind: 'ballet' },
+  // URL BLANK = skipped. The guessed calendar-search path (same shape as
+  // wiener-staatsoper.at, shared CMS) returned a 34-char empty document, so it
+  // doesn't exist. Needs the real Volksoper listing URL — the one whose page
+  // actually shows Masterpieces for Two / Carmen Suite / Marie Antoinette /
+  // Max und Moritz with their dates. Paste it here to activate.
+  'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: '', kind: 'html', render: true, filterKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
   'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
