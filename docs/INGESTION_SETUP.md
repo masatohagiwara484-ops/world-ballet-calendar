@@ -210,4 +210,22 @@ the house before booking" note.
 Setup: run `007_notifications.sql` + `008_digest.sql`, set `RESEND_API_KEY`
 (and later `EMAIL_FROM` once the domain is verified) and `CRON_SECRET` in
 Vercel. Test with `npx tsx scripts/test-digest.ts you@example.com` (dry run),
-then `--send`; re-running must report `sent: 0`.
+then `--send`; re-running must report `sent: 0`. The email argument is
+normalized (trim + lowercase) before matching, so casing/whitespace can't
+cause a false "0 subscribers" result.
+
+### 9. Sign-in — seeing your own followed companies
+
+`follows`/`subscribers` stay email-based (unchanged, still how the digest is
+addressed) but can now optionally link to a Supabase Auth account via a
+nullable `user_id` column (`009_auth_follows.sql`), so a signed-in visitor can
+see everything they follow at `/my/companies` instead of only ever getting a
+one-shot "we'll email you" confirmation. Sign-in is passwordless (magic link,
+`supabase.auth.signInWithOtp`) — no password UI, matching FollowButton's
+low-friction, editorial tone. Anonymous following via `/api/follow` is
+completely unaffected; `user_id` is simply null for those rows.
+
+Setup: run `009_auth_follows.sql`, then in the Supabase dashboard set
+**Authentication → URL Configuration → Site URL / Redirect URLs** to include
+the deployed domain + `/auth/callback`. No new environment variables are
+required (reuses `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY`).
