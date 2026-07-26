@@ -246,7 +246,7 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // Max und Moritz with their dates. Paste it here to activate.
   'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: 'https://www.volksoper.at/schedule/', kind: 'html', render: true, filterKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
-  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
+  'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2026-2027/index.html', kind: 'html', render: true },
   // Owner-verified listing URLs (2026-07). Each was checked in a browser to show
   // real titles + dates — the lesson from Paris, whose configured URL was a 404.
   'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://www.kglteater.dk/en/ballet/', kind: 'html', render: true, performanceKind: 'ballet' },
