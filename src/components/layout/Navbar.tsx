@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import clsx from 'clsx'
+import { createClient } from '@/lib/auth/browser'
 
 const LINKS = [
   { href: '/', label: 'Home' },
@@ -21,6 +22,9 @@ const LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  // null = not yet determined; we render nothing until then so the label never
+  // flickers from "Sign in" to "Your companies" on a signed-in visitor's load.
+  const [authed, setAuthed] = useState<boolean | null>(null)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -29,6 +33,36 @@ export default function Navbar() {
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [])
+
+  // The nav renders on every page, so this must never throw — an unconfigured
+  // or unreachable Supabase simply leaves the account entry hidden.
+  useEffect(() => {
+    let cancelled = false
+    let unsubscribe: (() => void) | undefined
+    try {
+      const supabase = createClient()
+      supabase.auth
+        .getUser()
+        .then(({ data }) => {
+          if (!cancelled) setAuthed(Boolean(data.user))
+        })
+        .catch(() => undefined)
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!cancelled) setAuthed(Boolean(session?.user))
+      })
+      unsubscribe = () => data.subscription.unsubscribe()
+    } catch {
+      // Auth unavailable — leave `authed` null.
+    }
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
+  }, [])
+
+  const account = authed
+    ? { href: '/my/companies', label: 'Your companies' }
+    : { href: '/login', label: 'Sign in' }
 
   // Close mobile menu on route change.
   useEffect(() => {
@@ -104,6 +138,29 @@ export default function Navbar() {
                 )}
               </Link>
             ))}
+
+            {/* The reader's own area — set apart from the nine editorial links
+                by a hairline, so the season's navigation stays one sequence. */}
+            {authed !== null && (
+              <>
+                <span aria-hidden className="h-3 w-px bg-[rgba(26,22,15,0.14)]" />
+                <Link
+                  href={account.href}
+                  aria-current={isActive(account.href) ? 'page' : undefined}
+                  className={clsx(
+                    'relative text-[11px] tracking-[0.22em] uppercase transition-colors duration-300',
+                    isActive(account.href)
+                      ? 'text-gold-deep'
+                      : 'text-ivory/70 hover:text-ivory'
+                  )}
+                >
+                  {account.label}
+                  {isActive(account.href) && (
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-px w-5 bg-gold-deep" />
+                  )}
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -144,6 +201,19 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+
+              {authed !== null && (
+                <Link
+                  href={account.href}
+                  aria-current={isActive(account.href) ? 'page' : undefined}
+                  className={clsx(
+                    'py-3 text-sm tracking-[0.18em] uppercase transition-colors duration-300',
+                    isActive(account.href) ? 'text-gold-deep' : 'text-ivory/80 hover:text-ivory'
+                  )}
+                >
+                  {account.label}
+                </Link>
+              )}
             </div>
           </div>
         )}

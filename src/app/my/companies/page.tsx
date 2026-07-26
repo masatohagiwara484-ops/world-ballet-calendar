@@ -4,9 +4,11 @@ import { createClient } from '@/lib/auth/server'
 import { getCompanies } from '@/lib/data'
 import CompanyCard from '@/components/shared/CompanyCard'
 import UnfollowButton from './UnfollowButton'
+import SignOutButton from './SignOutButton'
 
 export const metadata: Metadata = {
-  title: 'Your companies — première',
+  // The root layout's title template appends " — première".
+  title: 'Your companies',
   robots: { index: false, follow: false },
 }
 
@@ -56,10 +58,17 @@ export default async function MyCompaniesPage() {
   return (
     <main className="min-h-screen px-8 py-24 bg-stage">
       <div className="max-w-5xl mx-auto">
-        <p className="text-gold-deep text-xs tracking-[0.3em] uppercase mb-4">première</p>
-        <h1 className="font-serif text-4xl md:text-5xl mb-12 text-gradient-gold">
-          The companies you follow
-        </h1>
+        <div className="flex items-start justify-between gap-6 mb-12">
+          <div>
+            <p className="text-gold-deep text-xs tracking-[0.3em] uppercase mb-4">première</p>
+            <h1 className="font-serif text-4xl md:text-5xl text-gradient-gold">
+              The companies you follow
+            </h1>
+          </div>
+          <div className="pt-2 shrink-0">
+            <SignOutButton />
+          </div>
+        </div>
 
         {companies.length === 0 ? (
           <p className="text-ivory/60 text-base leading-relaxed">
