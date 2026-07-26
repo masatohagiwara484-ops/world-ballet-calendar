@@ -143,6 +143,10 @@ export async function sendWeeklyDigests(
   const weekKey = opts.weekKey ?? isoWeekKey(now)
   const batchId = `digest:${weekKey}`
   const result: DigestResult = { sent: 0, empty: 0, alreadySent: 0, overCap: 0, weekKey }
+  // Stored emails are trim+lowercased (see audience.ts normalizeEmail); match
+  // the same shape here so a case/whitespace mismatch on the caller's side
+  // can never silently return zero rows.
+  const onlyEmail = opts.onlyEmail?.trim().toLowerCase()
 
   try {
     const today = isoDate(now)
@@ -155,10 +159,13 @@ export async function sendWeeklyDigests(
       .from('subscribers')
       .select('email, token, unsubscribed_at')
       .is('unsubscribed_at', null)
-    if (opts.onlyEmail) subQuery = subQuery.eq('email', opts.onlyEmail)
+    if (onlyEmail) subQuery = subQuery.eq('email', onlyEmail)
     const { data: subData } = await subQuery
     const subscribers = (subData ?? []) as SubscriberRow[]
-    if (subscribers.length === 0) return result
+    if (subscribers.length === 0) {
+      if (onlyEmail) console.warn(`[digest] onlyEmail=${onlyEmail} matched 0 subscriber rows`)
+      return result
+    }
 
     // Already-sent readers for this week (idempotency).
     const { data: logData } = await client

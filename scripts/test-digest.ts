@@ -19,7 +19,8 @@ config({ path: '.env.local' })
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2)
-  const email = args.find((a) => !a.startsWith('--'))
+  const rawEmail = args.find((a) => !a.startsWith('--'))
+  const email = rawEmail?.trim().toLowerCase()
   const send = args.includes('--send')
   const weekIdx = args.indexOf('--week')
   const weekKey = weekIdx >= 0 ? args[weekIdx + 1] : undefined
