@@ -244,14 +244,19 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // doesn't exist. Needs the real Volksoper listing URL — the one whose page
   // actually shows Masterpieces for Two / Carmen Suite / Marie Antoinette /
   // Max und Moritz with their dates. Paste it here to activate.
-  'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: '', kind: 'html', render: true, filterKind: 'ballet' },
+  'wiener-staatsballett-volksoper': { companySlug: 'wiener-staatsballett', url: 'https://www.volksoper.at/schedule/', kind: 'html', render: true, filterKind: 'ballet' },
   // Italian / Danish / Dutch / Canadian / Australian / Japanese companies.
   'teatro-alla-scala': { companySlug: 'teatro-alla-scala', url: 'https://www.teatroallascala.org/en/season/2025-2026/', kind: 'html', render: true },
-  'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://kglteater.dk/en/programme/dance-and-ballet', kind: 'html', render: true, performanceKind: 'ballet' },
-  'dutch-national-ballet': { companySlug: 'dutch-national-ballet', url: 'https://www.operaballet.nl/en/ballet/season', kind: 'html', render: true, performanceKind: 'ballet' },
-  'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Owner-verified listing URLs (2026-07). Each was checked in a browser to show
+  // real titles + dates — the lesson from Paris, whose configured URL was a 404.
+  'royal-danish-ballet': { companySlug: 'royal-danish-ballet', url: 'https://www.kglteater.dk/en/ballet/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Season-scoped path; needs a yearly bump like Paris/Vienna.
+  'dutch-national-ballet': { companySlug: 'dutch-national-ballet', url: 'https://www.operaballet.nl/en/program/season-26-27/ballet', kind: 'html', render: true, performanceKind: 'ballet' },
+  'national-ballet-of-canada': { companySlug: 'national-ballet-of-canada', url: 'https://national.ballet.ca/performances/202627-season/', kind: 'html', render: true, performanceKind: 'ballet' },
   'australian-ballet': { companySlug: 'australian-ballet', url: 'https://australianballet.com.au/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
-  'tokyo-ballet': { companySlug: 'tokyo-ballet', url: 'https://www.thetokyoballet.com/performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // /en/performance/ is the ENGLISH listing; the old /performances/ path served
+  // the Japanese shell with no extractable listing.
+  'tokyo-ballet': { companySlug: 'tokyo-ballet', url: 'https://thetokyoballet.com/en/performance/', kind: 'html', render: true, performanceKind: 'ballet' },
   // NNTT's schedule page is a JS shell; the operas load from a plain JSON feed
   // (found via probe:network). Fetch it directly — deterministic, no model call.
   // Titles come from the JP `detail` field; the `url` slug carries the original
