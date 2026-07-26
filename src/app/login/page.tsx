@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import LoginForm from './LoginForm'
 
 export const metadata: Metadata = {
-  title: 'Sign in — première',
+  // The root layout's title template appends " — première".
+  title: 'Sign in',
   robots: { index: false, follow: false },
 }
 
