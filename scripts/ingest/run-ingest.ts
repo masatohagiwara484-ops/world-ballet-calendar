@@ -196,7 +196,12 @@ const SOURCES: Record<string, SourceConfig> = {
  * house's real what's-on URL to activate it (blank = skipped). Royal Ballet's
  * URL is known from the operator; the others need their season/what's-on URL.
  */
-const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/season/ballet'
+// The old /en/season/ballet URL returns HTTP 404 — it simply doesn't exist, which
+// is the whole reason Paris extracted 0 rows for weeks. The real listings live
+// under /en/programme/season-YY-YY/shows-<genre> and are SERVER-RENDERED (the
+// browser fires no schedule XHR — only analytics), so the normal render + LLM
+// path works. NOTE: the season slug is hardcoded and needs a yearly bump.
+const PARIS_OPERA_BALLET_LISTING = 'https://www.operadeparis.fr/en/programme/season-26-27/shows-ballet'
 const NYCB_LISTING = 'https://www.nycballet.com/season-and-tickets/'
 const SF_BALLET_LISTING = 'https://www.sfballet.org/calendar/'
 
@@ -208,8 +213,10 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // events from the opera filter so Royal Opera shows only genuine opera.
   'royal-opera': { companySlug: 'royal-opera', url: 'https://www.rbo.org.uk/tickets-and-events?hotFilter=opera', kind: 'html', render: true, performanceKind: 'opera', maxPages: 3, excludeTitle: ROYAL_OPERA_BALLET_TITLE },
   // Paris Opera — dedicated ballet and opera season pages.
-  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
-  'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/season/operas', kind: 'html', render: true, performanceKind: 'opera' },
+  // filterKind (not performanceKind) so a genre chip the crawler happens to trip
+  // can't land operas under the ballet company, as it did at Vienna.
+  'paris-opera-ballet': { companySlug: 'paris-opera-ballet', url: PARIS_OPERA_BALLET_LISTING, kind: 'html', render: true, filterKind: 'ballet' },
+  'opera-national-de-paris': { companySlug: 'opera-national-de-paris', url: 'https://www.operadeparis.fr/en/programme/season-26-27/shows-opera', kind: 'html', render: true, filterKind: 'opera' },
   // US companies. (american-ballet-theatre moved to SOURCES — wp-ajax, see above)
   'new-york-city-ballet': { companySlug: 'new-york-city-ballet', url: NYCB_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
   'san-francisco-ballet': { companySlug: 'san-francisco-ballet', url: SF_BALLET_LISTING, kind: 'html', render: true, performanceKind: 'ballet' },
