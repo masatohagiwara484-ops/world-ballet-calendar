@@ -294,6 +294,18 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // so render the real calendar page and AI-extract instead.
   'teatro-colon': { companySlug: 'teatro-colon', url: 'https://teatrocolon.org.ar/calendario/', kind: 'html', render: true, performanceKind: 'opera' },
   'opera-australia': { companySlug: 'opera-australia', url: 'https://opera.org.au/whats-on/', kind: 'html', render: true, performanceKind: 'opera' },
+
+  // --- Tier B expansion (2026-07). Listing URLs verified in a browser by the
+  // owner before wiring, the lesson from Paris (whose configured URL was a 404).
+  'english-national-ballet': { companySlug: 'english-national-ballet', url: 'https://www.ballet.org.uk/whats-on/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'birmingham-royal-ballet': { companySlug: 'birmingham-royal-ballet', url: 'https://www.brb.org.uk/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
+  'boston-ballet': { companySlug: 'boston-ballet', url: 'https://www.bostonballet.org/home/tickets-performances/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Season-scoped path — needs a yearly bump, like Paris/Vienna/Dutch.
+  'houston-ballet': { companySlug: 'houston-ballet', url: 'https://www.houstonballet.org/seasontickets/2026-2027-season/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // operan.se is the Royal Swedish OPERA's site; the genre query narrows it to
+  // dance, but filterKind guards against opera bleeding in the way it did at Vienna.
+  'royal-swedish-ballet': { companySlug: 'royal-swedish-ballet', url: 'https://www.operan.se/en/productions?genres=Ballet&genres=Dance', kind: 'html', render: true, filterKind: 'ballet' },
+  'staatsballett-berlin': { companySlug: 'staatsballett-berlin', url: 'https://www.staatsballett-berlin.de/en/schedule.html', kind: 'html', render: true, performanceKind: 'ballet' },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
