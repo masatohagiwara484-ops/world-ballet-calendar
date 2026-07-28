@@ -27,13 +27,18 @@
  * line to restore the previous keep-everything behaviour.
  */
 export const NON_PERFORMANCE_TITLE =
-  /behind the scenes|insight|insider|tester|click in|kantinentalk|\btalk\b|eintauchen|open house|study day|meet the artist|im gespräch|q ?& ?a/i
+  /behind the scenes|insight|insider|tester|click in|kantinentalk|\btalk\b|eintauchen|open house|study day|meet the (artist|choreographer|dancer|cast|company)|im gespräch|q ?& ?a/i
 
 // NOTE on "Führung": German compounds it, so a plain /führung/ would wrongly
 // match "Aufführung" (= a performance) and "Uraufführung" (= a premiere). Match
 // only the guided-tour compounds + standalone word, never the -aufführung forms.
+// "company class" / "zum zuschauen" (German: "training to watch") added
+// 2026-07-28 from the Tier B review pass — Staatsballett Berlin and the Royal
+// Swedish Ballet list open training sessions in the same feed as their shows.
+// "Relaxed Performance" is deliberately NOT matched: it is a real, staged
+// performance adapted for neurodivergent audiences.
 const NON_VIEWABLE_TITLE =
-  /costume sale|kost[üu]mverkauf|ballettf[üu]hrung|opernf[üu]hrung|hausf[üu]hrung|\bf[üu]hrung\b|guided tour|adult ballet|adult class|open class|offene klasse|brezeln|\bpretzel|\bworkshop\b|werkstatt|patenklasse|tanz für mich|sneak.?klub/i
+  /costume sale|kost[üu]mverkauf|ballettf[üu]hrung|opernf[üu]hrung|hausf[üu]hrung|\bf[üu]hrung\b|guided tour|adult ballet|adult class|open class|offene klasse|company class|zum zuschauen|brezeln|\bpretzel|\bworkshop\b|werkstatt|patenklasse|tanz für mich|sneak.?klub/i
 
 /** Ballet / shared RBO events that must not appear under the Royal Opera. */
 export const ROYAL_OPERA_BALLET_TITLE =
