@@ -874,7 +874,30 @@ function selftest(): void {
       ? '  ✓ zero-extraction guard blocks a false mass-cancellation'
       : '  ✗ zero-extraction guard FAILED'
   )
-  if (!ok || !guardOk) process.exit(1)
+
+  // Title drift: the LLM re-words the SAME production between runs, so its
+  // title-derived id changes ("TanzTanzTanz" → "Tanz Tanz"). Without a rescue
+  // that lands on the site twice — once as new, once awaiting cancellation.
+  const drifted = mk({ id: 'p-tanz-tanz', start_date: '2027-01-10', end_date: '2027-01-11' })
+  drifted.content_hash = contentHash(drifted)
+  const driftExisting = new Map<string, ExistingRow>([
+    ['p-tanztanztanz', { id: 'p-tanztanztanz', content_hash: 'STALE', start_date: '2027-01-10', end_date: '2027-01-11', price_range: null }],
+    // Same company, different dates — must NOT be claimed by the rescue.
+    ['p-other', { id: 'p-other', content_hash: 'y', start_date: '2027-05-01', end_date: '2027-05-09', price_range: null }],
+  ])
+  const drift = diffRun([drifted], driftExisting)
+  const driftOk =
+    drift.rows.length === 1 &&
+    drift.rows[0].id === 'p-tanztanztanz' &&
+    drift.rows[0].change_kind !== 'new' &&
+    drift.counts.cancelled === 1 &&
+    drift.cancelled[0]?.id === 'p-other'
+  console.log(
+    driftOk
+      ? '  ✓ title-drift rescue keeps a re-titled production as ONE row'
+      : '  ✗ title-drift rescue FAILED'
+  )
+  if (!ok || !guardOk || !driftOk) process.exit(1)
 }
 
 const badge = (k?: string) =>

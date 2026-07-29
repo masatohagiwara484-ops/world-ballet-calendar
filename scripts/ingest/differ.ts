@@ -63,10 +63,46 @@ export function diffRun(
     unchanged: 0,
   }
 
+  // Pass 1 — match on id (the title-derived slug).
+  const matched = incoming.map((row) => ({ row, ex: existing.get(row.id) }))
   const seen = new Set<string>()
-  const rows = incoming.map((row) => {
-    seen.add(row.id)
-    const change_kind = classify(row, existing.get(row.id))
+  for (const m of matched) if (m.ex) seen.add(m.row.id)
+
+  /*
+   * Pass 2 — TITLE-DRIFT RESCUE.
+   *
+   * Ids are derived from the title, and the LLM's title for the SAME production
+   * drifts slightly between runs ("TanzTanzTanz" → "Tanz Tanz" at Staatsballett
+   * Berlin; "MITTSU" → "MITTSU: Virginia Woolf" at Hamburg). The drifted row
+   * looks brand new while the original looks cancelled, so one production ends
+   * up on the site TWICE. A production whose run dates match an otherwise-
+   * cancelled row exactly is that same production re-titled: adopt the existing
+   * id so it diffs as a normal update instead of a phantom new + cancellation.
+   *
+   * Deliberately strict — BOTH dates must match exactly, and each orphan can be
+   * claimed only once — so two genuinely different programmes never merge.
+   */
+  const orphansByDates = new Map<string, string>()
+  for (const [id, ex] of existing) {
+    if (seen.has(id)) continue
+    const key = `${ex.start_date}|${ex.end_date}`
+    if (!orphansByDates.has(key)) orphansByDates.set(key, id)
+  }
+  const rescued = new Set<string>()
+  for (const m of matched) {
+    if (m.ex) continue
+    const key = `${m.row.start_date}|${m.row.end_date}`
+    const orphanId = orphansByDates.get(key)
+    if (!orphanId) continue
+    orphansByDates.delete(key)
+    rescued.add(orphanId)
+    seen.add(orphanId)
+    m.row = { ...m.row, id: orphanId }
+    m.ex = existing.get(orphanId)
+  }
+
+  const rows = matched.map(({ row, ex }) => {
+    const change_kind = classify(row, ex)
     counts[change_kind] += 1
     return { ...row, change_kind, review_status: 'pending' as const }
   })
