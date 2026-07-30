@@ -34,7 +34,7 @@ import { extractWpCalendar } from './extract-wp-calendar'
 import { extractJsonApi, type JsonApiConfig } from './extract-json-api'
 import { isNonPerformance, ROYAL_OPERA_BALLET_TITLE } from './filters'
 import { extractWithLlm, LLM_CONFIDENCE } from './extract-llm'
-import { renderPage } from './fetch-browser'
+import { renderPage, renderPages } from './fetch-browser'
 import {
   getWriter,
   getSourceState,
@@ -117,6 +117,16 @@ interface SourceConfig {
    * defeat the filter).
    */
   filterKind?: 'ballet' | 'opera'
+  /**
+   * Additional pages to crawl alongside `url`, for houses that publish NO
+   * combined season listing — Boston Ballet and Houston Ballet give every
+   * production its own detail page and nothing that lists them together, so the
+   * set of detail pages IS the listing. All pages render in one browser session
+   * and are concatenated with PAGE_BREAK before extraction. `url` stays the
+   * canonical source_url (the diff key and provenance link), so adding or
+   * removing an entry here never re-keys existing rows.
+   */
+  extraUrls?: string[]
 }
 
 /**
@@ -299,9 +309,36 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // owner before wiring, the lesson from Paris (whose configured URL was a 404).
   'english-national-ballet': { companySlug: 'english-national-ballet', url: 'https://www.ballet.org.uk/whats-on/', kind: 'html', render: true, performanceKind: 'ballet' },
   'birmingham-royal-ballet': { companySlug: 'birmingham-royal-ballet', url: 'https://www.brb.org.uk/whats-on', kind: 'html', render: true, performanceKind: 'ballet' },
-  'boston-ballet': { companySlug: 'boston-ballet', url: 'https://www.bostonballet.org/home/tickets-performances/', kind: 'html', render: true, performanceKind: 'ballet' },
-  // Season-scoped path — needs a yearly bump, like Paris/Vienna/Dutch.
-  'houston-ballet': { companySlug: 'houston-ballet', url: 'https://www.houstonballet.org/seasontickets/2026-2027-season/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // Boston publishes NO combined listing — the tickets page links out to one
+  // detail page per production, so the SET of detail pages is the listing.
+  // Owner-supplied, 2026-07. Update this list each season.
+  'boston-ballet': {
+    companySlug: 'boston-ballet',
+    url: 'https://www.bostonballet.org/home/tickets-performances/',
+    kind: 'html',
+    render: true,
+    performanceKind: 'ballet',
+    extraUrls: [
+      'https://www.bostonballet.org/performances/fall-experience/',
+      'https://www.bostonballet.org/performances/the-nutcracker/',
+      'https://www.bostonballet.org/performances/winter-experience/',
+      'https://www.bostonballet.org/performances/coppelia/',
+      'https://www.bostonballet.org/performances/cinderella/',
+      'https://www.bostonballet.org/performances/spring-experience-2027/',
+    ],
+  },
+  // Season-scoped path — needs a yearly bump, like Paris/Vienna/Dutch. The
+  // season page omits The Nutcracker (it sells separately), which is why the
+  // first crawl returned a season with no Nutcracker at all; its own page is
+  // crawled alongside.
+  'houston-ballet': {
+    companySlug: 'houston-ballet',
+    url: 'https://www.houstonballet.org/seasontickets/2026-2027-season/',
+    kind: 'html',
+    render: true,
+    performanceKind: 'ballet',
+    extraUrls: ['https://www.houstonballet.org/seasontickets/2026-2027-season/the-nutcracker-2026/'],
+  },
   // operan.se is the Royal Swedish OPERA's site; the genre query narrows it to
   // dance, but filterKind guards against opera bleeding in the way it did at Vienna.
   'royal-swedish-ballet': { companySlug: 'royal-swedish-ballet', url: 'https://www.operan.se/en/productions?genres=Ballet&genres=Dance', kind: 'html', render: true, filterKind: 'ballet' },
@@ -428,12 +465,17 @@ async function loadContent(src: SourceConfig, args: Args): Promise<string> {
     }
     // JS-rendered listings need a real browser; static pages/feeds use fetch.
     if (src.render) {
-      return renderPage(src.url, {
+      const renderOpts = {
         ua: INGEST_UA,
         waitForSelector: src.waitForSelector,
         maxPages: src.maxPages,
         pageParam: src.pageParam,
-      })
+      }
+      // No combined listing at this house: crawl url + each production page.
+      if (src.extraUrls?.length) {
+        return renderPages([src.url, ...src.extraUrls], renderOpts)
+      }
+      return renderPage(src.url, renderOpts)
     }
     const res = await fetch(src.url, {
       headers: {

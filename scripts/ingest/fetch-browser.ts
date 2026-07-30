@@ -334,6 +334,31 @@ async function renderMultiPageUrl(
 }
 
 /**
+ * Render several pages in ONE browser session and return their HTML joined with
+ * PAGE_BREAK (extract-llm splits on it, so each page's listing is read
+ * independently).
+ *
+ * For houses that publish NO combined listing at all — Boston Ballet and
+ * Houston Ballet each give every production its own detail page and nothing
+ * that lists them together. Crawling the set is the only way to see the season.
+ * One session keeps the cookie banner dismissed once and avoids re-launching
+ * Chrome per page.
+ */
+export async function renderPages(urls: string[], opts: RenderOptions = {}): Promise<string> {
+  const parts: string[] = []
+  for (const [i, u] of urls.entries()) {
+    const html = await renderPage(u, opts).catch((e) => {
+      // One unreachable detail page must not lose the rest of the season.
+      console.warn(`  ! page ${i + 1}/${urls.length} failed (${e instanceof Error ? e.message : String(e)})`)
+      return ''
+    })
+    if (html) parts.push(html)
+  }
+  console.log(`  · rendered ${parts.length}/${urls.length} page(s)`)
+  return parts.join(`\n${PAGE_BREAK}\n`)
+}
+
+/**
  * Render a JS page and return its final HTML. Throws (caught upstream as a
  * per-house skip) when Playwright is absent, the page is blocked, or a challenge
  * interstitial is detected — we surface the reason rather than work around it.
