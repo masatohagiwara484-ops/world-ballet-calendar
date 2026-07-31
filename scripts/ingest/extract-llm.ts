@@ -58,6 +58,7 @@ const ResultSchema = z.object({ performances: z.array(RowSchema) })
 
 const SYSTEM = [
   'You extract ballet and opera performances from a theatre season / "what\'s on" listing page.',
+  'The text may instead be a SINGLE production\'s own page (some houses publish no combined listing). In that case extract that one production — its title and run dates are usually in the heading and the surrounding copy, e.g. "Coppélia · March 5–14, 2027". Do not return nothing just because the page is not a list.',
   'Return EVERY performance that is clearly listed with a date — do not stop early; include all of them, top to bottom.',
   'kind is "ballet" or "opera".',
   'CRITICAL — DATES: output start_date and end_date in strict ISO format YYYY-MM-DD with a 4-digit year (e.g. 2026-10-13). Convert any written date ("Sat 13 Oct 2026", "13.10.2026", "October 13") to this exact format yourself.',
@@ -160,13 +161,16 @@ function trimSinglePage(html: string, baseUrl?: string): string {
  * content, leaving pages 2-N invisible to the model (the root cause of the
  * Royal Ballet crawl returning only the first ~10 productions).
  */
+/** Separator kept in the trimmed TEXT so chunking can respect page boundaries. */
+const PAGE_SEP = '\n=== PAGE BREAK ===\n'
+
 export function trimHtml(html: string, baseUrl?: string): string {
   if (html.includes(PAGE_BREAK)) {
     return html
       .split(PAGE_BREAK)
       .map((part) => trimSinglePage(part, baseUrl))
       .filter(Boolean)
-      .join('\n')
+      .join(PAGE_SEP)
   }
   return trimSinglePage(html, baseUrl)
 }
@@ -186,6 +190,44 @@ function chunk(text: string, size: number, maxChunks: number): string[] {
     i = end
   }
   return chunks
+}
+
+/**
+ * Chunk a multi-page render along PAGE boundaries instead of raw char offsets.
+ *
+ * Boston Ballet publishes one detail page per production, so a crawl returns
+ * seven full pages concatenated. Splitting that blindly every 20k chars put
+ * page boundaries mid-chunk and buried each production's few lines of real
+ * content inside repeated site chrome — the model returned ONE production out
+ * of six. Packing whole pages per call keeps each production's title and dates
+ * together with nothing but its own page around them.
+ *
+ * A single page larger than `size` still falls back to char-splitting so a long
+ * season listing is never dropped.
+ */
+function chunkByPage(text: string, size: number, maxChunks: number): string[] {
+  const pages = text.split(PAGE_SEP).filter((p) => p.trim())
+  const out: string[] = []
+  let buf = ''
+  for (const page of pages) {
+    if (out.length >= maxChunks) break
+    if (page.length > size) {
+      if (buf) {
+        out.push(buf)
+        buf = ''
+      }
+      out.push(...chunk(page, size, maxChunks - out.length))
+      continue
+    }
+    if (buf && buf.length + page.length > size) {
+      out.push(buf)
+      buf = page
+    } else {
+      buf = buf ? `${buf}\n${page}` : page
+    }
+  }
+  if (buf && out.length < maxChunks) out.push(buf)
+  return out
 }
 
 /** One Haiku call over a single chunk of listing text. */
@@ -242,7 +284,9 @@ export async function extractWithLlm(
   // ALWAYS log the model's input size — the ABT failure went unnoticed for
   // weeks precisely because a starved input (empty <main>) was silent: the
   // crawl logs showed a healthy page while the model received ~nothing.
-  const chunks = chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
+  const chunks = content.includes(PAGE_SEP)
+    ? chunkByPage(content, CHARS_PER_CHUNK, MAX_CHUNKS)
+    : chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
   console.log(`  · LLM input: ${content.length} chars → ${chunks.length} chunk(s)`)
   // Silent truncation is how a season's tail disappears without anyone noticing.
   const covered = chunks.reduce((n, c) => n + c.length, 0)
