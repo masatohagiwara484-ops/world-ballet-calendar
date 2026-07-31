@@ -3,6 +3,7 @@ import { Manrope, Cormorant_Garamond, Italiana, Fraunces, Playfair_Display } fro
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import NewsletterPopup from '@/components/audience/NewsletterPopup'
+import { SITE_URL, SITE_NAME } from '@/lib/site'
 import './globals.css'
 
 // Body / UI — Manrope (refined geometric sans, weights 300–700)
@@ -54,9 +55,7 @@ export const metadata: Metadata = {
   // Required so file-based opengraph-image URLs resolve to absolute URLs that
   // social scrapers (X, LINE, iMessage, Slack…) can fetch. Without this, OG
   // image links are relative and previews silently fail.
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'
-  ),
+  metadataBase: new URL(SITE_URL),
   title: {
     template: '%s — première',
     default: 'première — the world’s great stages, worth the journey',
@@ -76,9 +75,6 @@ export const metadata: Metadata = {
     follow: true,
   },
 }
-
-const SITE_URL = 'https://worldballetoperacalender.vercel.app'
-const SITE_NAME = 'première'
 
 const jsonLd = {
   '@context': 'https://schema.org',

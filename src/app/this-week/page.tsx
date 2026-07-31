@@ -4,10 +4,11 @@ import { ArrowUpRight } from 'lucide-react'
 import { getThisWeek, shortRunLabel } from '@/lib/this-week'
 import { KIND_LABEL } from '@/components/shared/design'
 import ShareThisWeek from '@/components/audience/ShareThisWeek'
+import { SITE_URL } from '@/lib/site'
 
 export const revalidate = 3600
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'
+const SITE = SITE_URL
 
 export const metadata: Metadata = {
   title: 'This Week on Stage',

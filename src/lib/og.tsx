@@ -16,6 +16,7 @@
  * Nothing else needs to change.
  */
 import { ImageResponse } from 'next/og'
+import { SITE_HOST } from '@/lib/site'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -310,7 +311,7 @@ export async function renderWeekCard(opts: {
         {/* Footer */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
           <div style={{ color: CREAM_DIM, fontSize: 22, letterSpacing: 3, display: 'flex' }}>
-            worldballetoperacalender.vercel.app
+            {SITE_HOST}
           </div>
           <div style={{ color: CREAM_DIM, fontSize: 22, letterSpacing: 3, display: 'flex' }}>
             discover · plan · book

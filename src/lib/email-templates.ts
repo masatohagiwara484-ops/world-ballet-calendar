@@ -7,8 +7,8 @@
  */
 import { formatRange } from '@/components/shared/format'
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'
+export { SITE_URL } from '@/lib/site'
+import { SITE_URL } from '@/lib/site'
 
 const GOLD = '#A8842A'
 const INK = '#1A1A1A'

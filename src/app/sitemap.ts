@@ -3,12 +3,12 @@ import { getCompanies, getPerformances } from '@/lib/data'
 import { getCities } from '@/lib/cities'
 import { buildGraphAsync } from '@/lib/graph'
 import { journal } from '@/data/journal'
+import { SITE_URL } from '@/lib/site'
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'https://worldballetoperacalender.vercel.app'
+    SITE_URL
 
   const now = new Date()
   const staticRoutes: MetadataRoute.Sitemap = [

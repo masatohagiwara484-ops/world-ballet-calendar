@@ -8,6 +8,7 @@ import { gradientFor } from '@/components/shared/design'
 import EntityPerformanceRow from '@/components/entity/EntityPerformanceRow'
 import FollowButton from '@/components/audience/FollowButton'
 import type { PersonRole, SearchResultItem } from '@/lib/types'
+import { SITE_URL } from '@/lib/site'
 
 export const revalidate = 3600
 export const dynamicParams = true
@@ -109,7 +110,7 @@ export default async function PersonPage({ params }: Props) {
     '@type': 'Person',
     name: person.name,
     ...(roleStr ? { jobTitle: roleStr } : {}),
-    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://worldballetoperacalender.vercel.app'}/people/${person.slug}`,
+    url: `${SITE_URL}/people/${person.slug}`,
   }
 
   return (
