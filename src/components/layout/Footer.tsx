@@ -8,8 +8,13 @@ const NAV = [
   { href: '/partners', label: 'Partners' },
 ]
 
-/** Contact ships now; the legal pages follow in the same footer row (M5). */
-const LEGAL = [{ href: '/contact', label: 'Contact' }]
+/** Contact + the legal pages, kept quiet but always reachable (ROADMAP M5/M7). */
+const LEGAL = [
+  { href: '/contact', label: 'Contact' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/disclosure', label: 'Disclosure' },
+]
 
 export default function Footer() {
   return (
@@ -79,7 +84,7 @@ export default function Footer() {
                 key={item.href}
                 href={item.href}
                 className="hover:text-gold-deep transition-colors duration-300"
-                style={{ color: 'rgba(26,26,26,0.45)', fontSize: '12px' }}
+                style={{ color: 'rgba(26,26,26,0.55)', fontSize: '15px' }}
               >
                 {item.label}
               </Link>

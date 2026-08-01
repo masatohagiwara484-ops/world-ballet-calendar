@@ -8,7 +8,7 @@
 > **This is the current, canonical plan.** Older docs are background only and are
 > superseded here on conflict.
 
-Last updated: 2026-07-11
+Last updated: 2026-07-30
 
 ---
 
@@ -29,7 +29,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⏸ deferred (post-tr
 |---|------|--------|-------|
 | 1 | Verified-dates trust badge | ✅ | `VerifiedDates` on perf page + cards. Shows on `last_verified` (full "dates confirmed" claim) OR `source_url` (precise "listing from the official source" link). Surfaces on real ingested rows. |
 | 2 | Affiliate live (`affiliate.ts`) | ⬜ | Code ready; needs network sign-up + IDs. External review pending. |
-| 3 | **Data verification & publishing** | ⬜ | **Highest priority.** Published data ≈ empty → site looks unchanged. Run ingestion / seed verified rows. Root cause of "site is blank." |
+| 3 | **Data verification & publishing** | 🟡 | Was the "site looks blank" root cause; largely solved 2026-07. ~24 houses now ingest real seasons. Root causes found were almost never extraction quality — they were **wrong listing URLs** (Paris was a 404, Vienna an empty SPA shell) and houses with no combined listing at all (Boston, Houston). Extraction paths now: `jsonld` (Met) · `wp-ajax` (ABT) · `json-api` (NNTT) · `html`+LLM · `extraUrls` (per-production sites). Remaining: publish the pending queue, finish Boston, and the Russian houses (Bolshoi 401). |
 | 4 | OG / share images | ✅ | Shipped (root OG fixed). |
 | 5 | Email alert MVP | ✅ | `FollowButton` + `/api/follow` + `NewsletterCapture`. |
 
@@ -55,6 +55,52 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⏸ deferred (post-tr
 
 ### E. Deferred (intentional) / 意図的に後回し
 i18n · user accounts / favorites · PWA · B2B casting tool — all post-traction.
+
+---
+
+## Launch readiness / ローンチ準備 (2026-07-30)
+
+The product is close; these are the things standing between "it works" and
+"strangers can find it, trust it, and we can earn from it."
+プロダクトはほぼ完成。以下は「動く」から「他人が見つけ、信頼し、収益化できる」
+までの残作業。
+
+### MUST — cannot launch without / これが無いとローンチ不可
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| M1 | Real domain | ✅ | `premierestages.com` bought via Vercel (2026-07-30); **www is the production alias**, apex 308-redirects to it. Set `NEXT_PUBLIC_SITE_URL=https://www.premierestages.com` and redeploy — `NEXT_PUBLIC_*` is inlined at build time, so setting it alone changes nothing. |
+| M2 | Publish the verified seasons | 🟡 | Large pending queue across ~24 houses awaiting `review:pending --publish`. |
+| M3 | Daily ingestion automation | ⬜ | Still manual. launchd on the owner's Mac — see the ingestion plan below (#12 P3). Prerequisite for the "run it, don't build it" phase. |
+| M4 | Telegram approval flow live | ⬜ | Tools shipped (`telegram:check`); wiring is a separate session. Approving from a terminal every day is not sustainable. |
+| M5 | Legal pages (privacy · terms · affiliate disclosure) | ⬜ | **Blocks M6** — affiliate networks and ad partners require a visible disclosure. Draft grounded in what the code actually collects; owner must review before publishing (not legal advice). |
+| M6 | Affiliate IDs | ⬜ | Code ready (`affiliate.ts`). Gated on the owner's payout account; applications take time, so start early. |
+| M7 | Contact route | ✅ | `/contact` + footer link (2026-07-30). Four pre-filled subjects; the corrections and company/theatre routes are also how a listing relationship with a house can begin. |
+
+### SHOULD — right after launch / ローンチ直後に効く
+| # | Task | Notes |
+|---|------|-------|
+| S1 | SNS accounts + posting | Instagram first — ballet is a visual medium. Do this only **after** M1, or the announced URL goes stale. |
+| S2 | Verify OG/share cards on real posts | The generated weekly card is the first impression when shared. |
+| S3 | Search Console + Analytics | Without it there is no signal to improve against. |
+| S4 | Mobile device check | Most traffic will be phones; `verifier-web` covers the desktop case only. |
+| S5 | Newsletter actually sending | Capture is built; delivery is not wired. |
+| S6 | Scheduled `audit:published` | Catches drift in already-live dates — the trust promise. |
+| S7 | English titles for JP/DE houses | NNTT publishes Japanese titles; international readers see them raw. |
+
+### NICE TO HAVE — user acquisition / 集客に効く（優先度低）
+| # | Task | Notes |
+|---|------|-------|
+| N1 | More `/journal` articles (5 today) | Compounding SEO; the largest long-term channel. |
+| N2 | Outreach to companies & theatres | A house linking back is worth more than any ad. |
+| N3 | Ballet media / creator outreach | `/read` already maps 17 outlets. |
+| N4 | Japanese UI | Deferred by default; pull forward only if targeting Japan first. |
+| N5 | Automated weekly SNS post | The weekly OG card already exists — only the posting is manual. |
+| N6 | Accounts / favourites | Explicitly post-traction (section E). |
+
+### Sequencing / 進行順
+- **Now:** M1 env var → M2 publish → M5 → S1 (announce on a stable URL).
+- **Next month:** M3 + M4 so the daily loop is approval-only, then M6.
+- **Sep–Dec:** operate and grow — S1/S3/N1/N2 are the levers.
 
 ---
 

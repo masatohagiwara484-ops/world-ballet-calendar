@@ -68,7 +68,7 @@ export default function ContactPage() {
             className="mb-5"
             style={{
               color: '#A8842A',
-              fontSize: '11px',
+              fontSize: '15px',
               letterSpacing: '0.4em',
               textTransform: 'uppercase',
             }}
@@ -78,14 +78,14 @@ export default function ContactPage() {
           <h1 className="font-serif text-4xl md:text-6xl text-ivory mb-6 leading-tight">
             Write to us
           </h1>
-          <p className="text-ivory/70 text-base md:text-lg leading-relaxed">
+          <p className="text-ivory/75 text-xl md:text-2xl leading-relaxed">
             première is a small, deliberately curated project. Every message is
             read by a person.
           </p>
 
           <a
             href={mailto('Hello')}
-            className="mt-10 inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gold text-stage font-semibold text-xs tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold transition-all"
+            className="mt-10 inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gold text-stage font-semibold text-base tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold transition-all"
           >
             <Mail size={15} />
             {CONTACT_EMAIL}
@@ -107,7 +107,7 @@ export default function ContactPage() {
                   className="mb-3"
                   style={{
                     color: '#A8842A',
-                    fontSize: '11px',
+                    fontSize: '15px',
                     letterSpacing: '0.4em',
                     textTransform: 'uppercase',
                     fontFamily: 'var(--font-sans)',
@@ -115,11 +115,11 @@ export default function ContactPage() {
                 >
                   {r.eyebrow}
                 </p>
-                <h2 className="font-serif text-2xl text-ivory mb-4">{r.headline}</h2>
-                <p className="text-ivory/70 text-sm leading-relaxed mb-6">{r.body}</p>
+                <h2 className="font-serif text-3xl text-ivory mb-5">{r.headline}</h2>
+                <p className="text-ivory/75 text-xl leading-relaxed mb-7">{r.body}</p>
                 <a
                   href={mailto(r.subject)}
-                  className="inline-flex items-center gap-2 text-sm text-gold-deep hover:text-gold transition-colors"
+                  className="inline-flex items-center gap-2 text-lg text-gold-deep hover:text-gold transition-colors"
                 >
                   {r.subject}
                   <ArrowUpRight size={14} />
@@ -139,14 +139,14 @@ export default function ContactPage() {
               className="mb-3"
               style={{
                 color: 'rgba(26,26,26,0.45)',
-                fontSize: '10px',
+                fontSize: '13px',
                 letterSpacing: '0.3em',
                 textTransform: 'uppercase',
               }}
             >
               Who runs première
             </p>
-            <p className="text-ivory/70 text-sm leading-relaxed">
+            <p className="text-ivory/75 text-xl leading-relaxed">
               première is published by {OPERATOR_NAME}, based in {OPERATOR_LOCATION}.
               Correspondence in English or Japanese is equally welcome.
             </p>
