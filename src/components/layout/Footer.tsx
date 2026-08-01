@@ -8,6 +8,9 @@ const NAV = [
   { href: '/partners', label: 'Partners' },
 ]
 
+/** Contact ships now; the legal pages follow in the same footer row (M5). */
+const LEGAL = [{ href: '/contact', label: 'Contact' }]
+
 export default function Footer() {
   return (
     <footer className="mt-24 px-4 pb-6">
@@ -59,14 +62,29 @@ export default function Footer() {
           className="mt-12 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           style={{ borderTop: '1px solid rgba(26,22,15,0.10)' }}
         >
-          <p
-            style={{
-              color: 'rgba(26,26,26,0.45)',
-              fontSize: '12px',
-            }}
-          >
-            premi&egrave;re &copy; 2026
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p
+              style={{
+                color: 'rgba(26,26,26,0.45)',
+                fontSize: '12px',
+              }}
+            >
+              premi&egrave;re &copy; 2026
+            </p>
+            {/* Contact and the legal pages: quiet, but always reachable — a
+                product that promises verified dates needs an obvious way to
+                report a wrong one. */}
+            {LEGAL.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="hover:text-gold-deep transition-colors duration-300"
+                style={{ color: 'rgba(26,26,26,0.45)', fontSize: '12px' }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
           <p
             style={{
               color: 'rgba(26,26,26,0.40)',

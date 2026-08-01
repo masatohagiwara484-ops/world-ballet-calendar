@@ -19,3 +19,14 @@ export const SITE_URL = (
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '')
 
 export const SITE_NAME = 'première'
+
+/**
+ * Public contact address. Currently the owner's personal Gmail — a dedicated
+ * address on the domain is intended before wide launch; changing it here
+ * updates the contact page and every mailto route at once.
+ */
+export const CONTACT_EMAIL = 'masatohagiwara484@gmail.com'
+
+/** Shown wherever the site must say who publishes it (contact, legal pages). */
+export const OPERATOR_NAME = 'première (Masato Hagiwara)'
+export const OPERATOR_LOCATION = 'Japan'
