@@ -106,6 +106,19 @@ const BOOKING_HREF_RE =
 const LINK_MARK = '(link: '
 
 /**
+ * "Does this text contain a date at all?" — used to reject a <main> that cannot
+ * possibly hold a listing. Covers written month names (EN/DE/FR/IT/ES/NL, which
+ * share enough of a prefix to match), ISO, and numeric D.M.Y / D/M/Y forms.
+ */
+const DATE_LIKE =
+  /(jan|feb|mar|apr|may|mai|jun|jul|aug|sep|okt|oct|nov|dec|dez|dic|gen|mag|giu|lug|ago|set|fev|avr|juin|juil|août|déc)[a-zé]*\.?\s*\d{1,2}(?!\d)|\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{2,4}/i
+// NOTE: no leading \b. cheerio's .text() concatenates adjacent elements without
+// whitespace ("Swan LakeOct 15"), so a word boundary before the month name does
+// not hold on real pages. Both error directions are safe here: a false positive
+// keeps <main> (the previous behaviour), a false negative falls back to <body>,
+// which is a superset of <main>. Detection only ever costs us extra text.
+
+/**
  * Strip chrome from a single HTML document and return the listings text with
  * booking links inlined as "(link: …)". Used by trimHtml for each page.
  */
@@ -143,11 +156,16 @@ function trimSinglePage(html: string, baseUrl?: string): string {
   const $main = $('main').first()
   if (!$main.length) return bodyText
   const mainText = clean($main.text())
-  const useMain = mainText.length >= 500 && marks(mainText) * 2 >= marks(bodyText)
+  // A <main> with no date anywhere in it cannot answer the only question we ask
+  // of a page. Boston Ballet proved the case: its production pages DO carry
+  // "March 11–21, 2027", but outside <main> (hero/header), so scoping to <main>
+  // handed the model 14k chars of marketing copy with not one date in it.
+  const hasDates = DATE_LIKE.test(mainText)
+  const useMain = mainText.length >= 500 && marks(mainText) * 2 >= marks(bodyText) && hasDates
   if (!useMain) {
     console.log(
       `  · <main> holds ${marks(mainText)}/${marks(bodyText)} booking links ` +
-        `(${mainText.length} chars) — extracting from <body> instead`
+        `(${mainText.length} chars${hasDates ? '' : ', no dates'}) — extracting from <body> instead`
     )
   }
   return useMain ? mainText : bodyText
@@ -284,6 +302,22 @@ export async function extractWithLlm(
   // ALWAYS log the model's input size — the ABT failure went unnoticed for
   // weeks precisely because a starved input (empty <main>) was silent: the
   // crawl logs showed a healthy page while the model received ~nothing.
+  // INGEST_DEBUG dumps the EXACT text the model receives. The rendered-HTML
+  // dump alone could not settle whether a miss was fetch, trimming or the
+  // model — this makes that one grep instead of several crawl round-trips.
+  if (process.env.INGEST_DEBUG) {
+    try {
+      const { writeFile, mkdir } = await import('node:fs/promises')
+      const dir = new URL('./.debug/', import.meta.url)
+      await mkdir(dir, { recursive: true })
+      const file = new URL(`${companySlug}-llm-input.txt`, dir)
+      await writeFile(file, content, 'utf8')
+      console.log(`  · [debug] wrote LLM input → scripts/ingest/.debug/${companySlug}-llm-input.txt`)
+    } catch {
+      /* a dump failure must never abort extraction */
+    }
+  }
+
   const chunks = content.includes(PAGE_SEP)
     ? chunkByPage(content, CHARS_PER_CHUNK, MAX_CHUNKS)
     : chunk(content, CHARS_PER_CHUNK, MAX_CHUNKS)
