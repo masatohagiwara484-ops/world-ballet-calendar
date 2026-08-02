@@ -343,6 +343,29 @@ const RENDER_SOURCES: Record<string, SourceConfig> = {
   // dance, but filterKind guards against opera bleeding in the way it did at Vienna.
   'royal-swedish-ballet': { companySlug: 'royal-swedish-ballet', url: 'https://www.operan.se/en/productions?genres=Ballet&genres=Dance', kind: 'html', render: true, filterKind: 'ballet' },
   'staatsballett-berlin': { companySlug: 'staatsballett-berlin', url: 'https://www.staatsballett-berlin.de/en/schedule.html', kind: 'html', render: true, performanceKind: 'ballet' },
+
+  // --- Tier B, second batch (owner-verified URLs, 2026-08-01) ---
+  // PNB sells The Nutcracker off its own page, like Houston — crawl both.
+  'pacific-northwest-ballet': {
+    companySlug: 'pacific-northwest-ballet',
+    url: 'https://www.pnb.org/season/',
+    kind: 'html',
+    render: true,
+    performanceKind: 'ballet',
+    extraUrls: ['https://www.pnb.org/nutcracker/'],
+  },
+  'joffrey-ballet': { companySlug: 'joffrey-ballet', url: 'https://joffrey.org/performances-and-tickets/26-27-season/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'washington-ballet': { companySlug: 'washington-ballet', url: 'https://www.washingtonballet.org/2026-27-subscriptions/', kind: 'html', render: true, performanceKind: 'ballet' },
+  // One repertoire page serves both arts (the owner's two links were #ballet /
+  // #opera anchors on it), so filter rather than force a kind.
+  'finnish-national-ballet': { companySlug: 'finnish-national-ballet', url: 'https://oopperabaletti.fi/en/repertoire/', kind: 'html', render: true, filterKind: 'ballet' },
+  'hong-kong-ballet': { companySlug: 'hong-kong-ballet', url: 'https://www.hkballet.com/en/see-hkb', kind: 'html', render: true, performanceKind: 'ballet' },
+  // opera.hu is the HUNGARIAN State Opera — the spreadsheet had this URL on the
+  // Teatro Real row, which is a different house (teatroreal.es, Madrid).
+  // Wired to the house the URL actually belongs to; Teatro Real still needs one.
+  'hungarian-state-opera': { companySlug: 'hungarian-state-opera', url: 'https://www.opera.hu/en/programme/repertoire/?evad=2026-2027', kind: 'html', render: true },
+  'nederlands-dans-theater': { companySlug: 'nederlands-dans-theater', url: 'https://www.ndt.nl/en/visit/calendar/', kind: 'html', render: true, performanceKind: 'ballet' },
+  'ballett-zurich': { companySlug: 'ballett-zurich', url: 'https://www.opernhaus.ch/en/spielplan/ballett-2627/', kind: 'html', render: true, performanceKind: 'ballet' },
 }
 
 /** All registered sources (feeds + render). `--all` runs every activated one. */
