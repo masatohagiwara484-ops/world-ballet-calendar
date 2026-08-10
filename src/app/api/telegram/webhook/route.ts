@@ -1,12 +1,20 @@
 /**
  * POST /api/telegram/webhook — the owner's approval endpoint.
  *
- * Telegram calls this when the owner taps a button on a digest. We:
+ * Telegram calls this when the owner taps a button on a digest, or types a
+ * command in the bot DM. We:
  *   1. verify the X-Telegram-Bot-Api-Secret-Token header (set at setWebhook time)
- *   2. load the ingest_batches row named in the callback_data
- *   3. flip its pending performances: Approve → published (cancellations → hidden),
+ *   2. verify the SENDER is the owner — the secret proves "Telegram called us",
+ *      not "the right person tapped" (see `isOwner`)
+ *   3. load the ingest_batches row named in the callback_data
+ *   4. flip its pending performances through the shared publish guard:
+ *      Approve → published (cancellations / bad dates / non-performances hidden),
  *      Reject → rejected — using the SERVER-ONLY service-role key
- *   4. acknowledge + rewrite the message, then revalidate the affected pages
+ *   5. acknowledge + rewrite the message, then revalidate the affected pages
+ *
+ * Commands (typed in the DM):
+ *   /pending — push the current review queue as digests, no terminal needed
+ *   /help    — what the bot can do
  *
  * This is the ONLY path that publishes scraped data. The crawl only ever writes
  * review_status='pending'.
@@ -14,10 +22,39 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { answerCallback, editMessage } from '@/lib/telegram'
+import {
+  answerCallback,
+  digestKeyboard,
+  detailKeyboard,
+  editMessage,
+  formatDetail,
+  formatDigest,
+  sendNotice,
+  DETAIL_PAGE_SIZE,
+  type DetailRow,
+  type DigestLine,
+} from '@/lib/telegram'
 import { notifyFollowersOfBatch } from '@/lib/notify'
+import { isOwner } from '@/lib/telegram-auth'
+import { partitionForPublish, describeHidden } from '@/lib/review-guard'
+import {
+  PENDING_COLUMNS,
+  companyName,
+  fetchPending,
+  pushPendingDigests,
+  type PendingRow,
+} from '@/lib/pending-digest'
 
 export const dynamic = 'force-dynamic'
+/**
+ * `/pending` fans out one message per house. Telegram REPLAYS any update it
+ * doesn't get a timely 200 for, so a timeout here would re-send the whole queue —
+ * give the handler room, and cap the fan-out with PENDING_FANOUT_LIMIT as well.
+ */
+export const maxDuration = 60
+
+/** Houses per `/pending` invocation; the rest come on the next ask. */
+const PENDING_FANOUT_LIMIT = 8
 
 function serviceClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -33,6 +70,7 @@ function serviceClient(): SupabaseClient | null {
 interface BatchRow {
   id: string
   company_slug: string
+  run_id: string
   performance_ids: string[]
   telegram_chat_id: string | null
   telegram_message_id: string | null
@@ -106,6 +144,90 @@ async function revalidateFor(
   }
 }
 
+/** Load the rows a batch governs, whatever their current review_status. */
+async function loadBatchRows(client: SupabaseClient, ids: string[]): Promise<PendingRow[]> {
+  if (ids.length === 0) return []
+  const { data } = await client
+    .from('performances')
+    .select(PENDING_COLUMNS)
+    .in('id', ids)
+    .order('start_date')
+  return (data ?? []) as PendingRow[]
+}
+
+const toDetailRows = (rows: PendingRow[]): DetailRow[] =>
+  rows.map((r) => ({
+    title: r.title,
+    kind: r.kind,
+    start_date: r.start_date,
+    end_date: r.end_date,
+    venue: r.venue,
+    price_range: r.price_range,
+    ticket_url: r.ticket_url,
+    affiliate_url: r.affiliate_url,
+    confidence: r.confidence,
+    change_kind: r.change_kind,
+  }))
+
+const toDigestLines = (rows: PendingRow[]): DigestLine[] =>
+  rows.map((r) => ({
+    change_kind: r.change_kind ?? 'new',
+    title: r.title,
+    start_date: r.start_date,
+    end_date: r.end_date ?? r.start_date,
+    kind: r.kind,
+    price: r.price_range,
+    confidence: r.confidence,
+  }))
+
+/** Handle a typed command in the bot DM (/pending, /start, /help). */
+async function handleCommand(
+  client: SupabaseClient,
+  chatId: string,
+  text: string
+): Promise<void> {
+  const parts = text.trim().split(/\s+/)
+  const command = parts[0]?.toLowerCase().replace(/@.*$/, '') ?? ''
+  // `/pending royal-ballet` narrows to one house, mirroring `--slug` on the CLI.
+  const slug = parts[1]?.trim() || undefined
+
+  if (command === '/pending') {
+    // Count first so the header lands ABOVE the digests it introduces.
+    const waiting = await fetchPending(client, slug)
+    if (waiting.length === 0) {
+      await sendNotice(
+        chatId,
+        slug ? `✅ *Nothing pending* for \`${slug}\`.` : '✅ *Nothing pending* — the queue is empty.'
+      )
+      return
+    }
+    const houses = new Set(waiting.map((r) => r.company_slug)).size
+    const capped = houses > PENDING_FANOUT_LIMIT ? ` Sending the first ${PENDING_FANOUT_LIMIT}.` : ''
+    await sendNotice(
+      chatId,
+      `📋 *${waiting.length} pending* across ${houses} house${houses === 1 ? '' : 's'}.${capped}`
+    )
+
+    const result = await pushPendingDigests(client, chatId, { slug, limit: PENDING_FANOUT_LIMIT })
+    const notes = [
+      result.remaining ? `${result.remaining} more house(s) — send /pending again.` : '',
+      result.failed.length ? `⚠️ failed: ${result.failed.map((f) => f.slug).join(', ')}` : '',
+    ].filter(Boolean)
+    if (notes.length) await sendNotice(chatId, notes.join('\n'))
+    return
+  }
+
+  // /start and /help both land here — one message that explains the whole loop.
+  await sendNotice(
+    chatId,
+    '🎟 *première — review bot*\n\n' +
+      '/pending — show everything waiting for approval\n' +
+      '/help — this message\n\n' +
+      'On a digest: *✅ Approve all* publishes, *🚫 Reject all* discards, ' +
+      '*🔍 Details* opens venue, price, ticket link and confidence per performance.'
+  )
+}
+
 export async function POST(req: NextRequest): Promise<Response> {
   // 1. Authenticate the caller as Telegram.
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET
@@ -117,21 +239,57 @@ export async function POST(req: NextRequest): Promise<Response> {
   const client = serviceClient()
   if (!client) return new NextResponse('not configured', { status: 503 })
 
-  const update = (await req.json().catch(() => null)) as { callback_query?: Record<string, unknown> } | null
+  const update = (await req.json().catch(() => null)) as {
+    callback_query?: Record<string, unknown>
+    message?: { chat?: { id: number }; from?: { id: number }; text?: string }
+  } | null
+
   const cq = update?.callback_query as
-    | { id: string; data?: string; message?: { chat?: { id: number }; message_id?: number } }
+    | {
+        id: string
+        data?: string
+        from?: { id: number }
+        message?: { chat?: { id: number }; message_id?: number }
+      }
     | undefined
-  // Non-button updates (plain messages etc.) are acknowledged and ignored.
-  if (!cq) return NextResponse.json({ ok: true })
+
+  // --- Typed commands (/pending, /help) ---
+  if (!cq) {
+    const message = update?.message
+    const text = message?.text ?? ''
+    if (!text.startsWith('/')) return NextResponse.json({ ok: true })
+    // 2. Authorise the SENDER. A stranger who finds the bot gets silence, not a
+    // queue listing — the pending queue is unpublished editorial data.
+    if (!isOwner(message?.from?.id)) return NextResponse.json({ ok: true })
+    const chatId = message?.chat?.id != null ? String(message.chat.id) : null
+    if (!chatId) return NextResponse.json({ ok: true })
+    try {
+      await handleCommand(client, chatId, text)
+    } catch (err) {
+      await sendNotice(chatId, `⚠️ ${err instanceof Error ? err.message : String(err)}`).catch(() => {})
+    }
+    return NextResponse.json({ ok: true })
+  }
+
+  // 2. Authorise the tapper — the secret header proves Telegram called us, not
+  // that the owner is the one publishing to the live site.
+  if (!isOwner(cq.from?.id)) {
+    await answerCallback(cq.id, 'Not authorised.').catch(() => {})
+    return NextResponse.json({ ok: true })
+  }
 
   const data = cq.data ?? ''
   const sep = data.indexOf(':')
   const action = sep > 0 ? data.slice(0, sep) : data
-  const batchId = sep > 0 ? data.slice(sep + 1) : ''
+  const rest = sep > 0 ? data.slice(sep + 1) : ''
+  // `detail` carries a trailing :<page>; every other action is just the batch id.
+  const pageMatch = action === 'detail' ? rest.match(/^(.*):(\d+)$/) : null
+  const batchId = pageMatch ? pageMatch[1] : rest
+  const page = pageMatch ? parseInt(pageMatch[2], 10) : 0
 
   const { data: batchData } = await client
     .from('ingest_batches')
-    .select('id, company_slug, performance_ids, telegram_chat_id, telegram_message_id, counts')
+    .select('id, company_slug, run_id, performance_ids, telegram_chat_id, telegram_message_id, counts')
     .eq('id', batchId)
     .maybeSingle()
   const batch = batchData as BatchRow | null
@@ -142,29 +300,95 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const ids = batch.performance_ids ?? []
-  const chatId = batch.telegram_chat_id ?? (cq.message?.chat?.id != null ? String(cq.message.chat.id) : null)
-  const messageId = batch.telegram_message_id ?? (cq.message?.message_id != null ? String(cq.message.message_id) : null)
+  // Edit the message that was ACTUALLY TAPPED, falling back to the recorded one.
+  // A standing `pending:<slug>` batch is re-pointed at each re-send, so the stored
+  // id can name a newer message than the one under the owner's finger — the reply
+  // must land on the message they touched.
+  const chatId = (cq.message?.chat?.id != null ? String(cq.message.chat.id) : null) ?? batch.telegram_chat_id
+  const messageId =
+    (cq.message?.message_id != null ? String(cq.message.message_id) : null) ?? batch.telegram_message_id
+
+  // --- Read-only views: Details / back to Summary. No DB writes, no decision. ---
+  if (action === 'detail' || action === 'summary') {
+    const rows = await loadBatchRows(client, ids)
+    const name = companyName(batch.company_slug)
+    const sourceUrl = rows.find((r) => r.source_url)?.source_url ?? undefined
+
+    if (rows.length === 0) {
+      await answerCallback(cq.id, 'These rows are gone.')
+      return NextResponse.json({ ok: true })
+    }
+    if (chatId && messageId) {
+      const isDetail = action === 'detail'
+      const pages = Math.max(1, Math.ceil(rows.length / DETAIL_PAGE_SIZE))
+      const safePage = Math.min(Math.max(page, 0), pages - 1)
+      const text = isDetail
+        ? formatDetail(name, toDetailRows(rows), safePage)
+        : formatDigest({
+            companyName: name,
+            runId: batch.run_id,
+            batchId,
+            lines: toDigestLines(rows),
+            sourceUrl,
+          })
+      const keyboard = isDetail
+        ? detailKeyboard(batchId, safePage, pages, sourceUrl)
+        : digestKeyboard(batchId, sourceUrl)
+      try {
+        await editMessage(chatId, messageId, text, keyboard)
+      } catch (err) {
+        // "message is not modified" means the view is already what was asked for.
+        // Anything else is a real failure and must NOT look like a working button.
+        const reason = err instanceof Error ? err.message : String(err)
+        if (!/not modified/i.test(reason)) {
+          await answerCallback(cq.id, 'Could not open details.').catch(() => {})
+          return NextResponse.json({ ok: true })
+        }
+      }
+    }
+    await answerCallback(cq.id, '')
+    return NextResponse.json({ ok: true })
+  }
 
   let resultText: string
   if (action === 'approve') {
-    // Confirmed cancellations are HIDDEN (rejected); everything else publishes.
-    await client
-      .from('performances')
-      .update({ review_status: 'rejected' })
-      .in('id', ids)
-      .eq('change_kind', 'cancelled')
-    await client
-      .from('performances')
-      .update({ review_status: 'published', last_verified: new Date().toISOString() })
-      .in('id', ids)
-      .eq('review_status', 'pending')
+    // The guard decides what actually goes live: cancellations, implausible dates
+    // and non-performance rows are HIDDEN, never published — identical rules to
+    // `npm run review:pending -- --publish`.
+    const rows = await loadBatchRows(client, ids)
+    const { publishIds, hideIds, hidden } = partitionForPublish(rows)
+
+    if (hideIds.length) {
+      // `.eq('review_status','pending')` matters HERE and not on the CLI: the CLI's
+      // rows came from a pending-only query, while loadBatchRows reads a batch's
+      // rows whatever their status. Without it a stale digest could unpublish a
+      // live row.
+      await client
+        .from('performances')
+        .update({ review_status: 'rejected' })
+        .in('id', hideIds)
+        .eq('review_status', 'pending')
+    }
+    if (publishIds.length) {
+      await client
+        .from('performances')
+        .update({ review_status: 'published', last_verified: new Date().toISOString() })
+        .in('id', publishIds)
+        .eq('review_status', 'pending')
+    }
     await client.from('ingest_batches').update({ status: 'approved' }).eq('id', batchId)
     await adjustTrust(client, batch.company_slug, true)
-    await revalidateFor(client, batch.company_slug, ids)
+    // Hidden rows need revalidation TOO: a confirmed cancellation was usually
+    // published before, so its `/performances/<id>` page is live and ISR-cached.
+    // Purge it, or a cancelled show stays readable for up to an hour.
+    await revalidateFor(client, batch.company_slug, [...publishIds, ...hideIds])
     // Follower alerts — awaited (Vercel may freeze the function after the
     // response), but internally never-throwing, so approval can't break.
-    await notifyFollowersOfBatch(client, batchId, batch.company_slug, ids)
-    resultText = `✅ *Approved* — ${ids.length} change${ids.length === 1 ? '' : 's'} now live.`
+    await notifyFollowersOfBatch(client, batchId, batch.company_slug, publishIds)
+    const withheld = describeHidden(hidden)
+    resultText =
+      `✅ *Approved* — ${publishIds.length} change${publishIds.length === 1 ? '' : 's'} now live.` +
+      (withheld ? `\n_Withheld: ${withheld}._` : '')
   } else if (action === 'reject') {
     await client
       .from('performances')

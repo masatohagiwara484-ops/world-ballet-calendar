@@ -50,8 +50,10 @@ published), so the catalogue is populated immediately and is never empty.
 
 1. Create a bot via **@BotFather** → `TELEGRAM_BOT_TOKEN`.
 2. Get your numeric **chat_id** (e.g. message @userinfobot).
-3. Choose a random `TELEGRAM_WEBHOOK_SECRET`.
-4. After deploying, register the webhook (one curl):
+3. Open the DM with your bot and press **Start** once — a bot cannot message a
+   user who has never started it.
+4. Choose a random `TELEGRAM_WEBHOOK_SECRET` (`openssl rand -hex 32`).
+5. After deploying, register the webhook (one curl):
 
 ```bash
 curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
@@ -59,7 +61,51 @@ curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
   -d "secret_token=${TELEGRAM_WEBHOOK_SECRET}"
 ```
 
-The webhook verifies the `X-Telegram-Bot-Api-Secret-Token` header on every tap.
+6. Confirm the whole chain: `npm run telegram:check` (read-only; sends nothing).
+
+### Two independent checks guard every tap
+
+- **`X-Telegram-Bot-Api-Secret-Token`** — proves *Telegram* called the webhook.
+- **Sender identity** — proves *the owner* tapped. `callback_query.from.id` (and
+  `message.from.id`) must appear in `TELEGRAM_CHAT_ID`, or in the comma-separated
+  `TELEGRAM_ALLOWED_USER_IDS` if review ever moves to a shared group. **Both
+  unset ⇒ nobody is authorised** — the check fails closed, so a half-configured
+  deploy refuses approvals rather than accepting them from anyone.
+
+The secret alone was never enough: it says a request came from Telegram, not who
+pressed the button. See `src/lib/telegram-auth.ts`.
+
+> ⚠️ **Before deploying this, check what `TELEGRAM_CHAT_ID` actually holds in
+> Vercel.** It is now read as a *user* id. In the 1:1 bot DM that is the same
+> number as the chat id, so nothing changes — but a **group/supergroup id is
+> negative** and will never match a sender, so every tap would answer "Not
+> authorised." That is the intended fail-closed behaviour; the fix is to set the
+> owner's own numeric id, or list the approvers in `TELEGRAM_ALLOWED_USER_IDS`.
+
+### Reviewing from the chat
+
+| In Telegram | What happens |
+|---|---|
+| **✅ Approve all** | publishes the batch through the shared guard, revalidates the affected pages, alerts followers |
+| **🚫 Reject all** | marks every pending row `rejected`, resets the source's trust streak |
+| **🔍 Details** | expands the digest in place — venue, exact run, price, ticket link, per-row confidence — paged 6 at a time, with **↩︎ Summary** to go back |
+| **🔎 Open source** | opens the house's official listing to verify before approving |
+| type **`/pending`** | pushes the current review queue as digests, on demand |
+| type **`/help`** | what the bot can do |
+
+**Approve is not a blind publish.** Every path that writes `published` — the tap,
+`npm run review:pending -- --publish`, and the crawl's earned auto-approve — runs
+`src/lib/review-guard.ts`, which withholds three classes of row and reports what
+it withheld:
+
+| Withheld | Why |
+|---|---|
+| `cancelled` | a cancellation is confirmed by hiding the row, not by publishing it |
+| implausible dates | year-0026 rows, and "runs" longer than 200 days (two engagements merged in error) |
+| non-performance | costume sales, guided tours, open classes (`src/lib/ingest-filters.ts`) |
+
+`npm run telegram:selftest` proves all of this offline — no bot, no DB, no
+network — and runs in CI on every PR.
 
 ## 5. Sources
 
@@ -153,11 +199,31 @@ confirm the digest, then leave it in `--all`.
 - Scheduled: every 2 days (`.github/workflows/ingest.yml`).
 - Dry run offline: `npm run ingest -- --all --fixture` (writes nothing).
 - Diff self-check: `npm run ingest:selftest`.
+- Telegram logic self-check: `npm run telegram:selftest`.
 
 You'll get one Telegram digest per company per run. Tap **✅ Approve all** /
 **🚫 Reject all**. Approved rows appear on the site within minutes (the webhook
 revalidates `/`, `/search`, the company, and the touched work/people/performance
 pages).
+
+### Reviewing outside a run
+
+A crawl only sends a digest for the changes *it* just found. To review whatever
+is sitting in the queue right now:
+
+```bash
+npm run review:telegram                          # every house with pending rows
+npm run review:telegram -- --slug royal-ballet   # one house
+npm run review:telegram -- --dry                 # count only, sends nothing
+```
+
+…or just type **`/pending`** in the bot DM, which runs the identical code path
+(`src/lib/pending-digest.ts`) with no terminal at all. Each house has one
+standing batch (`pending:<slug>`), so re-asking refreshes that house's digest
+instead of accumulating dead ones.
+
+`npm run review:pending` remains the terminal equivalent, and both paths publish
+through the same guard — nothing is only-approvable from one surface.
 
 ## 7. `--local` — the Mac / browser-saved HTML path (recommended for launch)
 
