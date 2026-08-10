@@ -53,15 +53,23 @@ published), so the catalogue is populated immediately and is never empty.
 3. Open the DM with your bot and press **Start** once — a bot cannot message a
    user who has never started it.
 4. Choose a random `TELEGRAM_WEBHOOK_SECRET` (`openssl rand -hex 32`).
-5. After deploying, register the webhook (one curl):
+5. After the code is **deployed to the URL you are registering**, register the
+   webhook:
 
 ```bash
-curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
-  -d "url=https://worldballetoperacalender.vercel.app/api/telegram/webhook" \
-  -d "secret_token=${TELEGRAM_WEBHOOK_SECRET}"
+npm run telegram:setwebhook          # reads .env.local; --url to override the origin
 ```
 
 6. Confirm the whole chain: `npm run telegram:check` (read-only; sends nothing).
+
+> **Why not a raw curl?** `curl ".../bot${TELEGRAM_BOT_TOKEN}/setWebhook"` expands
+> a **shell** variable, but the token lives in `.env.local`, which only Node reads.
+> In a normal terminal it expands to nothing, the URL becomes
+> `api.telegram.org/bot/setWebhook`, and Telegram replies a bare
+> `{"ok":false,"error_code":404,"description":"Not Found"}` — which reads like a
+> broken endpoint when the real cause is an empty token. The npm script uses the
+> same `.env.local` as every other command here, and keeps the token out of your
+> shell history. (Raw curl still works if you paste the literal token in.)
 
 ### Two independent checks guard every tap
 
