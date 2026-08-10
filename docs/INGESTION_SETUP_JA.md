@@ -185,19 +185,32 @@ Telegram で承認ボタンを押せるようにする設定です。落ち着�
 
 ### 4-4. Webhook を登録する（コマンド1回だけ）
 
-**サイトを Vercel にデプロイした後**で、ターミナルに次を打ちます。
-`${TELEGRAM_BOT_TOKEN}` と `${TELEGRAM_WEBHOOK_SECRET}` は、**自分の実際の値に置き換えて**ください。
+**登録先のURLにコードがデプロイされた後**で、ターミナルに次を打ちます。
 
 ```bash
-curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKENをここに>/setWebhook" \
-  -d "url=https://worldballetoperacalender.vercel.app/api/telegram/webhook" \
-  -d "secret_token=<TELEGRAM_WEBHOOK_SECRETをここに>"
+npm run telegram:setwebhook
 ```
 
-> 💡 用語：**curl（カール）**＝ターミナルから「指定したURLに命令を送る」コマンド。
-> これは「Telegramさん、ボタンが押されたらこのサイトに知らせてね」という**1回きりの登録**です。
-> 成功すると `{"ok":true,"result":true,...}` のような返事が表示されます。
-> このコマンドは bot の鍵さえあればどこからでも打てます（VPSは不要）。
+`.env.local` から鍵を読むので、**トークンを打ち込む必要はありません**。
+成功すると `✅ webhook registered — …` と表示されます。
+
+> ⚠️ **`curl` を手打ちして `404 Not Found` が返る場合、原因はほぼ100%「トークンが空」です。**
+>
+> ```
+> {"ok":false,"error_code":404,"description":"Not Found"}
+> ```
+>
+> `curl ".../bot${TELEGRAM_BOT_TOKEN}/setWebhook"` の `${TELEGRAM_BOT_TOKEN}` は
+> **ターミナル（シェル）の変数**です。しかしトークンは `.env.local` というファイルの中に
+> あり、これは Node が読むだけで、**ターミナルには自動で読み込まれません**。
+> そのため空文字に展開され、URLが `api.telegram.org/bot/setWebhook` になり、
+> Telegram は「そんなURLはない」＝404 を返します。**エンドポイントの間違いではありません。**
+>
+> 確認方法： `echo "${TELEGRAM_BOT_TOKEN:-空です}"` → 「空です」と出たらこれが原因。
+> 上の `npm run telegram:setwebhook` を使えばこの問題は起きません。
+
+> 💡 用語：**Webhook 登録**＝「Telegramさん、ボタンが押されたらこのサイトに知らせてね」
+> という**1回きりの登録**です。bot の鍵さえあればどこからでも実行できます（VPSは不要）。
 
 ### 4-5. 配線の確認（何も送らない安全なチェック）
 

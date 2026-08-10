@@ -100,6 +100,7 @@ The complete `npm run` script list (canonical — keep in sync with `package.jso
 | `review:pending [-- --publish]` | Terminal review queue for pending rows |
 | `review:telegram [-- --slug <s>] [-- --dry]` | Push the current pending queue to Telegram as tappable digests (same as typing `/pending` in the bot DM) |
 | `audit:published [-- --slug <s>] [-- --suspicious]` | Read-only trust audit of already-`published` rows (dates/provenance) |
+| `telegram:setwebhook [-- --url <origin>] [-- --drop]` | Register the approval webhook, reading the token from `.env.local` (avoids the empty-shell-variable 404) |
 | `telegram:check` | Read-only self-check that the Telegram approval channel is wired (getMe/getChat/getWebhookInfo) |
 | `telegram:selftest` | Offline check of approval auth + publish guard + message limits (runs in CI) |
 | `discover:feeds` / `inspect:feed` | Probe houses for official iCal/RSS/JSON feeds · inspect one feed |

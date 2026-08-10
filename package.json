@@ -22,6 +22,7 @@
     "review:telegram": "npx tsx scripts/ingest/review-telegram.ts",
     "audit:published": "npx tsx scripts/ingest/audit-published.ts",
     "telegram:check": "npx tsx scripts/ingest/telegram-check.ts",
+    "telegram:setwebhook": "npx tsx scripts/ingest/telegram-setwebhook.ts",
     "telegram:selftest": "npx tsx scripts/ingest/telegram-selftest.ts",
     "clean:published": "npx tsx scripts/ingest/clean-published.ts",
     "inspect:dump": "npx tsx scripts/ingest/inspect-dump.ts"
