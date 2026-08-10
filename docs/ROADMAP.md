@@ -71,7 +71,7 @@ The product is close; these are the things standing between "it works" and
 | M1 | Real domain | ✅ | `premierestages.com` bought via Vercel (2026-07-30); **www is the production alias**, apex 308-redirects to it. Set `NEXT_PUBLIC_SITE_URL=https://www.premierestages.com` and redeploy — `NEXT_PUBLIC_*` is inlined at build time, so setting it alone changes nothing. |
 | M2 | Publish the verified seasons | 🟡 | Large pending queue across ~24 houses awaiting `review:pending --publish`. |
 | M3 | Daily ingestion automation | ⬜ | Still manual. launchd on the owner's Mac — see the ingestion plan below (#12 P3). Prerequisite for the "run it, don't build it" phase. |
-| M4 | Telegram approval flow live | ⬜ | Tools shipped (`telegram:check`); wiring is a separate session. Approving from a terminal every day is not sustainable. |
+| M4 | Telegram approval flow live | 🟡 | **Code complete (Day 15):** owner auth on the webhook (`telegram-auth.ts`, fails closed), the shared publish guard both paths now share (`review-guard.ts`), `/pending` + `npm run review:telegram` for the queue on demand, and a paginated Details view. Remaining: the owner's 25-minute account setup (BotFather → Vercel/GitHub env → `setWebhook` → `telegram:check`), then one live send→tap→publish round trip. |
 | M5 | Legal pages (privacy · terms · affiliate disclosure) | ⬜ | **Blocks M6** — affiliate networks and ad partners require a visible disclosure. Draft grounded in what the code actually collects; owner must review before publishing (not legal advice). |
 | M6 | Affiliate IDs | ⬜ | Code ready (`affiliate.ts`). Gated on the owner's payout account; applications take time, so start early. |
 | M7 | Contact route | ✅ | `/contact` + footer link (2026-07-30). Four pre-filled subjects; the corrections and company/theatre routes are also how a listing relationship with a house can begin. |
@@ -156,10 +156,13 @@ be fully automated (a real browser session is what defeats the block); everythin
 | 2 | **Real-Chrome-profile path** (the human-input-minimizer). Add `CHROME_USER_DATA_DIR` → `launchPersistentContext` in `fetch-browser.ts` so the crawl uses the owner's logged-in profile/fingerprint. Likely converts most *needs-manual* houses back to *auto*. | agent | ⬜ (after P1) |
 | 3 | **Daily schedule.** launchd (recommended) / cron on the Mac runs `npm run ingest -- --all --live` each morning → Telegram digest → tap approve. | both | ⬜ |
 | 4 | **Minimize the residual manual houses.** One-click Save-As bookmarklet → `.local/<slug>.html`, then `npm run ingest:local -- --all`. Target ≤2–3 min/day. | agent | ⬜ |
-| 5 | **Better Telegram confirmation.** Emphasize date-changes, attach an official-page screenshot to the digest, add per-row approve (today: approve-all/reject-all). | agent | ⬜ |
+| 5 | **Better Telegram confirmation.** Emphasize date-changes, attach an official-page screenshot to the digest, add per-row approve. | agent | 🟡 Day 15 shipped the 🔍 Details view (venue/price/ticket/confidence, 6 per page) and `/pending`; screenshots and per-row approve remain. |
+| 6 | **Run the auto-approve path through the shared guard.** `run-ingest.ts` still publishes trusted sources without `review-guard.ts` — the one publish path that isn't guarded. | agent | ⬜ |
 
 New operator tools this stream: `npm run audit:published` (read-only live-date
-audit) · `npm run telegram:check` (read-only channel self-check).
+audit) · `npm run telegram:check` (read-only channel self-check) ·
+`npm run review:telegram` (push the pending queue to Telegram) ·
+`npm run telegram:selftest` (offline auth + guard proof, runs in CI).
 
 ## Bigger bets (from strategy) / 大きな賭け
 - **Performance-trip bundle** (ticket + hotel + flight) — the killer travel unit.

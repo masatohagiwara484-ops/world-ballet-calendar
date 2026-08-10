@@ -98,8 +98,10 @@ The complete `npm run` script list (canonical — keep in sync with `package.jso
 | `ingest:local -- --source <slug>` | Extract from operator-saved HTML (bypasses 403s) |
 | `ingest:selftest` | Diff-engine self-check, no network/DB (runs in CI) |
 | `review:pending [-- --publish]` | Terminal review queue for pending rows |
+| `review:telegram [-- --slug <s>] [-- --dry]` | Push the current pending queue to Telegram as tappable digests (same as typing `/pending` in the bot DM) |
 | `audit:published [-- --slug <s>] [-- --suspicious]` | Read-only trust audit of already-`published` rows (dates/provenance) |
 | `telegram:check` | Read-only self-check that the Telegram approval channel is wired (getMe/getChat/getWebhookInfo) |
+| `telegram:selftest` | Offline check of approval auth + publish guard + message limits (runs in CI) |
 | `discover:feeds` / `inspect:feed` | Probe houses for official iCal/RSS/JSON feeds · inspect one feed |
 | `inspect:dump` | Inspect a saved ingest HTML dump |
 | `clean:published` | Maintenance cleanup of published rows |
@@ -107,7 +109,8 @@ The complete `npm run` script list (canonical — keep in sync with `package.jso
 | `scrape -- --adapter <slug> --fixture` | Adapter debug CLI — run one scraper against its local fixture |
 
 Ops runbook for the ingestion commands: [`docs/INGESTION_SETUP.md`](./docs/INGESTION_SETUP.md).
-Every PR runs CI (`.github/workflows/ci.yml`): lint → `validate:data` → `ingest:selftest` → build.
+Every PR runs CI (`.github/workflows/ci.yml`): lint → `validate:data` →
+`ingest:selftest` → `telegram:selftest` → build.
 
 ## Documentation
 

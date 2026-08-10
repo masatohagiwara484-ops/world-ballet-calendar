@@ -127,20 +127,110 @@ export function formatDigest(input: DigestInput): string {
   return `${head} — ${n} change${n === 1 ? '' : 's'}\n${summary}\n${runLine}\n\n${grouped}${src}`
 }
 
+/** A full pending row, for the per-performance Details view. */
+export interface DetailRow {
+  title: string
+  kind: string | null
+  start_date: string
+  end_date: string | null
+  venue: string | null
+  price_range: string | null
+  ticket_url: string | null
+  affiliate_url: string | null
+  confidence: number | null
+  change_kind: string | null
+}
+
+/** Performances per Details page — keeps a page inside Telegram's 4096-char limit. */
+export const DETAIL_PAGE_SIZE = 6
+
+/**
+ * The per-performance view behind the "Details" button — everything the terminal
+ * review pass prints (venue, exact run, price, ticket link, confidence), so the
+ * owner never needs `npm run review:pending` to decide.
+ */
+export function formatDetail(
+  companyName: string,
+  rows: DetailRow[],
+  page: number
+): string {
+  const pages = Math.max(1, Math.ceil(rows.length / DETAIL_PAGE_SIZE))
+  const safePage = Math.min(Math.max(page, 0), pages - 1)
+  const slice = rows.slice(safePage * DETAIL_PAGE_SIZE, (safePage + 1) * DETAIL_PAGE_SIZE)
+
+  const body = slice
+    .map((r, i) => {
+      const n = safePage * DETAIL_PAGE_SIZE + i + 1
+      const disc = r.kind ? `${KIND_GLYPH[r.kind] ?? ''} ` : ''
+      const tag = r.change_kind && r.change_kind !== 'new' ? ` ${ICON[r.change_kind] ?? ''}` : ''
+      const facts = [
+        `📆 ${esc(niceSpan(r.start_date, r.end_date ?? r.start_date))}`,
+        r.venue ? `📍 ${esc(r.venue)}` : null,
+        r.price_range ? `💷 ${esc(r.price_range)}` : null,
+        // The link itself rides on the row so a long URL never breaks the layout.
+        r.affiliate_url ?? r.ticket_url ? `🎟 ${esc(short(r.affiliate_url ?? r.ticket_url ?? ''))}` : '⚠️ no ticket link',
+        r.confidence != null ? `${r.confidence < 0.9 ? '⚠️' : '·'} conf ${r.confidence.toFixed(2)}` : null,
+      ].filter(Boolean) as string[]
+      return `*${n}\\. ${disc}${esc(r.title)}*${tag}\n     ${facts.join('\n     ')}`
+    })
+    .join('\n\n')
+
+  const head = `🔍 *${esc(companyName)}* — details`
+  const foot = `_page ${safePage + 1} of ${pages} · ${rows.length} performance${rows.length === 1 ? '' : 's'}_`
+  return `${head}\n${foot}\n\n${body}`
+}
+
 /**
  * Inline keyboard: Approve all / Reject all, plus a tappable "Open source" URL
  * button so the owner can eyeball the official listing before approving —
- * turning review into a two-tap flow that needs no terminal at all.
+ * turning review into a two-tap flow that needs no terminal at all. "Details"
+ * expands the same batch into the per-performance view without losing the
+ * approve/reject affordance.
  */
-export function digestKeyboard(batchId: string, sourceUrl?: string) {
+export function digestKeyboard(batchId: string, sourceUrl?: string, hasDetail = true) {
   const rows: { text: string; callback_data?: string; url?: string }[][] = [
     [
       { text: '✅ Approve all', callback_data: `approve:${batchId}` },
       { text: '🚫 Reject all', callback_data: `reject:${batchId}` },
     ],
   ]
+  const third: { text: string; callback_data?: string; url?: string }[] = []
+  if (hasDetail && fits(`detail:${batchId}:0`)) {
+    third.push({ text: '🔍 Details', callback_data: `detail:${batchId}:0` })
+  }
+  if (sourceUrl && /^https?:\/\//.test(sourceUrl)) third.push({ text: '🔎 Open source', url: sourceUrl })
+  if (third.length) rows.push(third)
+  return { inline_keyboard: rows }
+}
+
+/**
+ * Keyboard for the Details view: page navigation, a way back to the summary, and
+ * the same Approve/Reject — the owner can decide from whichever view they're in.
+ */
+export function detailKeyboard(batchId: string, page: number, pages: number, sourceUrl?: string) {
+  const rows: { text: string; callback_data?: string; url?: string }[][] = []
+
+  const nav: { text: string; callback_data: string }[] = []
+  if (page > 0) nav.push({ text: '‹ Prev', callback_data: `detail:${batchId}:${page - 1}` })
+  if (page < pages - 1) nav.push({ text: 'Next ›', callback_data: `detail:${batchId}:${page + 1}` })
+  if (nav.length) rows.push(nav)
+
+  rows.push([{ text: '↩︎ Summary', callback_data: `summary:${batchId}` }])
+  rows.push([
+    { text: '✅ Approve all', callback_data: `approve:${batchId}` },
+    { text: '🚫 Reject all', callback_data: `reject:${batchId}` },
+  ])
   if (sourceUrl && /^https?:\/\//.test(sourceUrl)) rows.push([{ text: '🔎 Open source', url: sourceUrl }])
   return { inline_keyboard: rows }
+}
+
+/**
+ * Telegram rejects callback_data over 64 BYTES. Batch ids are `<runId>:<slug>`,
+ * so a long house slug plus a page suffix can approach the ceiling — drop the
+ * button rather than let the whole sendMessage fail.
+ */
+function fits(data: string): boolean {
+  return Buffer.byteLength(data, 'utf8') <= 64
 }
 
 /** Send a digest message; returns the Telegram message_id (or null offline). */
@@ -175,14 +265,25 @@ export async function answerCallback(callbackId: string, text: string): Promise<
   await call('answerCallbackQuery', { callback_query_id: callbackId, text })
 }
 
-/** Rewrite the digest message to record the decision (removes the buttons). */
-export async function editMessage(chatId: string, messageId: string, text: string): Promise<void> {
+/**
+ * Rewrite a message in place. With no `replyMarkup` Telegram drops the inline
+ * keyboard — which is exactly what recording a final decision wants. Passing a
+ * keyboard instead lets one message toggle between summary and Details without
+ * spamming the chat with new messages.
+ */
+export async function editMessage(
+  chatId: string,
+  messageId: string,
+  text: string,
+  replyMarkup?: unknown
+): Promise<void> {
   await call('editMessageText', {
     chat_id: chatId,
     message_id: Number(messageId),
     text,
     parse_mode: 'Markdown',
     disable_web_page_preview: true,
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   })
 }
 

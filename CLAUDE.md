@@ -53,14 +53,24 @@ npm run seed                          # load curated companies/performances
 npm run ingest -- --all --live        # crawl → write pending + Telegram digest
 npm run ingest:local -- --source <slug>  # extract from browser-saved HTML (no 403)
 npm run ingest:selftest               # diff-engine self-check
+npm run telegram:selftest             # approval auth + publish guard, offline
 npm run review:pending [-- --publish] # terminal review queue
+npm run review:telegram               # same queue, pushed to Telegram (= /pending)
 ```
 
 Full command table: `README.md`. Every PR runs CI (`.github/workflows/ci.yml`:
-lint → validate:data → ingest:selftest → build) — keep it green.
+lint → validate:data → ingest:selftest → telegram:selftest → build) — keep it green.
 
 Ingestion ops runbook: `docs/INGESTION_SETUP.md`. The `review_status` gate is
 absolute: nothing publishes without owner approval (Telegram or `--publish`).
+
+**Approval is authenticated AND guarded.** The webhook checks two independent
+things: the Telegram secret header (the call is from Telegram) *and* the sender's
+user id against `TELEGRAM_CHAT_ID` / `TELEGRAM_ALLOWED_USER_IDS` (the owner is the
+one publishing) — `src/lib/telegram-auth.ts`, fails closed. Every approval path
+then publishes through `src/lib/review-guard.ts`, which withholds cancellations,
+implausible dates and non-performance rows. Telegram and the terminal must never
+diverge on what an approval means — change the shared module, not one caller.
 
 ## 4. Environment variables
 
@@ -69,7 +79,8 @@ absolute: nothing publishes without owner approval (Telegram or `--publish`).
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel + `.env.local` |
 | `SUPABASE_SERVICE_ROLE_KEY` | GitHub Secrets + Vercel (server) + `.env.local` — never client-side |
 | `ANTHROPIC_API_KEY` | GitHub Secrets + `.env.local` (Haiku extraction) |
-| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_WEBHOOK_SECRET` | approval flow |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` / `TELEGRAM_WEBHOOK_SECRET` | approval flow — `CHAT_ID` doubles as the owner identity |
+| `TELEGRAM_ALLOWED_USER_IDS` | optional — comma-separated approver allowlist for a shared review group |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | optional — Google Maps for venue maps, else Leaflet |
 
 ## 5. Agents / エージェント

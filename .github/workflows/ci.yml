@@ -43,5 +43,10 @@ jobs:
       - name: Ingest diff-engine self-test
         run: npm run ingest:selftest
 
+      # Approval now happens from Telegram, so the rules that decide WHO may
+      # publish and WHAT an "Approve all" puts on the live site are CI-gated.
+      - name: Telegram review self-test
+        run: npm run telegram:selftest
+
       - name: Production build
         run: npm run build

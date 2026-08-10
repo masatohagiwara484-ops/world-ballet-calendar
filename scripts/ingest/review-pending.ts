@@ -20,7 +20,7 @@
  */
 import { config } from 'dotenv'
 import { getWriter } from './state'
-import { isNonPerformance } from './filters'
+import { partitionForPublish, describeHidden } from '../../src/lib/review-guard'
 
 config({ path: '.env.local' })
 
@@ -135,6 +135,7 @@ async function main(): Promise<void> {
     console.log('Review the list above. To act:')
     console.log(`  npm run review:pending -- ${slug ? `--slug ${slug} ` : ''}--publish    # publish these`)
     console.log(`  npm run review:pending -- ${slug ? `--slug ${slug} ` : ''}--reject     # discard these`)
+    console.log(`  npm run review:telegram${slug ? ` -- --slug ${slug}` : ''}             # review from Telegram instead`)
     return
   }
 
@@ -154,65 +155,35 @@ async function main(): Promise<void> {
     return
   }
 
-  // Data-quality guard: a sane performance date is in the near future window.
-  // Rows outside it (e.g. the year-0026 rows a since-fixed parser once wrote) are
-  // stale artefacts and must NEVER reach the live site — auto-reject them.
-  const isSaneYear = (d: string | null): boolean => {
-    if (!d) return false
-    const y = parseInt(d.slice(0, 4), 10)
-    return Number.isFinite(y) && y >= 2025 && y <= 2035
-  }
-  // A single production almost never runs longer than ~6 months; a longer span is
-  // the signature of two separate engagements merged in error (e.g. a 2026 show
-  // and a 2027 show collapsed into one row). Mirrors normalize.ts MAX_RUN_DAYS.
-  const MAX_SANE_SPAN_DAYS = 200
-  const isInsane = (r: PendingRow): boolean => {
-    if (!isSaneYear(r.start_date)) return true
-    if (r.end_date != null) {
-      if (!isSaneYear(r.end_date)) return true
-      const span = (Date.parse(r.end_date) - Date.parse(r.start_date)) / 86_400_000
-      if (span > MAX_SANE_SPAN_DAYS) return true
-    }
-    return false
-  }
+  // publish — the guard decides what actually goes live. It lives in
+  // src/lib/review-guard so the Telegram webhook applies the IDENTICAL rules:
+  // cancellations, implausible dates and non-performance rows are hidden.
+  const { publishIds, hideIds, hidden } = partitionForPublish(rows)
 
-  // publish — mirror the webhook: cancellations + bad-date rows are hidden, the rest go live.
-  const cancelledIds = rows.filter((r) => r.change_kind === 'cancelled').map((r) => r.id)
-  const insaneRows = rows.filter((r) => r.change_kind !== 'cancelled' && isInsane(r))
-  // Non-performance rows (costume sales, guided tours, adult classes, …) that
-  // predate the ingest-time filter can still sit in the pending queue. Apply the
-  // SAME filter at publish time so a stale "Ballettführung" can never reach the
-  // live site just because it was written before the filter existed.
-  const nonPerfRows = rows.filter((r) => r.change_kind !== 'cancelled' && isNonPerformance(r.title))
-  const rejectIds = [
-    ...new Set([...cancelledIds, ...insaneRows.map((r) => r.id), ...nonPerfRows.map((r) => r.id)]),
-  ]
-
-  if (insaneRows.length) {
-    console.log(`⚠️  Auto-rejecting ${insaneRows.length} row(s) with implausible dates (kept off the live site):`)
-    for (const r of insaneRows.slice(0, 10)) {
+  for (const reason of ['implausible-date', 'non-performance'] as const) {
+    const group = hidden.filter((h) => h.reason === reason)
+    if (!group.length) continue
+    const label =
+      reason === 'implausible-date'
+        ? 'row(s) with implausible dates (kept off the live site)'
+        : 'non-performance row(s) (sales/tours/classes)'
+    console.log(`⚠️  Auto-rejecting ${group.length} ${label}:`)
+    for (const { row: r } of group.slice(0, 10)) {
       console.log(`      - ${r.company_slug}  "${r.title.slice(0, 40)}"  ${r.start_date}…${r.end_date}`)
     }
   }
-  if (nonPerfRows.length) {
-    console.log(`⚠️  Auto-rejecting ${nonPerfRows.length} non-performance row(s) (sales/tours/classes):`)
-    for (const r of nonPerfRows.slice(0, 10)) {
-      console.log(`      - ${r.company_slug}  "${r.title.slice(0, 40)}"`)
-    }
-  }
-  if (rejectIds.length) {
+
+  if (hideIds.length) {
     const { error: e } = await client
       .from('performances')
       .update({ review_status: 'rejected' })
-      .in('id', rejectIds)
+      .in('id', hideIds)
     if (e) {
       console.error('✗ hiding cancellations/bad-date rows failed:', e.message)
       process.exit(1)
     }
   }
 
-  // Publish everything pending EXCEPT what we just rejected.
-  const publishIds = ids.filter((id) => !rejectIds.includes(id))
   const { error: e2 } = await client
     .from('performances')
     .update({ review_status: 'published', last_verified: new Date().toISOString() })
@@ -222,12 +193,8 @@ async function main(): Promise<void> {
     console.error('✗ publish failed:', e2.message)
     process.exit(1)
   }
-  console.log(
-    `✅ Published ${publishIds.length} row(s)` +
-      `${cancelledIds.length ? `, hid ${cancelledIds.length} cancellation(s)` : ''}` +
-      `${insaneRows.length ? `, rejected ${insaneRows.length} bad-date row(s)` : ''}` +
-      `${nonPerfRows.length ? `, rejected ${nonPerfRows.length} non-performance row(s)` : ''}.`
-  )
+  const withheld = describeHidden(hidden)
+  console.log(`✅ Published ${publishIds.length} row(s)${withheld ? `, withheld ${withheld}` : ''}.`)
   console.log('   They appear on the live site at the next revalidate (≤1h) or after a redeploy.')
 }
 
