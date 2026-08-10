@@ -79,7 +79,7 @@ The product is close; these are the things standing between "it works" and
 ### SHOULD — right after launch / ローンチ直後に効く
 | # | Task | Notes |
 |---|------|-------|
-| S1 | SNS accounts + posting | Instagram first — ballet is a visual medium. Do this only **after** M1, or the announced URL goes stale. |
+| S1 | SNS accounts + posting | Instagram first — ballet is a visual medium. Do this only **after** M1, or the announced URL goes stale. Channel playbook (Canva tokens, post formats, revenue): `docs/features/instagram-social-playbook.md`. |
 | S2 | Verify OG/share cards on real posts | The generated weekly card is the first impression when shared. |
 | S3 | Search Console + Analytics | Without it there is no signal to improve against. |
 | S4 | Mobile device check | Most traffic will be phones; `verifier-web` covers the desktop case only. |
@@ -94,7 +94,7 @@ The product is close; these are the things standing between "it works" and
 | N2 | Outreach to companies & theatres | A house linking back is worth more than any ad. |
 | N3 | Ballet media / creator outreach | `/read` already maps 17 outlets. |
 | N4 | Japanese UI | Deferred by default; pull forward only if targeting Japan first. |
-| N5 | Automated weekly SNS post | The weekly OG card already exists — only the posting is manual. |
+| N5 | Automated weekly SNS post | The weekly OG card already exists — only the posting is manual. Format F1 in `docs/features/instagram-social-playbook.md`. |
 | N6 | Accounts / favourites | Explicitly post-traction (section E). |
 
 ### Sequencing / 進行順
