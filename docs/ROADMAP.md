@@ -157,7 +157,7 @@ be fully automated (a real browser session is what defeats the block); everythin
 | 3 | **Daily schedule.** launchd (recommended) / cron on the Mac runs `npm run ingest -- --all --live` each morning → Telegram digest → tap approve. | both | ⬜ |
 | 4 | **Minimize the residual manual houses.** One-click Save-As bookmarklet → `.local/<slug>.html`, then `npm run ingest:local -- --all`. Target ≤2–3 min/day. | agent | ⬜ |
 | 5 | **Better Telegram confirmation.** Emphasize date-changes, attach an official-page screenshot to the digest, add per-row approve. | agent | 🟡 Day 15 shipped the 🔍 Details view (venue/price/ticket/confidence, 6 per page) and `/pending`; screenshots and per-row approve remain. |
-| 6 | **Run the auto-approve path through the shared guard.** `run-ingest.ts` still publishes trusted sources without `review-guard.ts` — the one publish path that isn't guarded. | agent | ⬜ |
+| 6 | **Run the auto-approve path through the shared guard.** `run-ingest.ts` published trusted sources without `review-guard.ts` — the one publish path with no human between the parser and the site. | agent | ✅ Day 15 (review follow-up) |
 
 New operator tools this stream: `npm run audit:published` (read-only live-date
 audit) · `npm run telegram:check` (read-only channel self-check) ·

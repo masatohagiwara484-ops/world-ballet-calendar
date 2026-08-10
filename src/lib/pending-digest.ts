@@ -19,7 +19,7 @@
 // the Next build and under `tsx` when the CLI script pulls it in.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { companies } from '../data/companies'
-import { formatDigest, sendDigest, type DigestLine } from './telegram'
+import { clearKeyboard, formatDigest, sendDigest, type DigestLine } from './telegram'
 
 /** Every field the digest and the Details view need, in one read. */
 export const PENDING_COLUMNS =
@@ -48,6 +48,8 @@ export interface PushResult {
   rows: number
   /** Digests actually delivered. */
   sent: number
+  /** Houses left unsent because `limit` was reached — ask again to get them. */
+  remaining: number
   /** Company slugs whose digest failed to send, with the reason. */
   failed: { slug: string; reason: string }[]
 }
@@ -104,6 +106,29 @@ function toDigestLines(rows: PendingRow[]): DigestLine[] {
   }))
 }
 
+/**
+ * Retire the previous message for this standing batch, if there is one.
+ *
+ * The batch id is stable per house, so re-sending re-points it at a DIFFERENT row
+ * set. Without this, the older message keeps a live "Approve all" that would
+ * publish rows it never displayed — the one way this design could break "approve
+ * exactly what you see". Stripping its keyboard makes the newest digest the only
+ * tappable one.
+ */
+async function retirePreviousMessage(client: SupabaseClient, batchId: string): Promise<void> {
+  const { data } = await client
+    .from('ingest_batches')
+    .select('telegram_chat_id, telegram_message_id, status')
+    .eq('id', batchId)
+    .maybeSingle()
+  const prev = data as { telegram_chat_id: string | null; telegram_message_id: string | null; status: string } | null
+  // Only a still-open digest has buttons worth removing.
+  if (!prev?.telegram_chat_id || !prev.telegram_message_id || prev.status !== 'sent') return
+  await clearKeyboard(prev.telegram_chat_id, prev.telegram_message_id).catch(() => {
+    /* an old or already-edited message can't be updated — not worth failing the send */
+  })
+}
+
 /** Upsert the standing batch so a tap on the digest can find these exact rows. */
 async function recordPendingBatch(
   client: SupabaseClient,
@@ -132,15 +157,28 @@ async function recordPendingBatch(
 export async function pushPendingDigests(
   client: SupabaseClient,
   chatId: string,
-  opts: { slug?: string } = {}
+  opts: { slug?: string; limit?: number } = {}
 ): Promise<PushResult> {
   const rows = await fetchPending(client, opts.slug)
   const byCompany = groupByCompany(rows)
   const runId = `manual-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}`
 
-  const result: PushResult = { companies: byCompany.size, rows: rows.length, sent: 0, failed: [] }
+  // `limit` bounds the fan-out per invocation. The webhook passes one because a
+  // serverless request that sends dozens of messages inline will out-run its
+  // timeout, and Telegram REPLAYS an update it never got a 200 for — sending the
+  // whole queue twice. The CLI passes none: a terminal can wait.
+  const all = [...byCompany.entries()]
+  const batchList = opts.limit != null ? all.slice(0, opts.limit) : all
 
-  for (const [slug, list] of byCompany) {
+  const result: PushResult = {
+    companies: byCompany.size,
+    rows: rows.length,
+    sent: 0,
+    remaining: all.length - batchList.length,
+    failed: [],
+  }
+
+  for (const [slug, list] of batchList) {
     const batchId = pendingBatchId(slug)
     const counts: Record<string, number> = {}
     for (const r of list) counts[r.change_kind ?? 'new'] = (counts[r.change_kind ?? 'new'] ?? 0) + 1
@@ -154,6 +192,7 @@ export async function pushPendingDigests(
         lines: toDigestLines(list),
         sourceUrl,
       })
+      await retirePreviousMessage(client, batchId)
       const messageId = await sendDigest(chatId, text, batchId, sourceUrl)
       await recordPendingBatch(client, {
         id: batchId,

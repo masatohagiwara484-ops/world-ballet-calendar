@@ -75,6 +75,13 @@ curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
 The secret alone was never enough: it says a request came from Telegram, not who
 pressed the button. See `src/lib/telegram-auth.ts`.
 
+> ⚠️ **Before deploying this, check what `TELEGRAM_CHAT_ID` actually holds in
+> Vercel.** It is now read as a *user* id. In the 1:1 bot DM that is the same
+> number as the chat id, so nothing changes — but a **group/supergroup id is
+> negative** and will never match a sender, so every tap would answer "Not
+> authorised." That is the intended fail-closed behaviour; the fix is to set the
+> owner's own numeric id, or list the approvers in `TELEGRAM_ALLOWED_USER_IDS`.
+
 ### Reviewing from the chat
 
 | In Telegram | What happens |
@@ -86,9 +93,10 @@ pressed the button. See `src/lib/telegram-auth.ts`.
 | type **`/pending`** | pushes the current review queue as digests, on demand |
 | type **`/help`** | what the bot can do |
 
-**Approve is not a blind publish.** Every approval path — the tap and
-`npm run review:pending -- --publish` alike — runs `src/lib/review-guard.ts`,
-which withholds three classes of row and reports what it withheld:
+**Approve is not a blind publish.** Every path that writes `published` — the tap,
+`npm run review:pending -- --publish`, and the crawl's earned auto-approve — runs
+`src/lib/review-guard.ts`, which withholds three classes of row and reports what
+it withheld:
 
 | Withheld | Why |
 |---|---|

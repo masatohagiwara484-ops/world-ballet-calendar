@@ -40,11 +40,21 @@ import { partitionForPublish, describeHidden } from '@/lib/review-guard'
 import {
   PENDING_COLUMNS,
   companyName,
+  fetchPending,
   pushPendingDigests,
   type PendingRow,
 } from '@/lib/pending-digest'
 
 export const dynamic = 'force-dynamic'
+/**
+ * `/pending` fans out one message per house. Telegram REPLAYS any update it
+ * doesn't get a timely 200 for, so a timeout here would re-send the whole queue —
+ * give the handler room, and cap the fan-out with PENDING_FANOUT_LIMIT as well.
+ */
+export const maxDuration = 60
+
+/** Houses per `/pending` invocation; the rest come on the next ask. */
+const PENDING_FANOUT_LIMIT = 8
 
 function serviceClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -176,22 +186,34 @@ async function handleCommand(
   chatId: string,
   text: string
 ): Promise<void> {
-  const command = text.trim().split(/\s+/)[0]?.toLowerCase().replace(/@.*$/, '') ?? ''
+  const parts = text.trim().split(/\s+/)
+  const command = parts[0]?.toLowerCase().replace(/@.*$/, '') ?? ''
+  // `/pending royal-ballet` narrows to one house, mirroring `--slug` on the CLI.
+  const slug = parts[1]?.trim() || undefined
 
   if (command === '/pending') {
-    const result = await pushPendingDigests(client, chatId)
-    if (result.rows === 0) {
-      await sendNotice(chatId, '✅ *Nothing pending* — the queue is empty.')
+    // Count first so the header lands ABOVE the digests it introduces.
+    const waiting = await fetchPending(client, slug)
+    if (waiting.length === 0) {
+      await sendNotice(
+        chatId,
+        slug ? `✅ *Nothing pending* for \`${slug}\`.` : '✅ *Nothing pending* — the queue is empty.'
+      )
       return
     }
-    const failed = result.failed.length
-      ? `\n⚠️ ${result.failed.length} digest(s) failed to send: ${result.failed.map((f) => f.slug).join(', ')}`
-      : ''
+    const houses = new Set(waiting.map((r) => r.company_slug)).size
+    const capped = houses > PENDING_FANOUT_LIMIT ? ` Sending the first ${PENDING_FANOUT_LIMIT}.` : ''
     await sendNotice(
       chatId,
-      `📋 *${result.rows} pending* across ${result.companies} house${result.companies === 1 ? '' : 's'} — ` +
-        `${result.sent} digest${result.sent === 1 ? '' : 's'} below.${failed}`
+      `📋 *${waiting.length} pending* across ${houses} house${houses === 1 ? '' : 's'}.${capped}`
     )
+
+    const result = await pushPendingDigests(client, chatId, { slug, limit: PENDING_FANOUT_LIMIT })
+    const notes = [
+      result.remaining ? `${result.remaining} more house(s) — send /pending again.` : '',
+      result.failed.length ? `⚠️ failed: ${result.failed.map((f) => f.slug).join(', ')}` : '',
+    ].filter(Boolean)
+    if (notes.length) await sendNotice(chatId, notes.join('\n'))
     return
   }
 
@@ -278,8 +300,13 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const ids = batch.performance_ids ?? []
-  const chatId = batch.telegram_chat_id ?? (cq.message?.chat?.id != null ? String(cq.message.chat.id) : null)
-  const messageId = batch.telegram_message_id ?? (cq.message?.message_id != null ? String(cq.message.message_id) : null)
+  // Edit the message that was ACTUALLY TAPPED, falling back to the recorded one.
+  // A standing `pending:<slug>` batch is re-pointed at each re-send, so the stored
+  // id can name a newer message than the one under the owner's finger — the reply
+  // must land on the message they touched.
+  const chatId = (cq.message?.chat?.id != null ? String(cq.message.chat.id) : null) ?? batch.telegram_chat_id
+  const messageId =
+    (cq.message?.message_id != null ? String(cq.message.message_id) : null) ?? batch.telegram_message_id
 
   // --- Read-only views: Details / back to Summary. No DB writes, no decision. ---
   if (action === 'detail' || action === 'summary') {
@@ -309,8 +336,14 @@ export async function POST(req: NextRequest): Promise<Response> {
         : digestKeyboard(batchId, sourceUrl)
       try {
         await editMessage(chatId, messageId, text, keyboard)
-      } catch {
-        /* "message is not modified" and friends are harmless here */
+      } catch (err) {
+        // "message is not modified" means the view is already what was asked for.
+        // Anything else is a real failure and must NOT look like a working button.
+        const reason = err instanceof Error ? err.message : String(err)
+        if (!/not modified/i.test(reason)) {
+          await answerCallback(cq.id, 'Could not open details.').catch(() => {})
+          return NextResponse.json({ ok: true })
+        }
       }
     }
     await answerCallback(cq.id, '')
@@ -326,7 +359,15 @@ export async function POST(req: NextRequest): Promise<Response> {
     const { publishIds, hideIds, hidden } = partitionForPublish(rows)
 
     if (hideIds.length) {
-      await client.from('performances').update({ review_status: 'rejected' }).in('id', hideIds)
+      // `.eq('review_status','pending')` matters HERE and not on the CLI: the CLI's
+      // rows came from a pending-only query, while loadBatchRows reads a batch's
+      // rows whatever their status. Without it a stale digest could unpublish a
+      // live row.
+      await client
+        .from('performances')
+        .update({ review_status: 'rejected' })
+        .in('id', hideIds)
+        .eq('review_status', 'pending')
     }
     if (publishIds.length) {
       await client
@@ -337,7 +378,10 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
     await client.from('ingest_batches').update({ status: 'approved' }).eq('id', batchId)
     await adjustTrust(client, batch.company_slug, true)
-    await revalidateFor(client, batch.company_slug, publishIds)
+    // Hidden rows need revalidation TOO: a confirmed cancellation was usually
+    // published before, so its `/performances/<id>` page is live and ISR-cached.
+    // Purge it, or a cancelled show stays readable for up to an hour.
+    await revalidateFor(client, batch.company_slug, [...publishIds, ...hideIds])
     // Follower alerts — awaited (Vercel may freeze the function after the
     // response), but internally never-throwing, so approval can't break.
     await notifyFollowersOfBatch(client, batchId, batch.company_slug, publishIds)

@@ -282,6 +282,19 @@ export async function publishIds(client: SupabaseClient, ids: string[]): Promise
   if (error) throw error
 }
 
+/**
+ * Hide rows instead of publishing them — what the publish guard decides for a
+ * cancellation, an implausible date or a non-performance title.
+ */
+export async function rejectIds(client: SupabaseClient, ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const { error } = await client
+    .from('performances')
+    .update({ review_status: 'rejected' })
+    .in('id', ids)
+  if (error) throw error
+}
+
 /** Record (or update) the Telegram digest batch — the approval state machine. */
 export async function recordBatch(
   client: SupabaseClient,

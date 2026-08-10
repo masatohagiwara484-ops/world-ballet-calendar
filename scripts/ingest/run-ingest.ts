@@ -47,8 +47,10 @@ import {
   markSeen,
   bumpMisses,
   publishIds,
+  rejectIds,
   recordBatch,
 } from './state'
+import { partitionForPublish, describeHidden } from '../../src/lib/review-guard'
 import type { ExistingRow, IngestPerformance } from './types'
 
 config({ path: '.env.local' })
@@ -835,13 +837,36 @@ async function runSource(src: SourceConfig, args: Args, runId: string): Promise<
     changed.every((r) => r.change_kind === 'new')
 
   if (autoEligible) {
-    await publishIds(writer, changed.map((r) => r.id))
-    console.log(`  ✓ auto-approved ${changed.length} new rows (trusted source)`)
+    // Earned trust buys a source the right to skip the OWNER, never the guard.
+    // Eligibility turns on confidence and change kind — neither of which rules out
+    // a year-0026 date, the exact artefact partitionForPublish exists to catch.
+    // This is the one publish path with no human between the parser and the site,
+    // so it is the one that can least afford to be unguarded.
+    const { publishIds: safeIds, hideIds, hidden } = partitionForPublish(
+      changed.map((r) => ({
+        id: r.id,
+        title: r.title,
+        start_date: r.start_date,
+        end_date: r.end_date,
+        change_kind: r.change_kind ?? 'new',
+      }))
+    )
+    await publishIds(writer, safeIds)
+    if (hideIds.length) await rejectIds(writer, hideIds)
+    const withheld = describeHidden(hidden)
+    console.log(
+      `  ✓ auto-approved ${safeIds.length} new rows (trusted source)` +
+        (withheld ? `, withheld ${withheld}` : '')
+    )
     if (chatId) {
       const name = companies.find((c) => c.slug === src.companySlug)?.name ?? src.companySlug
-      await sendNotice(chatId, `✅ *${name}* — ${changed.length} new auto-published (run ${runId})`).catch(() => {})
+      await sendNotice(
+        chatId,
+        `✅ *${name}* — ${safeIds.length} new auto-published (run ${runId})` +
+          (withheld ? `\n_Withheld: ${withheld}._` : '')
+      ).catch(() => {})
     }
-    return { ok: true, line: `✅ ${src.companySlug}: ${changed.length} auto-published` }
+    return { ok: true, line: `✅ ${src.companySlug}: ${safeIds.length} auto-published` }
   }
 
   // One Telegram digest per company per run — only when something changed. Only

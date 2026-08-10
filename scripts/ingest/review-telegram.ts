@@ -40,7 +40,8 @@ async function main(): Promise<void> {
 
   const chatId = process.env.TELEGRAM_CHAT_ID
   const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!dry && (!chatId || !token || token.includes('placeholder'))) {
+  const configured = !!chatId && !!token && !token.includes('placeholder')
+  if (!dry && !configured) {
     console.error(
       '✗ Telegram not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env.local,\n' +
         '  then run `npm run telegram:check` to confirm the wiring.'
@@ -60,7 +61,8 @@ async function main(): Promise<void> {
     return
   }
 
-  const result = await pushPendingDigests(client, chatId!, { slug })
+  if (!chatId) return // unreachable: guarded above, but keeps chatId non-null for TS
+  const result = await pushPendingDigests(client, chatId, { slug })
 
   if (result.rows === 0) {
     console.log(`No pending rows${slug ? ` for ${slug}` : ''}. Nothing to send.`)

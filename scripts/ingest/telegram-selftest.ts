@@ -144,10 +144,61 @@ function testMessages(): void {
   )
 }
 
+/**
+ * Legacy `Markdown` is the parse_mode every send uses, so `esc` must NOT emit the
+ * MarkdownV2 escapes — a stray `\.` is printed literally to the owner.
+ */
+function testEscaping(): void {
+  console.log('\n=== markdown escaping (legacy parse_mode) ===')
+  const tricky: DetailRow = {
+    title: 'Roméo et Juliette (rev. 2026) — Act I–III, No. 4',
+    kind: 'ballet',
+    start_date: '2026-09-12',
+    end_date: '2026-10-04',
+    venue: 'Palais Garnier, Paris',
+    price_range: '€20–€100',
+    ticket_url: 'https://example.com/tickets',
+    affiliate_url: null,
+    confidence: 0.95,
+    change_kind: 'new',
+  }
+  const detail = formatDetail('Opéra national de Paris', [tricky], 0)
+  const digest = formatDigest({
+    companyName: 'Opéra national de Paris',
+    runId: '2026-08-10-04-17',
+    batchId: 'pending:opera-national-de-paris',
+    lines: [
+      {
+        change_kind: 'date-changed',
+        title: tricky.title,
+        start_date: '2026-09-12',
+        end_date: '2026-10-04',
+        was: '2026-09-05',
+        kind: 'ballet',
+        price: tricky.price_range,
+        confidence: 0.95,
+      },
+    ],
+    sourceUrl: 'https://example.com/whats-on',
+  })
+
+  // A backslash may only ever precede a legacy-Markdown control character.
+  const strayEscape = /\\([^_*[\]`\\])/
+  check('no stray backslash escapes in the Details view', !strayEscape.test(detail))
+  check('no stray backslash escapes in the digest', !strayEscape.test(digest))
+  check('punctuation survives verbatim', detail.includes('Act I–III, No. 4'))
+  check('the numbered heading is not escaped', detail.includes('*1. '))
+  check(
+    'entity-opening characters are still escaped',
+    formatDetail('X', [{ ...tricky, title: 'Swan_Lake' }], 0).includes('Swan\\_Lake')
+  )
+}
+
 console.log('=== telegram review self-test ===')
 testAuth()
 testGuard()
 testMessages()
+testEscaping()
 
 if (failures > 0) {
   console.error(`\n✗ ${failures} check(s) failed.`)

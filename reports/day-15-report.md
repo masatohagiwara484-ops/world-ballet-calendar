@@ -69,13 +69,51 @@ be reachable at any time, not only during a crawl.
 ## 3. Verification / 検証
 
 **EN:** `lint` ✓ · `validate:data` ✓ · `ingest:selftest` ✓ · `telegram:selftest`
-✓ (24/24) · `next build` ✓. `review:telegram --dry` was exercised without
+✓ (29/29) · `next build` ✓. `review:telegram --dry` was exercised without
 credentials and exits cleanly with the correct configuration error. The live
 send/tap path cannot be verified from this environment — it needs the owner's bot
 token, so it is the first item below.
 
 **JA:** 上記5点すべてグリーン。認証情報のない環境で `--dry` が正しくエラー終了する
 ことも確認。実際の送信とタップの検証には bot トークンが必要なため、下記の残作業とした。
+
+### 3-1. Review pass / レビュー指摘への対応
+
+**EN:** `code_reviewer` returned CHANGES REQUESTED and confirmed the auth path
+itself was clean (no publish without owner authorisation, no bypass via
+`/pending`, callback parsing correct for colon-bearing batch ids). Eleven
+findings, all fixed:
+
+- **A regression I introduced:** narrowing `revalidateFor` to `publishIds` meant
+  an approved *cancellation* no longer purged its live `/performances/<id>` page
+  — ISR would have kept a cancelled show readable for up to an hour. Now
+  revalidates published **and** hidden ids.
+- **`.eq('review_status','pending')` on the hide update.** The CLI is safe only
+  because its rows came from a pending-only query; the webhook reads a batch's
+  rows at any status, so a stale digest could have unpublished a live row.
+- **`/pending` fan-out.** Sending ~38 messages inline would out-run the function
+  and Telegram replays un-acked updates — the whole queue twice. Capped at 8
+  houses per ask, `maxDuration` exported, header moved above the digests.
+- **Superseded digests.** A standing `pending:<slug>` batch re-points at a new row
+  set on every re-send, so an older message's Approve could publish rows it never
+  displayed. The previous message's keyboard is now stripped, and edits land on
+  the message actually tapped rather than the last one recorded.
+- **Auto-approve now runs the guard** (see §2 note reversed — it was scoped out,
+  the review showed the docs then overclaimed, so it was cheaper to make the
+  claim true than to narrow it). It is the only publish path with no human in it.
+- **Markdown escaping.** `esc` emitted MarkdownV2 escapes while every send uses
+  legacy `Markdown`, which prints `Swan Lake\.` verbatim. Trimmed to the legacy
+  set; five new self-test checks pin it.
+- Plus: silent Details failures now say so, `/pending <slug>` works, keyboard
+  types named, `!` assertion removed, and a deploy warning that a **negative
+  (group) `TELEGRAM_CHAT_ID` will refuse every tap** — correct fail-closed
+  behaviour, but it must be checked before merging.
+
+**JA:** `code_reviewer` は「認証経路そのものは問題なし」と確認したうえで11件を指摘し、
+全件修正済み。特に重要なのは、**自分が入れたリグレッション**（承認済み中止公演の詳細
+ページがISRで最大1時間残る）、**古いダイジェストのボタンが生き続ける問題**、
+**`/pending` のタイムアウトによるTelegram再送で全件二重送信**の3点。自動承認経路も
+共有ガードを通すよう修正し、ドキュメントの記述と実装を一致させた。
 
 ---
 
@@ -101,13 +139,16 @@ your Vercel/GitHub settings. Full walkthrough: `docs/INGESTION_SETUP_JA.md` §4.
 ## 5. Next / 次
 
 **EN:**
+- **Check the deployed `TELEGRAM_CHAT_ID` is your user id, not a group id**,
+  before this reaches production — a negative id fails closed on every tap.
 - Owner completes the six setup steps; then verify a real send → tap → publish
   round trip end to end on the live deploy.
-- Consider running the shared guard on the ingest **auto-approve** path too
-  (`run-ingest.ts`), which still publishes trusted sources without it. Deliberately
-  out of scope today to keep this diff to the review surface.
+- Remaining from ROADMAP #12 P5: attach an official-page screenshot to the digest,
+  and per-row approve (today: approve-all/reject-all plus the Details view).
 
 **JA:**
+- 本番反映の前に、Vercel の `TELEGRAM_CHAT_ID` が**グループIDではなく自分のユーザーID**
+  であることを確認する（負の数だと全タップが拒否される＝安全側の挙動）。
 - オーナーの設定完了後、本番で「送信 → タップ → 公開」を通しで検証する。
-- 巡回の**自動承認**経路（`run-ingest.ts`）は、まだ共有ガードを通っていない。今回は
-  差分をレビュー面に絞るため意図的に対象外とした。次の候補。
+- 残タスク（ROADMAP #12 P5）：ダイジェストへの公式ページのスクリーンショット添付と、
+  1公演ごとの承認。
