@@ -158,5 +158,21 @@ const LEADING_ARTICLE =
  * title is preserved for display; only the grouping key is folded.
  */
 export function workTitleKey(title: string): string {
-  return slugify(title.trim().replace(LEADING_ARTICLE, ''))
+  const trimmed = title.trim()
+  const key = slugify(trimmed.replace(LEADING_ARTICLE, ''))
+  // A title with no Latin letters at all (新国立劇場 publishes 「トスカ」) slugifies
+  // to ''. Without a fallback every such work shared one empty key — a dozen
+  // different operas merged into a single Work whose page lived at `/works/`.
+  // A short stable hash of the title keeps each one distinct and linkable.
+  return key || `t-${hashTitle(trimmed)}`
+}
+
+/** FNV-1a, base-36 — stable across runs and runtimes, no dependency. */
+function hashTitle(input: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return (h >>> 0).toString(36)
 }

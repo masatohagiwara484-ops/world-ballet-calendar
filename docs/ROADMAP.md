@@ -8,7 +8,7 @@
 > **This is the current, canonical plan.** Older docs are background only and are
 > superseded here on conflict.
 
-Last updated: 2026-07-30
+Last updated: 2026-11-24
 
 ---
 
@@ -58,22 +58,41 @@ i18n · user accounts / favorites · PWA · B2B casting tool — all post-tracti
 
 ---
 
-## Launch readiness / ローンチ準備 (2026-07-30)
+## Now — owner priorities / 現在の優先順位 (2026-11-24)
 
-The product is close; these are the things standing between "it works" and
-"strangers can find it, trust it, and we can earn from it."
-プロダクトはほぼ完成。以下は「動く」から「他人が見つけ、信頼し、収益化できる」
-までの残作業。
+Work resumed after a three-month pause. The site stayed up; the **data went
+stale** (every `last_verified` is June–July, the scheduled crawl last ran
+2026-10-15, 23 of 39 houses carry data). The owner's order, which supersedes the
+sequencing further down:
+3か月の中断から再開。サイトは稼働中だが**データが古い**。以下がオーナー指定の優先順。
+
+| P | Priority | Status | What it means |
+|---|----------|--------|---------------|
+| P1 | **Fresh data** | 🟡 | New loop: a Claude session on the owner's Mac crawls, repairs broken sources by reading the official site in Chrome, verifies, and asks once before publishing. Protocol: `.claude/skills/season-refresh`. **Blocked on a session running on the Mac** — cloud containers cannot reach the houses or Supabase. |
+| P2 | **Mobile layout** | 🟡 | 2026-11-24 audit at 390px, 16 routes: fixed search results squeezed beside the Filters button, the contact button overflowing, the calendar opening on a finished month, ended runs listed first in search, doubled `— première` titles, and Japanese-titled works collapsing into one `/works/` page. Remaining: a real-device pass (S4). |
+| P3 | **UI/UX review** | ⬜ | Decided together with the owner — proposals first, no unilateral redesign. |
+| P4 | **Affiliate sign-ups** | ⬜ | = M6. GetYourGuide already earns; the other five ids are missing. Prefer one network that carries several brands over five applications. Owner applies (payout account). |
+| P5 | **Hands-off operations** | ⬜ | Weekly scheduled refresh (P1 loop) + weekly social pack (P6), each ending in one owner approval. Replaces the launchd plan (ingestion phases 1–4 below). |
+| P6 | **Instagram** | ⬜ | Account exists. Everything generated — images from the repo's own renderer (1080×1350, brand tokens) plus caption/hashtags/alt text; the owner's only manual step is posting. Playbook: `docs/features/instagram-social-playbook.md`. |
+
+**Telegram (M4) is deferred, not cancelled.** The code is complete and tested;
+approval now happens in the Claude session through the same `review:pending
+--publish` guard, so Telegram is a notification upgrade for later.
+Telegram は後回し（コード完成済み）。承認は Claude セッション内で同じガードを通す。
+
+---
+
+## Launch readiness / ローンチ準備
 
 ### MUST — cannot launch without / これが無いとローンチ不可
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | M1 | Real domain | ✅ | `premierestages.com` bought via Vercel (2026-07-30); **www is the production alias**, apex 308-redirects to it. Set `NEXT_PUBLIC_SITE_URL=https://www.premierestages.com` and redeploy — `NEXT_PUBLIC_*` is inlined at build time, so setting it alone changes nothing. |
-| M2 | Publish the verified seasons | 🟡 | Large pending queue across ~24 houses awaiting `review:pending --publish`. |
-| M3 | Daily ingestion automation | ⬜ | Still manual. launchd on the owner's Mac — see the ingestion plan below (#12 P3). Prerequisite for the "run it, don't build it" phase. |
-| M4 | Telegram approval flow live | 🟡 | **Code complete (Day 15):** owner auth on the webhook (`telegram-auth.ts`, fails closed), the shared publish guard both paths now share (`review-guard.ts`), `/pending` + `npm run review:telegram` for the queue on demand, and a paginated Details view. Remaining: the owner's 25-minute account setup (BotFather → Vercel/GitHub env → `setWebhook` → `telegram:check`), then one live send→tap→publish round trip. |
-| M5 | Legal pages (privacy · terms · affiliate disclosure) | ⬜ | **Blocks M6** — affiliate networks and ad partners require a visible disclosure. Draft grounded in what the code actually collects; owner must review before publishing (not legal advice). |
-| M6 | Affiliate IDs | ⬜ | Code ready (`affiliate.ts`). Gated on the owner's payout account; applications take time, so start early. |
+| M2 | Publish the verified seasons | 🟡 | = P1. 261 rows live across 23 houses (189 upcoming) but all verified June–July; 16 houses empty. Refresh via `season-refresh`. |
+| M3 | Ingestion automation | ⬜ | = P5. Weekly scheduled Claude session on the owner's Mac instead of launchd. Note: the GitHub Actions cron stopped on 2026-10-15 (scheduled workflows pause after 60 days without repo activity) and was never able to reach most houses anyway. |
+| M4 | Telegram approval flow live | ⏸ | **Deferred 2026-11-24** (owner's call) — not launch-blocking now that approval runs in-session. | **Code complete (Day 15):** owner auth on the webhook (`telegram-auth.ts`, fails closed), the shared publish guard both paths now share (`review-guard.ts`), `/pending` + `npm run review:telegram` for the queue on demand, and a paginated Details view. Remaining: the owner's 25-minute account setup (BotFather → Vercel/GitHub env → `setWebhook` → `telegram:check`), then one live send→tap→publish round trip. |
+| M5 | Legal pages (privacy · terms · affiliate disclosure) | ✅ | Live at `/privacy` `/terms` `/disclosure` since 2026-08-01, linked from the footer. Owner review still advised (not legal advice). Contact address is the owner's personal Gmail — move to an address on the domain before wide launch. |
+| M6 | Affiliate IDs | 🟡 | = P4. GetYourGuide is live; Booking, Tiqets, Trainline, Welcome Pickups and Airalo ids are missing. Applications take time, so start early. |
 | M7 | Contact route | ✅ | `/contact` + footer link (2026-07-30). Four pre-filled subjects; the corrections and company/theatre routes are also how a listing relationship with a house can begin. |
 
 ### SHOULD — right after launch / ローンチ直後に効く
@@ -98,9 +117,9 @@ The product is close; these are the things standing between "it works" and
 | N6 | Accounts / favourites | Explicitly post-traction (section E). |
 
 ### Sequencing / 進行順
-- **Now:** M1 env var → M2 publish → M5 → S1 (announce on a stable URL).
-- **Next month:** M3 + M4 so the daily loop is approval-only, then M6.
-- **Sep–Dec:** operate and grow — S1/S3/N1/N2 are the levers.
+Superseded by **Now — owner priorities** above (P1 → P6). After those: S3
+analytics + Search Console, S5 newsletter delivery, then N1/N2 as the growth
+levers.
 
 ---
 
@@ -140,6 +159,10 @@ changes, confirm in Telegram with a tap, live within minutes. Owner input reduce
 to the trust-gate tap plus a save-as ritual for the few houses that block bots.
 **目標:** 毎日1回巡回 → 新規/日付変更を検出 → Telegramでタップ承認 → 数分で反映。
 人力は「承認タップ」＋割れない少数館の保存のみ。
+
+> **2026-11-24:** phases 1–4 below are replaced by the `season-refresh` loop
+> (agent session on the owner's Mac, Chrome for the houses a script cannot
+> read). The constraint that follows is why it must run on the Mac.
 
 **Hard constraint / 制約:** a background agent and cloud cron (GitHub Actions,
 Vercel) get **403** from major houses — datacenter IP. The **only** machine that

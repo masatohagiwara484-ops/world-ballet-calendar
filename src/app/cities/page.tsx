@@ -5,7 +5,7 @@ import CityTile from '@/components/cities/CityTile'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Ballet & opera by city — première',
+  title: 'Ballet & opera by city',
   description:
     'Browse ballet and opera by city — Paris, London, New York, Vienna, Tokyo and more. See which companies perform where, and what’s on this season.',
   openGraph: {

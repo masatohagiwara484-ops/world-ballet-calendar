@@ -61,7 +61,9 @@ npm run review:telegram               # same queue, pushed to Telegram (= /pendi
 Full command table: `README.md`. Every PR runs CI (`.github/workflows/ci.yml`:
 lint → validate:data → ingest:selftest → telegram:selftest → build) — keep it green.
 
-Ingestion ops runbook: `docs/INGESTION_SETUP.md`. The `review_status` gate is
+Ingestion ops runbook: `docs/INGESTION_SETUP.md`. The routine refresh is the
+`season-refresh` skill — it runs on the owner's Mac (cloud containers cannot
+reach the houses or Supabase) and ends in one owner approval. The `review_status` gate is
 absolute: nothing publishes without owner approval (Telegram or `--publish`).
 
 **Approval is authenticated AND guarded.** The webhook checks two independent

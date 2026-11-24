@@ -3,7 +3,7 @@ import { CONTACT_EMAIL, OPERATOR_NAME, OPERATOR_LOCATION } from '@/lib/site'
 import LegalPage, { LegalSection } from '@/components/legal/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Terms — première',
+  title: 'Terms',
   description:
     'The terms of using première, including what our performance listings are and are not.',
 }

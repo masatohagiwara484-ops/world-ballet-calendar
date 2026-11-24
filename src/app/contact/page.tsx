@@ -3,7 +3,7 @@ import { Mail, ArrowUpRight } from 'lucide-react'
 import { CONTACT_EMAIL, OPERATOR_NAME, OPERATOR_LOCATION } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'Contact — première',
+  title: 'Contact',
   description:
     'Reach première — corrections to a listing, an invitation from a company or theatre, partnership enquiries, or a note from a reader.',
   openGraph: {
@@ -85,10 +85,10 @@ export default function ContactPage() {
 
           <a
             href={mailto('Hello')}
-            className="mt-10 inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gold text-stage font-semibold text-base tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold transition-all"
+            className="mt-10 inline-flex max-w-full items-center gap-2.5 sm:gap-3 px-5 sm:px-8 py-4 rounded-full bg-gold text-stage font-semibold text-[11px] sm:text-base tracking-[0.06em] sm:tracking-[0.22em] uppercase hover:bg-gold-bright hover:shadow-glow-gold transition-all"
           >
-            <Mail size={15} />
-            {CONTACT_EMAIL}
+            <Mail size={15} className="shrink-0" />
+            <span className="min-w-0 break-all">{CONTACT_EMAIL}</span>
           </a>
         </div>
       </section>

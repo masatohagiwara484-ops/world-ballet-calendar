@@ -3,7 +3,7 @@ import { CONTACT_EMAIL } from '@/lib/site'
 import LegalPage, { LegalSection } from '@/components/legal/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Affiliate disclosure — première',
+  title: 'Affiliate disclosure',
   description:
     'How première earns: some booking and travel links pay us a commission, at no extra cost to you, and never in exchange for editorial coverage.',
 }

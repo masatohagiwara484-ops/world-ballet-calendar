@@ -59,14 +59,14 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     title = `${work.replace(/-/g, ' ')} — every performance worldwide`
     description = `Discover every performance of ${work.replace(/-/g, ' ')} on première.`
   } else if (q) {
-    title = `"${q}" — première`
+    title = `"${q}"`
     description = `Search results for "${q}" — find ballet and opera performances worldwide.`
   } else if (filters.kind) {
     const kindName = filters.kind.charAt(0).toUpperCase() + filters.kind.slice(1)
-    title = `${kindName} performances worldwide — première`
+    title = `${kindName} performances worldwide`
     description = `Browse ${kindName} performances around the world on première.`
   } else {
-    title = "Search the world's ballet & opera — première"
+    title = "Search the world's ballet & opera"
     description = 'Find any ballet or opera performance in the world. Filter by company, city, artist, date, and more.'
   }
 
@@ -116,7 +116,10 @@ export default async function SearchPage({ searchParams }: PageProps) {
   // src/data/performances.ts, which is intentionally empty now that real data
   // lives in Supabase. Using the sync search() here was the bug that made the
   // search page always show "no performances" while the calendar (live) worked.
-  const result = await searchAsync(filters)
+  // Default to what can still be seen: without an explicit start date, ended
+  // runs are left out. (Date sort otherwise opened the page on last June.)
+  const today = new Date().toISOString().slice(0, 10)
+  const result = await searchAsync({ ...filters, start_date: filters.start_date ?? today })
 
   const q = filters.q
 
@@ -158,12 +161,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
         <ActiveFiltersSuspense filters={filters} />
 
         {/* Two-column layout */}
-        <div className="flex gap-7 items-start">
+        <div className="flex flex-col lg:flex-row lg:gap-7 lg:items-start">
           {/* Filter rail */}
           <FilterRailSuspense facets={result.facets} filters={filters} />
 
           {/* Results column */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             {result.items.length > 0 ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {result.items.map((item) => (

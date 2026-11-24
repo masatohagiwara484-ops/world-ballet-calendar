@@ -7,7 +7,7 @@ import CityTile from '@/components/cities/CityTile'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: 'Trip bundles — plan a performance trip — première',
+  title: 'Trip bundles — plan a performance trip',
   description:
     'Plan an entire trip around a performance: tickets, a hotel dated to the run, experiences and flights — bundled for the great ballet and opera cities of the world.',
   openGraph: {

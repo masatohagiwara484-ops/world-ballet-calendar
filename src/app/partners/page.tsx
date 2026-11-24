@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { PARTNER_STATUS } from '@/lib/affiliate'
 
 export const metadata: Metadata = {
-  title: 'Plan Your Visit — première',
+  title: 'Plan Your Visit',
   description:
     'Hotels near the great opera houses, curated tours and backstage experiences, and flights to the cultural capitals — the travel layer of première is live.',
   openGraph: {

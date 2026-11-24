@@ -3,7 +3,7 @@ import { CONTACT_EMAIL, OPERATOR_NAME, OPERATOR_LOCATION } from '@/lib/site'
 import LegalPage, { LegalSection } from '@/components/legal/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Privacy — première',
+  title: 'Privacy',
   description:
     'What première collects, why, who processes it, and how to have it removed.',
 }

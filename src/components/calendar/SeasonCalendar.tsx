@@ -34,7 +34,12 @@ function runCoversDay(p: PerformanceWithCompany, dayIso: string): boolean {
 }
 
 export default function SeasonCalendar() {
-  const [month, setMonth] = useState<Date>(SEASON_START)
+  // Open on the month the reader is living in — never on a month that is already
+  // over. SEASON_START stays the floor for the season view's range.
+  const [month, setMonth] = useState<Date>(() => {
+    const now = startOfMonth(new Date())
+    return now > SEASON_START ? now : SEASON_START
+  })
   const [kind, setKind] = useState<KindFilter>('all')
   const [country, setCountry] = useState<string>('')
   const [companySlug, setCompanySlug] = useState<string>('')
